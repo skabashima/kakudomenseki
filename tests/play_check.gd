@@ -72,7 +72,8 @@ func _answer_str(scene: Node) -> String:
 
 
 func _test_clear_all_correct() -> void:
-	var scene: Node = await _open_stage("e", 0)
+	# 角度編の先頭 = e1
+	var scene: Node = await _open_stage("kaku", 0)
 	for q in GameState.QUESTIONS_PER_STAGE:
 		await _type_answer(scene, _answer_str(scene))
 	if scene.overlay == null:
@@ -88,7 +89,8 @@ func _test_clear_all_correct() -> void:
 
 
 func _test_fail_out() -> void:
-	var scene: Node = await _open_stage("e", 1)
+	# 面積編の先頭 = e2
+	var scene: Node = await _open_stage("men", 0)
 	for i in GameState.START_HEARTS:
 		await _type_answer(scene, "999999")
 	if scene.hearts != 0:
@@ -104,7 +106,8 @@ func _test_fail_out() -> void:
 
 
 func _test_clear_with_miss() -> void:
-	var scene: Node = await _open_stage("e", 2)
+	# 面積編の 2 番目 = e3
+	var scene: Node = await _open_stage("men", 1)
 	await _type_answer(scene, "999999")   # 1 ミス
 	# こわれた式はハートを消費しないこと
 	var hearts_before: int = scene.hearts
@@ -116,10 +119,15 @@ func _test_clear_with_miss() -> void:
 		await _type_answer(scene, "(%s)+0" % _answer_str(scene))
 	if int(GameState.stars.get("e3", 0)) != 2:
 		failures.append("miss-clear: ★2 のはずが %d" % int(GameState.stars.get("e3", 0)))
-	# 1 問目クリア済みなので次のステージが解放されているはず
-	if not GameState.is_stage_unlocked("e", 1):
-		failures.append("unlock: e2 が解放されていない")
-	if GameState.is_stage_unlocked("e", 5):
-		failures.append("unlock: e6 が解放されてしまっている")
+	# 角度編は e1 クリア済みなので次(e4)が解放されているはず
+	if not GameState.is_stage_unlocked("kaku", 1):
+		failures.append("unlock: 角度編 2 番目が解放されていない")
+	if GameState.is_stage_unlocked("kaku", 5):
+		failures.append("unlock: 角度編 6 番目が解放されてしまっている")
+	# 面積編は e3(idx1)までクリア済み → idx2 は開き、idx5 は閉じたまま
+	if not GameState.is_stage_unlocked("men", 2):
+		failures.append("unlock: 面積編 3 番目が解放されていない")
+	if GameState.is_stage_unlocked("men", 5):
+		failures.append("unlock: 面積編 6 番目が解放されてしまっている")
 	scene.queue_free()
 	await get_tree().process_frame

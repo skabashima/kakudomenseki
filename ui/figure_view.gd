@@ -135,7 +135,14 @@ func _pts_px(arr: Array) -> PackedVector2Array:
 func _draw_poly(sh: Dictionary) -> void:
 	var pts := _pts_px(sh["p"])
 	if sh.has("fill"):
-		draw_colored_polygon(pts, sh["fill"])
+		# 凹多角形(ブーメラン形など)も正しく塗れるよう三角形に分割して描く
+		var indices := Geometry2D.triangulate_polygon(pts)
+		if indices.is_empty():
+			draw_colored_polygon(pts, sh["fill"])
+		else:
+			for i in range(0, indices.size(), 3):
+				draw_colored_polygon(PackedVector2Array(
+					[pts[indices[i]], pts[indices[i + 1]], pts[indices[i + 2]]]), sh["fill"])
 	var w: float = sh.get("w", 4.0)
 	if w > 0.0:
 		var stroke: Color = sh.get("stroke", COL_LINE) if sh.get("stroke") != null else COL_LINE

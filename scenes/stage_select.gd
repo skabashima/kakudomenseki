@@ -60,7 +60,18 @@ func _ready() -> void:
 	scroll.add_child(list)
 
 	var stages: Array = course["stages"]
+	var last_level := ""
 	for i in stages.size():
+		# レベルが変わるところに見出しを入れる(中学受験 → 高校受験 → 大学受験)
+		var lv := ProblemGen.level_name(String(stages[i]["id"]))
+		if lv != last_level:
+			last_level = lv
+			var head_lbl := Label.new()
+			head_lbl.text = "― %s ―" % lv
+			head_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+			head_lbl.add_theme_font_size_override("font_size", 24)
+			head_lbl.add_theme_color_override("font_color", col.lightened(0.5))
+			list.add_child(head_lbl)
 		list.add_child(_stage_card(i, stages[i], col))
 
 

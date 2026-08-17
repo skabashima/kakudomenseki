@@ -22,6 +22,8 @@ static func gen(stage_id: String, rng: RandomNumberGenerator, tier: int) -> Dict
 		"j7": return _j7(rng, tier)
 		"j8": return _j8(rng, tier)
 		"j9": return _j9(rng, tier)
+		"j11": return _j11(rng, tier)
+		"j12": return _j12(rng, tier)
 		_: return _j10(rng, tier)
 
 
@@ -612,4 +614,93 @@ static func _j10(rng: RandomNumberGenerator, tier: int) -> Dictionary:
 		"hint2": "実は 三日月の和 = 三角形の面積。%d × %d ÷ 2" % [b, a],
 		"expl": "半円(%d)+半円(%d)+三角形−半円(斜辺) を計算すると、三平方の定理で π が消えて三角形の面積だけ残ります。答えは %d × %d ÷ 2 = %s(ヒポクラテスの月)。" % [a, b, b, a, ProblemGen.fmt(ans2)],
 		"fig": fig2,
+	}
+
+
+## j11: 星形五角形のとがった角(和は 180°)
+static func _j11(rng: RandomNumberGenerator, tier: int) -> Dictionary:
+	var step := 5 if tier == 0 else 1
+	var tips: Array = []
+	var x := 0
+	# 4 つのとがった角を決め、残り 1 つが x。ありえない形にならない範囲で選び直す
+	while true:
+		tips = []
+		var sum4 := 0
+		for i in 4:
+			var t := step * rng.randi_range(20 / step, 48 / step)
+			tips.append(t)
+			sum4 += t
+		x = 180 - sum4
+		if x >= 15 and x <= 70:
+			break
+	tips.append(x)
+	# 星のとがった角は「向かいの弧の半分」。弧(となり合う頂点の間)を
+	# gap[(i+2) % 5] = 2 × tips[i] にすれば、指定どおりの角の星が描ける
+	var gaps: Array = [0, 0, 0, 0, 0]
+	for i in 5:
+		gaps[(i + 2) % 5] = 2 * tips[i]
+	var pts: Array = []
+	var deg := 90.0
+	for i in 5:
+		pts.append(Vector2(cos(deg_to_rad(deg)), sin(deg_to_rad(deg))) * 5.0)
+		deg += float(gaps[i])
+	var shapes: Array = []
+	for i in 5:
+		shapes.append(ProblemGen.seg(pts[i], pts[(i + 2) % 5], Color.WHITE, 3.5))
+	for i in 5:
+		var lbl := "x" if i == 4 else "%d°" % int(tips[i])
+		shapes.append(ProblemGen.ang(pts[i], pts[(i + 2) % 5], pts[(i + 3) % 5], lbl))
+	return {
+		"q": "星形の 5 つのとがった角のうち 4 つが図の通りのとき、角 x は何度ですか。",
+		"answer": float(x), "unit": "度",
+		"hint1": "星形五角形のとがった 5 つの角の和は、いつでも 180° だよ。",
+		"hint2": "x = 180 − (%d + %d + %d + %d)" % [tips[0], tips[1], tips[2], tips[3]],
+		"expl": "とがった角の和は 180°。x = 180 − %d = %d° です。" % [180 - x, x],
+		"fig": {"shapes": shapes},
+	}
+
+
+## j12: 弧の長さの比と円周角(円周角は弧に比例する)
+static func _j12(rng: RandomNumberGenerator, _tier: int) -> Dictionary:
+	# 比 p:q:r で、答えの角 180p/(p+q+r) が整数になる組だけ使う
+	var p := 0
+	var q := 0
+	var r := 0
+	var x := 0
+	while true:
+		p = rng.randi_range(1, 6)
+		q = rng.randi_range(1, 6)
+		r = rng.randi_range(1, 6)
+		var sum := p + q + r
+		if (180 * p) % sum == 0 and 180 * p / sum >= 20 and 180 * p / sum <= 120:
+			x = 180 * p / sum
+			break
+	var sum := p + q + r
+	var rr := 5.0
+	# A から反時計回りに、弧 AB = p、弧 BC = q、弧 CA = r の割合で置く
+	var deg_a := 90.0
+	var deg_b := deg_a + 360.0 * p / sum
+	var deg_c := deg_b + 360.0 * q / sum
+	var pa := Vector2(cos(deg_to_rad(deg_a)), sin(deg_to_rad(deg_a))) * rr
+	var pb := Vector2(cos(deg_to_rad(deg_b)), sin(deg_to_rad(deg_b))) * rr
+	var pc := Vector2(cos(deg_to_rad(deg_c)), sin(deg_to_rad(deg_c))) * rr
+	var mid_ab := deg_a + 180.0 * p / sum
+	var mid_bc := deg_b + 180.0 * q / sum
+	var mid_ca := deg_c + 180.0 * r / sum
+	var fig := {"shapes": [
+		ProblemGen.circle(Vector2.ZERO, rr),
+		ProblemGen.poly([pa, pb, pc], ProblemGen.FILL_MAIN, Color.WHITE, 3.0),
+		ProblemGen.label(pa * 1.18, "A"), ProblemGen.label(pb * 1.18, "B"), ProblemGen.label(pc * 1.18, "C"),
+		ProblemGen.label(Vector2(cos(deg_to_rad(mid_ab)), sin(deg_to_rad(mid_ab))) * (rr + 0.9), str(p), ProblemGen.COL_YELLOW, 26),
+		ProblemGen.label(Vector2(cos(deg_to_rad(mid_bc)), sin(deg_to_rad(mid_bc))) * (rr + 0.9), str(q), ProblemGen.COL_YELLOW, 26),
+		ProblemGen.label(Vector2(cos(deg_to_rad(mid_ca)), sin(deg_to_rad(mid_ca))) * (rr + 0.9), str(r), ProblemGen.COL_YELLOW, 26),
+		ProblemGen.ang(pc, pa, pb, "x"),
+	]}
+	return {
+		"q": "円周上の点 A・B・C は、弧の長さの比が AB : BC : CA = %d : %d : %d になっています。角 x(∠ACB)は何度ですか。" % [p, q, r],
+		"answer": float(x), "unit": "度",
+		"hint1": "円周角は弧の長さに比例する。円周ぜんぶの弧に対する円周角の合計は 180° だよ。",
+		"hint2": "x = 180 × %d ÷ (%d + %d + %d)" % [p, p, q, r],
+		"expl": "∠ACB は弧 AB に対する円周角。x = 180 × %d/%d = %d° です。" % [p, sum, x],
+		"fig": fig,
 	}

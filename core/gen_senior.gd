@@ -42,6 +42,8 @@ static func gen(stage_id: String, rng: RandomNumberGenerator, tier: int) -> Dict
 		"s7": return _s7(rng, tier)
 		"s8": return _s8(rng, tier)
 		"s9": return _s9(rng, tier)
+		"s11": return _s11(rng, tier)
+		"s12": return _s12(rng, tier)
 		_: return _s10(rng, tier)
 
 
@@ -644,3 +646,101 @@ static func _s10(rng: RandomNumberGenerator, tier: int) -> Dictionary:
 			"expl": "交点は x = %d, %d。S = |a|(β−α)³/6 = %d × %d³/6 = %s です。" % [p2, q2, a2, d, ProblemGen.fmt(ans)],
 			"fig": fig3,
 		}
+
+
+## s11: 三角方程式(sin・cos・tan の値から角度を求める)
+static func _s11(rng: RandomNumberGenerator, tier: int) -> Dictionary:
+	# [問題文の式, 範囲(°), 答え(°)]
+	const EASY := [
+		["sinθ = 1/2", 90, 30], ["sinθ = √3/2", 90, 60], ["sinθ = √2/2", 90, 45],
+		["sinθ = 1", 90, 90], ["cosθ = 1/2", 90, 60], ["cosθ = √3/2", 90, 30],
+		["cosθ = √2/2", 90, 45], ["tanθ = 1", 90, 45], ["tanθ = √3", 90, 60],
+		["cosθ = 0", 90, 90],
+	]
+	const OBTUSE := [
+		["cosθ = −1/2", 180, 120], ["cosθ = −√3/2", 180, 150], ["cosθ = −√2/2", 180, 135],
+		["tanθ = −1", 180, 135], ["tanθ = −√3", 180, 120], ["cosθ = −1", 180, 180],
+	]
+	const EQUATION := [
+		["2sinθ = 1", 90, 30], ["2sinθ = √3", 90, 60], ["√2 sinθ = 1", 90, 45],
+		["2cosθ = 1", 90, 60], ["2cosθ + 1 = 0", 180, 120], ["tanθ + 1 = 0", 180, 135],
+		["√3 tanθ = 1", 90, 30], ["2cosθ = √2", 90, 45], ["2cosθ + √3 = 0", 180, 150],
+	]
+	var pool: Array
+	match mini(tier, 2):
+		0: pool = EASY
+		1: pool = OBTUSE
+		_: pool = EQUATION
+	if rng.randf() < 0.3:
+		pool = [EASY, OBTUSE, EQUATION][rng.randi_range(0, 2)]
+	var pick: Array = pool[rng.randi_range(0, pool.size() - 1)]
+	var expr := String(pick[0])
+	var range_max := int(pick[1])
+	var ans := int(pick[2])
+	# 単位円の図(答えの角の位置に半径を引く)
+	var rr := 4.5
+	var rad := deg_to_rad(float(ans))
+	var tip := Vector2(cos(rad), sin(rad)) * rr
+	var fig := {"shapes": [
+		ProblemGen.axes(Vector2(-rr - 1, -1.2), Vector2(rr + 1, rr + 1)),
+		ProblemGen.circle(Vector2.ZERO, rr, null, ProblemGen.COL_DIM, 3.0),
+		ProblemGen.seg(Vector2.ZERO, tip, ProblemGen.COL_YELLOW, 4.0),
+		ProblemGen.circle(tip, 0.15, ProblemGen.COL_YELLOW),
+		ProblemGen.seg(tip, Vector2(tip.x, 0), ProblemGen.COL_DIM, 2.5, true),
+		ProblemGen.ang(Vector2.ZERO, Vector2(rr, 0), tip, "θ"),
+	]}
+	return {
+		"q": "0° ≤ θ ≤ %d° のとき、%s を満たす θ を求めなさい。" % [range_max, expr],
+		"answer": float(ans), "unit": "度",
+		"hint1": "30°・45°・60°(と 90°・120°・135°・150°)の sin・cos・tan の値を思い出そう。単位円をかくと確実だよ。",
+		"hint2": "%s になるのは θ = %d° のとき。" % [expr, ans],
+		"expl": "%s を満たすのは θ = %d° です(単位円の図の位置)。" % [expr, ans],
+		"fig": fig,
+	}
+
+
+## s12: ベクトルのなす角(cosθ = a・b / |a||b| がきれいな値になる組)
+static func _s12(rng: RandomNumberGenerator, tier: int) -> Dictionary:
+	# [ax, ay, bx, by, 角度]
+	const RIGHT := [
+		[2, 1, -1, 2, 90], [3, 1, -1, 3, 90], [1, 2, -2, 1, 90], [4, 1, -1, 4, 90],
+		[3, 2, -2, 3, 90], [1, 3, -3, 1, 90], [2, 3, -3, 2, 90],
+	]
+	const OTHERS := [
+		[3, 1, 2, -1, 45], [1, 3, 2, 1, 45], [2, 1, 3, -1, 45], [1, 2, 3, 1, 45],
+		[0, 2, 2, 2, 45], [2, 0, 2, 2, 45],
+		[1, 2, -3, -1, 135], [3, 1, -2, 1, 135], [1, 3, -2, -1, 135],
+		[2, 0, -2, 2, 135], [0, 2, 2, -2, 135],
+	]
+	var pool: Array = RIGHT if tier == 0 else OTHERS
+	if rng.randf() < 0.3:
+		pool = RIGHT if pool == OTHERS else OTHERS
+	var s: Array = pool[rng.randi_range(0, pool.size() - 1)]
+	var ax := int(s[0])
+	var ay := int(s[1])
+	var bx := int(s[2])
+	var by := int(s[3])
+	var ans := int(s[4])
+	var dot := ax * bx + ay * by
+	var va := Vector2(ax, ay)
+	var vb := Vector2(bx, by)
+	var lo := Vector2(minf(0, minf(va.x, vb.x)) - 1, minf(0, minf(va.y, vb.y)) - 1)
+	var hi := Vector2(maxf(0, maxf(va.x, vb.x)) + 1, maxf(0, maxf(va.y, vb.y)) + 1)
+	var fig := {"shapes": [
+		ProblemGen.grid(lo, hi), ProblemGen.axes(lo, hi),
+		ProblemGen.arrow(Vector2.ZERO, va, ProblemGen.COL_YELLOW),
+		ProblemGen.arrow(Vector2.ZERO, vb, Color(0.55, 0.85, 1.0)),
+		ProblemGen.label(va + va.normalized() * 0.8, "a→"),
+		ProblemGen.label(vb + vb.normalized() * 0.8, "b→"),
+		ProblemGen.ang(Vector2.ZERO, va, vb, "θ"),
+	]}
+	return {
+		"q": "a→ = (%d, %d)、b→ = (%d, %d) のなす角 θ を求めなさい。" % [ax, ay, bx, by],
+		"answer": float(ans), "unit": "度",
+		"hint1": "cosθ = (a・b) ÷ (|a→| |b→|)。まず内積 a・b を計算しよう。",
+		"hint2": "a・b = %d×%d + %d×%d = %d。cosθ = %s になるよ。" % [
+			ax, bx, ay, by, dot,
+			"0" if dot == 0 else ("√2/2" if ans == 45 else "−√2/2")],
+		"expl": "a・b = %d。cosθ = %d/(|a||b|) から θ = %d° です。" % [dot, dot, ans],
+		"fig": fig,
+	}
