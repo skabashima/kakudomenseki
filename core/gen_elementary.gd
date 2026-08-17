@@ -1,0 +1,524 @@
+class_name GenElementary
+## 中学受験レベル(小学校の図形)の問題生成。値は毎回ランダム。
+## 円周率は 3.14 で計算する(問題文に明記)。
+
+
+
+static func gen(stage_id: String, rng: RandomNumberGenerator, tier: int) -> Dictionary:
+	match stage_id:
+		"e1": return _e1(rng, tier)
+		"e2": return _e2(rng, tier)
+		"e3": return _e3(rng, tier)
+		"e4": return _e4(rng, tier)
+		"e5": return _e5(rng, tier)
+		"e6": return _e6(rng, tier)
+		"e7": return _e7(rng, tier)
+		"e8": return _e8(rng, tier)
+		"e9": return _e9(rng, tier)
+		_: return _e10(rng, tier)
+
+
+## e1: 三角形の内角(2 つ与えて残りを求める)
+static func _e1(rng: RandomNumberGenerator, _tier: int) -> Dictionary:
+	var a := 5 * rng.randi_range(5, 20)      # 25..100
+	var b := 5 * rng.randi_range(5, 20)
+	var x := 180 - a - b
+	while x < 25 or x > 110:
+		a = 5 * rng.randi_range(5, 20)
+		b = 5 * rng.randi_range(5, 20)
+		x = 180 - a - b
+	var v: Array = ProblemGen.tri_from_angles(float(a), float(b), 10.0)
+	var fig := {"shapes": [
+		ProblemGen.poly(v, ProblemGen.FILL_MAIN),
+		ProblemGen.ang(v[1], v[2], v[0], "%d°" % a),
+		ProblemGen.ang(v[2], v[0], v[1], "%d°" % b),
+		ProblemGen.ang(v[0], v[1], v[2], "x"),
+	]}
+	return {
+		"q": "三角形の角 x は何度ですか。",
+		"answer": float(x), "unit": "度",
+		"hint1": "三角形の 3 つの角をぜんぶたすと 180° になるよ。",
+		"hint2": "x = 180 − %d − %d" % [a, b],
+		"expl": "三角形の内角の和は 180°。だから x = 180 − %d − %d = %d° です。" % [a, b, x],
+		"fig": fig,
+	}
+
+
+## e2: 正方形・長方形の面積(まわりの長さからの逆算も)
+static func _e2(rng: RandomNumberGenerator, tier: int) -> Dictionary:
+	var kind := rng.randi_range(0, 1) if tier < 2 else 2
+	if kind == 0:
+		var a := rng.randi_range(3, 15)
+		var b := rng.randi_range(3, 15)
+		while b == a:
+			b = rng.randi_range(3, 15)
+		var fig := {"shapes": [
+			ProblemGen.poly([Vector2(0, 0), Vector2(a, 0), Vector2(a, b), Vector2(0, b)], ProblemGen.FILL_MAIN),
+			ProblemGen.side_label(Vector2(0, 0), Vector2(a, 0), "%dcm" % a, -1.0),
+			ProblemGen.side_label(Vector2(a, 0), Vector2(a, b), "%dcm" % b, -1.0),
+			ProblemGen.right(Vector2(0, 0), Vector2(a, 0), Vector2(0, b)),
+		]}
+		return {
+			"q": "たて %dcm、よこ %dcm の長方形の面積は何 cm² ですか。" % [b, a],
+			"answer": float(a * b), "unit": "cm²",
+			"hint1": "長方形の面積 = たて × よこ だよ。",
+			"hint2": "%d × %d を計算しよう。" % [b, a],
+			"expl": "長方形の面積 = たて × よこ = %d × %d = %d cm² です。" % [b, a, a * b],
+			"fig": fig,
+		}
+	elif kind == 1:
+		var a := rng.randi_range(4, 13)
+		var fig := {"shapes": [
+			ProblemGen.poly([Vector2(0, 0), Vector2(a, 0), Vector2(a, a), Vector2(0, a)], ProblemGen.FILL_MAIN),
+			ProblemGen.side_label(Vector2(0, 0), Vector2(a, 0), "%dcm" % a, -1.0),
+			ProblemGen.right(Vector2(0, 0), Vector2(a, 0), Vector2(0, a)),
+			ProblemGen.tick(Vector2(0, 0), Vector2(a, 0)),
+			ProblemGen.tick(Vector2(a, 0), Vector2(a, a)),
+		]}
+		return {
+			"q": "1 辺が %dcm の正方形の面積は何 cm² ですか。" % a,
+			"answer": float(a * a), "unit": "cm²",
+			"hint1": "正方形の面積 = 1辺 × 1辺 だよ。",
+			"hint2": "%d × %d を計算しよう。" % [a, a],
+			"expl": "正方形の面積 = 1辺 × 1辺 = %d × %d = %d cm² です。" % [a, a, a * a],
+			"fig": fig,
+		}
+	else:
+		# まわりの長さ → 面積(ひとひねり)
+		var s := rng.randi_range(4, 12)
+		var perim := s * 4
+		var fig := {"shapes": [
+			ProblemGen.poly([Vector2(0, 0), Vector2(s, 0), Vector2(s, s), Vector2(0, s)], ProblemGen.FILL_ACCENT),
+			ProblemGen.label(Vector2(s * 0.5, s * 0.5), "?", ProblemGen.COL_YELLOW, 40),
+			ProblemGen.label(Vector2(s * 0.5, -1.2), "まわりの長さ %dcm" % perim),
+		]}
+		return {
+			"q": "まわりの長さが %dcm の正方形があります。この正方形の面積は何 cm² ですか。" % perim,
+			"answer": float(s * s), "unit": "cm²",
+			"hint1": "まず 1 辺の長さを求めよう。まわりの長さは 1 辺の 4 倍だよ。",
+			"hint2": "1 辺 = %d ÷ 4 = %d cm。面積は %d × %d。" % [perim, s, s, s],
+			"expl": "1 辺 = %d ÷ 4 = %d cm。面積 = %d × %d = %d cm² です。" % [perim, s, s, s, s * s],
+			"fig": fig,
+		}
+
+
+## e3: 三角形の面積(高さを図から読む/面積からの逆算)
+static func _e3(rng: RandomNumberGenerator, tier: int) -> Dictionary:
+	var b := 2 * rng.randi_range(2, 8)       # 底辺(偶数 4..16)
+	var h := rng.randi_range(3, 12)
+	if tier >= 2 and rng.randf() < 0.6:
+		# 逆算: 面積と底辺 → 高さ
+		var s := b * h / 2
+		var apex := Vector2(b * rng.randf_range(0.3, 0.7), h)
+		var fig := {"shapes": [
+			ProblemGen.poly([Vector2(0, 0), Vector2(b, 0), apex], ProblemGen.FILL_MAIN),
+			ProblemGen.seg(Vector2(apex.x, 0), apex, ProblemGen.COL_YELLOW, 3.0, true),
+			ProblemGen.right(Vector2(apex.x, 0), Vector2(b, 0), apex),
+			ProblemGen.side_label(Vector2(0, 0), Vector2(b, 0), "%dcm" % b, 1.0),
+			ProblemGen.label(Vector2(apex.x + 1.3, h * 0.5), "?cm", ProblemGen.COL_YELLOW),
+			ProblemGen.label(Vector2(b * 0.5, h + 1.5), "面積 %dcm²" % s),
+		]}
+		return {
+			"q": "面積が %dcm² で底辺が %dcm の三角形があります。高さは何 cm ですか。" % [s, b],
+			"answer": float(h), "unit": "cm",
+			"hint1": "面積 = 底辺 × 高さ ÷ 2。高さ = 面積 × 2 ÷ 底辺 で逆算できるよ。",
+			"hint2": "高さ = %d × 2 ÷ %d" % [s, b],
+			"expl": "高さ = 面積 × 2 ÷ 底辺 = %d × 2 ÷ %d = %d cm です。" % [s, b, h],
+			"fig": fig,
+		}
+	var apex_x := b * rng.randf_range(0.25, 0.75)
+	var apex := Vector2(apex_x, h)
+	var fig := {"shapes": [
+		ProblemGen.poly([Vector2(0, 0), Vector2(b, 0), apex], ProblemGen.FILL_MAIN),
+		ProblemGen.seg(Vector2(apex_x, 0), apex, ProblemGen.COL_YELLOW, 3.0, true),
+		ProblemGen.right(Vector2(apex_x, 0), Vector2(b, 0), apex),
+		ProblemGen.side_label(Vector2(0, 0), Vector2(b, 0), "%dcm" % b, 1.0),
+		ProblemGen.label(Vector2(apex_x + 1.4, h * 0.5), "%dcm" % h),
+	]}
+	return {
+		"q": "底辺 %dcm、高さ %dcm の三角形の面積は何 cm² ですか。" % [b, h],
+		"answer": float(b * h / 2), "unit": "cm²",
+		"hint1": "三角形の面積 = 底辺 × 高さ ÷ 2 だよ。",
+		"hint2": "%d × %d ÷ 2 を計算しよう。" % [b, h],
+		"expl": "三角形の面積 = 底辺 × 高さ ÷ 2 = %d × %d ÷ 2 = %d cm² です。" % [b, h, b * h / 2],
+		"fig": fig,
+	}
+
+
+## e4: 平行線と角(錯角/折れ線)
+static func _e4(rng: RandomNumberGenerator, tier: int) -> Dictionary:
+	var w := 12.0
+	if tier == 0 or rng.randf() < 0.4:
+		# 錯角: 平行線を横切る直線
+		var a := 5 * rng.randi_range(7, 24)   # 35..120
+		var rad := deg_to_rad(float(a))
+		var d := Vector2(cos(rad), sin(rad)) * 4.5
+		var p_low := Vector2(4, 0)
+		var p_high := Vector2(4 + 5.0 / tan(rad) * 1.0, 5)
+		# 横切る線は下の平行線上 p_low から上の平行線上 p_high へ
+		p_high = p_low + Vector2(5.0 / tan(rad), 5.0)
+		var fig := {"shapes": [
+			ProblemGen.seg(Vector2(0, 0), Vector2(w, 0)), ProblemGen.seg(Vector2(0, 5), Vector2(w, 5)),
+			ProblemGen.label(Vector2(w + 0.7, 0), "m"), ProblemGen.label(Vector2(w + 0.7, 5), "l"),
+			ProblemGen.seg(p_low - (p_high - p_low) * 0.25, p_high + (p_high - p_low) * 0.25, ProblemGen.COL_DIM, 4.0),
+			ProblemGen.ang(p_low, Vector2(w, 0), p_high, "%d°" % a),
+			ProblemGen.ang(p_high, p_low, Vector2(0, 5), "x"),
+		]}
+		return {
+			"q": "直線 l と m は平行です。角 x は何度ですか。",
+			"answer": float(a), "unit": "度",
+			"hint1": "平行線の錯角(Z の形の角)は等しいよ。",
+			"hint2": "x は %d° の錯角。そのまま等しい。" % a,
+			"expl": "平行線の錯角は等しいので x = %d° です。" % a,
+			"fig": fig,
+		}
+	# 折れ線: 間の点の角 = 上下の角の和
+	var a2 := 5 * rng.randi_range(4, 12)     # 20..60
+	var b2 := 5 * rng.randi_range(4, 12)
+	var p := Vector2(6, 2.5)
+	var to_l := p + Vector2(-cos(deg_to_rad(float(a2))), sin(deg_to_rad(float(a2)))).normalized() * 20.0
+	# l 上の点(y=5)と m 上の点(y=0)へ、指定角度で線を引く
+	var la := deg_to_rad(float(a2))
+	var lb := deg_to_rad(float(b2))
+	var q_l := p + Vector2(-2.5 / tan(la), 2.5)
+	var q_m := p + Vector2(-2.5 / tan(lb), -2.5)
+	var fig2 := {"shapes": [
+		ProblemGen.seg(Vector2(0, 5), Vector2(w, 5)), ProblemGen.seg(Vector2(0, 0), Vector2(w, 0)),
+		ProblemGen.label(Vector2(w + 0.7, 5), "l"), ProblemGen.label(Vector2(w + 0.7, 0), "m"),
+		ProblemGen.seg(q_l, p, ProblemGen.COL_DIM), ProblemGen.seg(p, q_m, ProblemGen.COL_DIM),
+		ProblemGen.ang(q_l, Vector2(w, 5), p, "%d°" % a2),
+		ProblemGen.ang(q_m, p, Vector2(w, 0), "%d°" % b2),
+		ProblemGen.ang(p, q_l, q_m, "x"),
+	]}
+	return {
+		"q": "直線 l と m は平行です。折れ線の角 x は何度ですか。",
+		"answer": float(a2 + b2), "unit": "度",
+		"hint1": "折れ曲がった点を通る、l と m に平行な線を引いてみよう。角が 2 つに分かれるよ。",
+		"hint2": "x = %d + %d(錯角で上下に分けられる)" % [a2, b2],
+		"expl": "折れ点を通る平行線を引くと、錯角により x は %d° と %d° に分かれます。x = %d + %d = %d° です。" % [a2, b2, a2, b2, a2 + b2],
+		"fig": fig2,
+	}
+
+
+## e5: 平行四辺形・台形・ひし形の面積
+static func _e5(rng: RandomNumberGenerator, tier: int) -> Dictionary:
+	var kind: int = [0, 1, 2][mini(tier, 2)] if rng.randf() < 0.7 else rng.randi_range(0, 2)
+	if kind == 0:
+		var a := rng.randi_range(5, 14)
+		var h := rng.randi_range(3, 10)
+		var sk := 2.5
+		var fig := {"shapes": [
+			ProblemGen.poly([Vector2(0, 0), Vector2(a, 0), Vector2(a + sk, h), Vector2(sk, h)], ProblemGen.FILL_MAIN),
+			ProblemGen.seg(Vector2(sk, 0), Vector2(sk, h), ProblemGen.COL_YELLOW, 3.0, true),
+			ProblemGen.right(Vector2(sk, 0), Vector2(a, 0), Vector2(sk, h)),
+			ProblemGen.side_label(Vector2(0, 0), Vector2(a, 0), "%dcm" % a, 1.0),
+			ProblemGen.label(Vector2(sk - 1.3, h * 0.5), "%dcm" % h),
+		]}
+		return {
+			"q": "底辺 %dcm、高さ %dcm の平行四辺形の面積は何 cm² ですか。" % [a, h],
+			"answer": float(a * h), "unit": "cm²",
+			"hint1": "平行四辺形の面積 = 底辺 × 高さ。÷2 はいらないよ。",
+			"hint2": "%d × %d を計算しよう。" % [a, h],
+			"expl": "平行四辺形の面積 = 底辺 × 高さ = %d × %d = %d cm² です。" % [a, h, a * h],
+			"fig": fig,
+		}
+	elif kind == 1:
+		var a := rng.randi_range(3, 8)        # 上底
+		var b := rng.randi_range(a + 2, 14)   # 下底
+		if (a + b) % 2 == 1:
+			b += 1
+		var h := rng.randi_range(3, 9)
+		var off := (b - a) * 0.5
+		var fig := {"shapes": [
+			ProblemGen.poly([Vector2(0, 0), Vector2(b, 0), Vector2(off + a, h), Vector2(off, h)], ProblemGen.FILL_MAIN),
+			ProblemGen.seg(Vector2(off + a * 0.5, 0), Vector2(off + a * 0.5, h), ProblemGen.COL_YELLOW, 3.0, true),
+			ProblemGen.side_label(Vector2(off, h), Vector2(off + a, h), "%dcm" % a, 1.0),
+			ProblemGen.side_label(Vector2(0, 0), Vector2(b, 0), "%dcm" % b, 1.0),
+			ProblemGen.label(Vector2(off + a * 0.5 + 1.4, h * 0.5), "%dcm" % h),
+		]}
+		return {
+			"q": "上底 %dcm、下底 %dcm、高さ %dcm の台形の面積は何 cm² ですか。" % [a, b, h],
+			"answer": float((a + b) * h / 2), "unit": "cm²",
+			"hint1": "台形の面積 = (上底 + 下底) × 高さ ÷ 2 だよ。",
+			"hint2": "(%d + %d) × %d ÷ 2 を計算しよう。" % [a, b, h],
+			"expl": "台形の面積 = (上底+下底)×高さ÷2 = (%d+%d)×%d÷2 = %d cm² です。" % [a, b, h, (a + b) * h / 2],
+			"fig": fig,
+		}
+	else:
+		var d1 := 2 * rng.randi_range(2, 8)
+		var d2 := 2 * rng.randi_range(2, 8)
+		var fig := {"shapes": [
+			ProblemGen.poly([Vector2(0, d2 * 0.5), Vector2(d1 * 0.5, 0), Vector2(d1, d2 * 0.5), Vector2(d1 * 0.5, d2)], ProblemGen.FILL_MAIN),
+			ProblemGen.seg(Vector2(0, d2 * 0.5), Vector2(d1, d2 * 0.5), ProblemGen.COL_YELLOW, 3.0, true),
+			ProblemGen.seg(Vector2(d1 * 0.5, 0), Vector2(d1 * 0.5, d2), ProblemGen.COL_YELLOW, 3.0, true),
+			ProblemGen.side_label(Vector2(0, d2 * 0.5), Vector2(d1, d2 * 0.5), "%dcm" % d1, -1.0, 0.9),
+			ProblemGen.label(Vector2(d1 * 0.5 + 1.5, d2 * 0.9), "%dcm" % d2),
+		]}
+		return {
+			"q": "対角線が %dcm と %dcm のひし形の面積は何 cm² ですか。" % [d1, d2],
+			"answer": float(d1 * d2 / 2), "unit": "cm²",
+			"hint1": "ひし形の面積 = 対角線 × 対角線 ÷ 2 だよ。",
+			"hint2": "%d × %d ÷ 2 を計算しよう。" % [d1, d2],
+			"expl": "ひし形の面積 = 対角線×対角線÷2 = %d×%d÷2 = %d cm² です。" % [d1, d2, d1 * d2 / 2],
+			"fig": fig,
+		}
+
+
+## e6: 二等辺三角形の角
+static func _e6(rng: RandomNumberGenerator, tier: int) -> Dictionary:
+	if tier < 2 and rng.randf() < 0.6:
+		# 頂角 → 底角
+		var a := 2 * rng.randi_range(12, 55)    # 24..110(偶数)
+		var x := (180 - a) / 2
+		var v: Array = ProblemGen.tri_from_angles(float(x), float(x), 10.0)
+		var fig := {"shapes": [
+			ProblemGen.poly(v, ProblemGen.FILL_MAIN),
+			ProblemGen.tick(v[0], v[1]), ProblemGen.tick(v[0], v[2]),
+			ProblemGen.ang(v[0], v[1], v[2], "%d°" % a),
+			ProblemGen.ang(v[1], v[2], v[0], "x"),
+		]}
+		return {
+			"q": "AB = AC の二等辺三角形で、頂角が %d° のとき、底角 x は何度ですか。" % a,
+			"answer": float(x), "unit": "度",
+			"hint1": "二等辺三角形の 2 つの底角は等しいよ。3 つの角の和は 180°。",
+			"hint2": "x = (180 − %d) ÷ 2" % a,
+			"expl": "底角は 2 つとも等しいので x = (180 − %d) ÷ 2 = %d° です。" % [a, x],
+			"fig": fig,
+		}
+	# 底角 → 頂角(または外角がらみ)
+	var b := rng.randi_range(25, 80)
+	var x2 := 180 - 2 * b
+	var v2: Array = ProblemGen.tri_from_angles(float(b), float(b), 10.0)
+	var fig2 := {"shapes": [
+		ProblemGen.poly(v2, ProblemGen.FILL_MAIN),
+		ProblemGen.tick(v2[0], v2[1]), ProblemGen.tick(v2[0], v2[2]),
+		ProblemGen.ang(v2[1], v2[2], v2[0], "%d°" % b),
+		ProblemGen.ang(v2[2], v2[0], v2[1], "%d°" % b),
+		ProblemGen.ang(v2[0], v2[1], v2[2], "x"),
+	]}
+	return {
+		"q": "AB = AC の二等辺三角形で、底角が %d° のとき、頂角 x は何度ですか。" % b,
+		"answer": float(x2), "unit": "度",
+		"hint1": "底角が 2 つあるから、その分を 180° から引こう。",
+		"hint2": "x = 180 − %d × 2" % b,
+		"expl": "x = 180 − %d × 2 = %d° です。" % [b, x2],
+		"fig": fig2,
+	}
+
+
+## e7: 多角形の内角の和・正多角形の角
+static func _e7(rng: RandomNumberGenerator, tier: int) -> Dictionary:
+	var kind := 0 if tier == 0 else (1 if tier == 1 else 2)
+	if rng.randf() < 0.3:
+		kind = rng.randi_range(0, 2)
+	if kind == 0:
+		var n := rng.randi_range(5, 8)
+		var fig := _regular_polygon_fig(n, false)
+		var names := {5: "五", 6: "六", 7: "七", 8: "八"}
+		return {
+			"q": "%s角形の内角の和は何度ですか。" % names[n],
+			"answer": float((n - 2) * 180), "unit": "度",
+			"hint1": "1 つの頂点から対角線を引くと、三角形が (ちょう点の数 − 2) こできるよ。",
+			"hint2": "(%d − 2) × 180 を計算しよう。" % n,
+			"expl": "%s角形は三角形 %d こに分けられるので、内角の和は %d × 180 = %d° です。" % [names[n], n - 2, n - 2, (n - 2) * 180],
+			"fig": fig,
+		}
+	elif kind == 1:
+		var choices := [5, 6, 8, 9, 10, 12]
+		var n2: int = choices[rng.randi_range(0, choices.size() - 1)]
+		var x := 180 - 360 / n2
+		return {
+			"q": "正%d角形の 1 つの内角は何度ですか。" % n2,
+			"answer": float(x), "unit": "度",
+			"hint1": "内角の和 (%d−2)×180 を、角の数 %d でわればいいよ。" % [n2, n2],
+			"hint2": "(%d − 2) × 180 ÷ %d" % [n2, n2],
+			"expl": "内角の和は (%d−2)×180 = %d°。それを %d でわって %d° です。" % [n2, (n2 - 2) * 180, n2, x],
+			"fig": _regular_polygon_fig(n2, true),
+		}
+	else:
+		var choices2 := [5, 6, 8, 9, 10, 12, 15, 18, 20]
+		var n3: int = choices2[rng.randi_range(0, choices2.size() - 1)]
+		return {
+			"q": "正%d角形の 1 つの外角は何度ですか。" % n3,
+			"answer": float(360 / n3), "unit": "度",
+			"hint1": "どんな多角形でも、外角の和はぐるっと 1 周で 360° だよ。",
+			"hint2": "360 ÷ %d" % n3,
+			"expl": "外角の和は 360°。正%d角形では全部等しいので 360 ÷ %d = %d° です。" % [n3, n3, 360 / n3],
+			"fig": _regular_polygon_fig(mini(n3, 12), true),
+		}
+
+
+static func _regular_polygon_fig(n: int, mark_one: bool) -> Dictionary:
+	var pts: Array = []
+	for i in n:
+		var a := TAU * i / n + PI / 2.0
+		pts.append(Vector2(cos(a), sin(a)) * 5.0)
+	var shapes: Array = [ProblemGen.poly(pts, ProblemGen.FILL_MAIN)]
+	if mark_one:
+		shapes.append(ProblemGen.ang(pts[0], pts[n - 1], pts[1], "x"))
+	return {"shapes": shapes}
+
+
+## e8: 円とおうぎ形(円周率 3.14)
+static func _e8(rng: RandomNumberGenerator, tier: int) -> Dictionary:
+	var kind := mini(tier, 2)
+	if rng.randf() < 0.3:
+		kind = rng.randi_range(0, 2)
+	if kind == 0:
+		var r := rng.randi_range(3, 10)
+		var ans := r * r * 3.14
+		var fig := {"shapes": [
+			ProblemGen.circle(Vector2.ZERO, float(r), ProblemGen.FILL_MAIN),
+			ProblemGen.seg(Vector2.ZERO, Vector2(r, 0), ProblemGen.COL_YELLOW, 3.0),
+			ProblemGen.circle(Vector2.ZERO, 0.12, ProblemGen.COL_YELLOW),
+			ProblemGen.label(Vector2(r * 0.5, 0.7), "%dcm" % r),
+		]}
+		return {
+			"q": "半径 %dcm の円の面積は何 cm² ですか。円周率は 3.14 とします。" % r,
+			"answer": ans, "unit": "cm²", "tol": 0.02,
+			"hint1": "円の面積 = 半径 × 半径 × 3.14 だよ。",
+			"hint2": "%d × %d × 3.14 を計算しよう。" % [r, r],
+			"expl": "円の面積 = %d × %d × 3.14 = %s cm² です。" % [r, r, ProblemGen.fmt(ans)],
+			"fig": fig,
+		}
+	elif kind == 1:
+		var d := 2 * rng.randi_range(2, 10)
+		var ans2 := d * 3.14
+		var fig2 := {"shapes": [
+			ProblemGen.circle(Vector2.ZERO, d * 0.5, ProblemGen.FILL_MAIN),
+			ProblemGen.seg(Vector2(-d * 0.5, 0), Vector2(d * 0.5, 0), ProblemGen.COL_YELLOW, 3.0),
+			ProblemGen.label(Vector2(0, 0.8), "%dcm" % d),
+		]}
+		return {
+			"q": "直径 %dcm の円の円周の長さは何 cm ですか。円周率は 3.14 とします。" % d,
+			"answer": ans2, "unit": "cm", "tol": 0.02,
+			"hint1": "円周 = 直径 × 3.14 だよ。",
+			"hint2": "%d × 3.14 を計算しよう。" % d,
+			"expl": "円周 = 直径 × 3.14 = %d × 3.14 = %s cm です。" % [d, ProblemGen.fmt(ans2)],
+			"fig": fig2,
+		}
+	else:
+		var rs := [4, 6, 8, 10, 12]
+		var r3: int = rs[rng.randi_range(0, rs.size() - 1)]
+		var angs := [45, 90, 120, 180, 270]
+		var th: int = angs[rng.randi_range(0, angs.size() - 1)]
+		var ans3 := r3 * r3 * 3.14 * th / 360.0
+		var fig3 := {"shapes": [
+			ProblemGen.sector(Vector2.ZERO, float(r3), 0.0, float(th), ProblemGen.FILL_ACCENT, Color.WHITE),
+			ProblemGen.ang(Vector2.ZERO, Vector2(r3, 0), Vector2(cos(deg_to_rad(float(th))), sin(deg_to_rad(float(th)))) * r3, "%d°" % th),
+			ProblemGen.label(Vector2(r3 * 0.6, -0.9), "%dcm" % r3),
+		]}
+		return {
+			"q": "半径 %dcm、中心角 %d° のおうぎ形の面積は何 cm² ですか。円周率は 3.14 とします。" % [r3, th],
+			"answer": ans3, "unit": "cm²", "tol": 0.02,
+			"hint1": "おうぎ形は円の一部。円の面積 × (中心角 ÷ 360) だよ。",
+			"hint2": "%d × %d × 3.14 × %d/360" % [r3, r3, th],
+			"expl": "面積 = %d × %d × 3.14 × %d/360 = %s cm² です。" % [r3, r3, th, ProblemGen.fmt(ans3)],
+			"fig": fig3,
+		}
+
+
+## e9: 複合図形(L字・額縁・正方形から円を引く)
+static func _e9(rng: RandomNumberGenerator, tier: int) -> Dictionary:
+	var kind := mini(tier, 2)
+	if rng.randf() < 0.3:
+		kind = rng.randi_range(0, 2)
+	if kind == 0:
+		var big_w := rng.randi_range(8, 15)
+		var big_h := rng.randi_range(6, 12)
+		var cut_w := rng.randi_range(3, big_w - 3)
+		var cut_h := rng.randi_range(2, big_h - 3)
+		var ans := big_w * big_h - cut_w * cut_h
+		# L 字: 右上を切り取る
+		var p := [
+			Vector2(0, 0), Vector2(big_w, 0), Vector2(big_w, big_h - cut_h),
+			Vector2(big_w - cut_w, big_h - cut_h), Vector2(big_w - cut_w, big_h), Vector2(0, big_h),
+		]
+		var fig := {"shapes": [
+			ProblemGen.poly(p, ProblemGen.FILL_MAIN),
+			ProblemGen.side_label(Vector2(0, 0), Vector2(big_w, 0), "%dcm" % big_w, 1.0),
+			ProblemGen.side_label(Vector2(0, 0), Vector2(0, big_h), "%dcm" % big_h, -1.0),
+			ProblemGen.side_label(Vector2(big_w - cut_w, big_h), Vector2(big_w - cut_w, big_h - cut_h), "%dcm" % cut_h, 1.0),
+			ProblemGen.side_label(Vector2(big_w - cut_w, big_h), Vector2(big_w, big_h), "%dcm" % cut_w, -1.0),
+		]}
+		return {
+			"q": "図の L 字形の面積は何 cm² ですか。(角はすべて直角です)",
+			"answer": float(ans), "unit": "cm²",
+			"hint1": "大きい長方形から、切り取られた長方形を引こう。",
+			"hint2": "%d × %d − %d × %d" % [big_w, big_h, cut_w, cut_h],
+			"expl": "大きい長方形 %d×%d = %d から、切り取り %d×%d = %d を引いて %d cm² です。" % [big_w, big_h, big_w * big_h, cut_w, cut_h, cut_w * cut_h, ans],
+			"fig": fig,
+		}
+	elif kind == 1:
+		var outer := rng.randi_range(7, 14)
+		var inner := rng.randi_range(3, outer - 3)
+		var off := (outer - inner) * 0.5
+		var ans2 := outer * outer - inner * inner
+		var fig2 := {"shapes": [
+			ProblemGen.poly([Vector2(0, 0), Vector2(outer, 0), Vector2(outer, outer), Vector2(0, outer)], ProblemGen.FILL_ACCENT),
+			ProblemGen.poly([Vector2(off, off), Vector2(off + inner, off), Vector2(off + inner, off + inner), Vector2(off, off + inner)], Color(0.06, 0.09, 0.16, 1.0)),
+			ProblemGen.side_label(Vector2(0, 0), Vector2(outer, 0), "%dcm" % outer, 1.0),
+			ProblemGen.side_label(Vector2(off, off), Vector2(off + inner, off), "%dcm" % inner, 1.0),
+		]}
+		return {
+			"q": "1 辺 %dcm の正方形から、1 辺 %dcm の正方形をくりぬきました。残った色のついた部分の面積は何 cm² ですか。" % [outer, inner],
+			"answer": float(ans2), "unit": "cm²",
+			"hint1": "外の正方形の面積から、くりぬいた正方形の面積を引こう。",
+			"hint2": "%d × %d − %d × %d" % [outer, outer, inner, inner],
+			"expl": "%d² − %d² = %d − %d = %d cm² です。" % [outer, inner, outer * outer, inner * inner, ans2],
+			"fig": fig2,
+		}
+	else:
+		var r := rng.randi_range(2, 7)
+		var s := r * 2
+		var ans3 := s * s - r * r * 3.14
+		var fig3 := {"shapes": [
+			ProblemGen.poly([Vector2(0, 0), Vector2(s, 0), Vector2(s, s), Vector2(0, s)], ProblemGen.FILL_ACCENT),
+			ProblemGen.circle(Vector2(r, r), float(r), Color(0.06, 0.09, 0.16, 1.0), Color.WHITE, 3.0),
+			ProblemGen.side_label(Vector2(0, 0), Vector2(s, 0), "%dcm" % s, 1.0),
+		]}
+		return {
+			"q": "1 辺 %dcm の正方形に、ぴったり入る円をかきました。正方形から円を引いた色のついた部分の面積は何 cm² ですか。円周率は 3.14 とします。" % s,
+			"answer": ans3, "unit": "cm²", "tol": 0.02,
+			"hint1": "円の半径は正方形の 1 辺の半分 = %dcm だよ。" % r,
+			"hint2": "%d × %d − %d × %d × 3.14" % [s, s, r, r],
+			"expl": "正方形 %d² = %d、円 %d×%d×3.14 = %s。差は %s cm² です。" % [s, s * s, r, r, ProblemGen.fmt(r * r * 3.14), ProblemGen.fmt(ans3)],
+			"fig": fig3,
+		}
+
+
+## e10: 葉っぱ形(名物問題)
+static func _e10(rng: RandomNumberGenerator, tier: int) -> Dictionary:
+	var sizes := [4, 6, 8, 10, 20]
+	var a: int = sizes[rng.randi_range(0, sizes.size() - 1)]
+	if tier < 1 and rng.randf() < 0.5:
+		# ウォームアップ: 四分円 − 三角形
+		var ans := a * a * 3.14 / 4.0 - a * a / 2.0
+		var fig := {"shapes": [
+			ProblemGen.sector(Vector2.ZERO, float(a), 0.0, 90.0, ProblemGen.FILL_MAIN, Color.WHITE),
+			ProblemGen.poly([Vector2.ZERO, Vector2(a, 0), Vector2(0, a)], Color(0.06, 0.09, 0.16, 0.85)),
+			ProblemGen.side_label(Vector2.ZERO, Vector2(a, 0), "%dcm" % a, 1.0),
+			ProblemGen.right(Vector2.ZERO, Vector2(a, 0), Vector2(0, a)),
+		]}
+		return {
+			"q": "半径 %dcm の四分円(円の 4 分の 1)から、直角三角形を切り取った色のついた部分の面積は何 cm² ですか。円周率は 3.14 とします。" % a,
+			"answer": ans, "unit": "cm²", "tol": 0.02,
+			"hint1": "四分円の面積から三角形の面積を引こう。",
+			"hint2": "%d×%d×3.14÷4 − %d×%d÷2" % [a, a, a, a],
+			"expl": "四分円 %s − 三角形 %s = %s cm² です。" % [ProblemGen.fmt(a * a * 3.14 / 4.0), ProblemGen.fmt(a * a / 2.0), ProblemGen.fmt(ans)],
+			"fig": fig,
+		}
+	var leaf := a * a * 0.57
+	var fig2 := {"shapes": [
+		ProblemGen.poly([Vector2(0, 0), Vector2(a, 0), Vector2(a, a), Vector2(0, a)]),
+		{"t": "leaf", "a": float(a)},
+		ProblemGen.side_label(Vector2(0, 0), Vector2(a, 0), "%dcm" % a, 1.0),
+	]}
+	return {
+		"q": "1 辺 %dcm の正方形の中に、2 つの四分円をかいてできる葉っぱ形(色のついた部分)の面積は何 cm² ですか。円周率は 3.14 とします。" % a,
+		"answer": leaf, "unit": "cm²", "tol": 0.02,
+		"hint1": "四分円 2 つをたすと、葉っぱが 2 重に、残りが 1 重に数えられる。そこから正方形を引くと葉っぱだけ残るよ。",
+		"hint2": "%d×%d×3.14÷4 × 2 − %d×%d = %d×%d×0.57" % [a, a, a, a, a, a],
+		"expl": "葉っぱ = 四分円×2 − 正方形 = %s − %d = %s cm²。「1辺×1辺×0.57」と覚えてもOK。" % [ProblemGen.fmt(a * a * 3.14 / 2.0), a * a, ProblemGen.fmt(leaf)],
+		"fig": fig2,
+	}
