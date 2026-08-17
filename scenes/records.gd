@@ -57,7 +57,9 @@ func _ready() -> void:
 	var gap: Array = GameState.next_rank_gap()
 	if String(gap[0]) != "":
 		_lbl(pv, "「%s」まで あと %d 点" % [gap[0], gap[1]], 22, Color(0.75, 0.83, 0.95))
-	_lbl(pv, "最高コンボ ×%d" % GameState.best_combo, 24, Color(0.6, 0.95, 1.0))
+	_lbl(pv, "解いた問題 %d 問(一発正解 %d 問)   最高コンボ ×%d" % [
+		int(GameState.stats.get("correct", 0)), int(GameState.stats.get("perfect", 0)),
+		GameState.best_combo], 24, Color(0.6, 0.95, 1.0))
 
 	# コース別
 	for c in ProblemGen.COURSES:

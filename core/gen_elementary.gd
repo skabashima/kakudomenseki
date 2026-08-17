@@ -19,13 +19,15 @@ static func gen(stage_id: String, rng: RandomNumberGenerator, tier: int) -> Dict
 
 
 ## e1: 三角形の内角(2 つ与えて残りを求める)
-static func _e1(rng: RandomNumberGenerator, _tier: int) -> Dictionary:
-	var a := 5 * rng.randi_range(5, 20)      # 25..100
-	var b := 5 * rng.randi_range(5, 20)
+static func _e1(rng: RandomNumberGenerator, tier: int) -> Dictionary:
+	# 1 問目はキリのいい 5° 刻み、2 問目からは 1° 刻みで無数に出る
+	var step := 5 if tier == 0 else 1
+	var a := step * rng.randi_range(25 / step, 100 / step)
+	var b := step * rng.randi_range(25 / step, 100 / step)
 	var x := 180 - a - b
 	while x < 25 or x > 110:
-		a = 5 * rng.randi_range(5, 20)
-		b = 5 * rng.randi_range(5, 20)
+		a = step * rng.randi_range(25 / step, 100 / step)
+		b = step * rng.randi_range(25 / step, 100 / step)
 		x = 180 - a - b
 	var v: Array = ProblemGen.tri_from_angles(float(a), float(b), 10.0)
 	var fig := {"shapes": [
@@ -148,9 +150,10 @@ static func _e3(rng: RandomNumberGenerator, tier: int) -> Dictionary:
 ## e4: 平行線と角(錯角/折れ線)
 static func _e4(rng: RandomNumberGenerator, tier: int) -> Dictionary:
 	var w := 12.0
+	var step := 5 if tier == 0 else 1
 	if tier == 0 or rng.randf() < 0.4:
 		# 錯角: 平行線を横切る直線
-		var a := 5 * rng.randi_range(7, 24)   # 35..120
+		var a := step * rng.randi_range(35 / step, 120 / step)
 		var rad := deg_to_rad(float(a))
 		var d := Vector2(cos(rad), sin(rad)) * 4.5
 		var p_low := Vector2(4, 0)
@@ -173,8 +176,8 @@ static func _e4(rng: RandomNumberGenerator, tier: int) -> Dictionary:
 			"fig": fig,
 		}
 	# 折れ線: 間の点の角 = 上下の角の和
-	var a2 := 5 * rng.randi_range(4, 12)     # 20..60
-	var b2 := 5 * rng.randi_range(4, 12)
+	var a2 := step * rng.randi_range(20 / step, 60 / step)
+	var b2 := step * rng.randi_range(20 / step, 60 / step)
 	var p := Vector2(6, 2.5)
 	var to_l := p + Vector2(-cos(deg_to_rad(float(a2))), sin(deg_to_rad(float(a2)))).normalized() * 20.0
 	# l 上の点(y=5)と m 上の点(y=0)へ、指定角度で線を引く
@@ -308,13 +311,25 @@ static func _e6(rng: RandomNumberGenerator, tier: int) -> Dictionary:
 
 ## e7: 多角形の内角の和・正多角形の角
 static func _e7(rng: RandomNumberGenerator, tier: int) -> Dictionary:
-	var kind := 0 if tier == 0 else (1 if tier == 1 else 2)
+	var kind := 0 if tier == 0 else (1 if tier == 1 else 2 + rng.randi_range(0, 1))
 	if rng.randf() < 0.3:
-		kind = rng.randi_range(0, 2)
+		kind = rng.randi_range(0, 3)
+	if kind == 3:
+		# 逆算: 外角から何角形かを当てる
+		var choices3 := [5, 6, 8, 9, 10, 12, 15, 18, 20, 24, 30, 36, 40, 45]
+		var n4: int = choices3[rng.randi_range(0, choices3.size() - 1)]
+		return {
+			"q": "1 つの外角が %d° の正多角形は、正何角形ですか。(数字で答えなさい)" % (360 / n4),
+			"answer": float(n4), "unit": "角形",
+			"hint1": "外角の和はどんな多角形でも 360°。1 つ分でわれば角の数がわかるよ。",
+			"hint2": "360 ÷ %d" % (360 / n4),
+			"expl": "360 ÷ %d = %d なので正%d角形です。" % [360 / n4, n4, n4],
+			"fig": _regular_polygon_fig(mini(n4, 12), true),
+		}
 	if kind == 0:
-		var n := rng.randi_range(5, 8)
+		var n := rng.randi_range(5, 12)
 		var fig := _regular_polygon_fig(n, false)
-		var names := {5: "五", 6: "六", 7: "七", 8: "八"}
+		var names := {5: "五", 6: "六", 7: "七", 8: "八", 9: "九", 10: "十", 11: "十一", 12: "十二"}
 		return {
 			"q": "%s角形の内角の和は何度ですか。" % names[n],
 			"answer": float((n - 2) * 180), "unit": "度",
@@ -324,7 +339,7 @@ static func _e7(rng: RandomNumberGenerator, tier: int) -> Dictionary:
 			"fig": fig,
 		}
 	elif kind == 1:
-		var choices := [5, 6, 8, 9, 10, 12]
+		var choices := [5, 6, 8, 9, 10, 12, 15, 18, 20, 24]
 		var n2: int = choices[rng.randi_range(0, choices.size() - 1)]
 		var x := 180 - 360 / n2
 		return {
@@ -336,7 +351,7 @@ static func _e7(rng: RandomNumberGenerator, tier: int) -> Dictionary:
 			"fig": _regular_polygon_fig(n2, true),
 		}
 	else:
-		var choices2 := [5, 6, 8, 9, 10, 12, 15, 18, 20]
+		var choices2 := [5, 6, 8, 9, 10, 12, 15, 18, 20, 24, 30, 36, 40, 45]
 		var n3: int = choices2[rng.randi_range(0, choices2.size() - 1)]
 		return {
 			"q": "正%d角形の 1 つの外角は何度ですか。" % n3,
@@ -489,10 +504,26 @@ static func _e9(rng: RandomNumberGenerator, tier: int) -> Dictionary:
 
 ## e10: 葉っぱ形(名物問題)
 static func _e10(rng: RandomNumberGenerator, tier: int) -> Dictionary:
-	var sizes := [4, 6, 8, 10, 20]
-	var a: int = sizes[rng.randi_range(0, sizes.size() - 1)]
+	var a := rng.randi_range(3, 20)
+	if tier >= 2 and rng.randf() < 0.5:
+		# 発展: 正方形から葉っぱを引いた残り(= 1辺×1辺×0.43)
+		var rest := a * a * 0.43
+		var fig4 := {"shapes": [
+			ProblemGen.poly([Vector2(0, 0), Vector2(a, 0), Vector2(a, a), Vector2(0, a)], ProblemGen.FILL_ACCENT),
+			{"t": "leaf", "a": float(a), "fill": Color(0.06, 0.09, 0.16, 1.0)},
+			ProblemGen.side_label(Vector2(0, 0), Vector2(a, 0), "%dcm" % a, 1.0),
+		]}
+		return {
+			"q": "1 辺 %dcm の正方形から、2 つの四分円が重なってできる葉っぱ形をのぞいた、色のついた部分の面積は何 cm² ですか。円周率は 3.14 とします。" % a,
+			"answer": rest, "unit": "cm²", "tol": 0.02,
+			"hint1": "まず葉っぱ形の面積(1辺×1辺×0.57)を求めて、正方形から引こう。",
+			"hint2": "%d×%d − %d×%d×0.57" % [a, a, a, a],
+			"expl": "葉っぱ = %s。正方形 %d − %s = %s cm²(1辺×1辺×0.43)。" % [ProblemGen.fmt(a * a * 0.57), a * a, ProblemGen.fmt(a * a * 0.57), ProblemGen.fmt(rest)],
+			"fig": fig4,
+		}
 	if tier < 1 and rng.randf() < 0.5:
-		# ウォームアップ: 四分円 − 三角形
+		# ウォームアップ: 四分円 − 三角形(2 桁小数に収まるよう偶数の辺で)
+		a = 2 * rng.randi_range(2, 10)
 		var ans := a * a * 3.14 / 4.0 - a * a / 2.0
 		var fig := {"shapes": [
 			ProblemGen.sector(Vector2.ZERO, float(a), 0.0, 90.0, ProblemGen.FILL_MAIN, Color.WHITE),

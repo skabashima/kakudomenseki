@@ -6,7 +6,9 @@ class_name GenSenior
 ## 余弦定理がきれいに解ける組 [a, b, C(度), c]
 const COS_SETS := [
 	[5, 8, 60, 7], [3, 8, 60, 7], [8, 15, 60, 13], [7, 15, 60, 13], [5, 21, 60, 19],
+	[11, 35, 60, 31], [16, 21, 60, 19], [24, 35, 60, 31], [9, 24, 60, 21],
 	[3, 5, 120, 7], [7, 8, 120, 13], [5, 16, 120, 19], [11, 24, 120, 31], [7, 33, 120, 37],
+	[6, 10, 120, 14], [10, 32, 120, 38], [13, 35, 120, 43], [14, 16, 120, 26],
 ]
 
 ## ヘロンの公式で面積が整数になる三角形 [a, b, c, S]
@@ -14,6 +16,9 @@ const HERON_SETS := [
 	[3, 4, 5, 6], [5, 5, 6, 12], [5, 5, 8, 12], [6, 8, 10, 24], [5, 12, 13, 30],
 	[9, 12, 15, 54], [13, 14, 15, 84], [10, 10, 12, 48], [7, 15, 20, 42],
 	[9, 10, 17, 36], [11, 13, 20, 66], [17, 17, 16, 120],
+	[8, 15, 17, 60], [7, 24, 25, 84], [20, 21, 29, 210], [9, 40, 41, 180],
+	[12, 16, 20, 96], [10, 13, 13, 60], [13, 13, 24, 60], [12, 17, 25, 90],
+	[4, 13, 15, 24], [13, 20, 21, 126], [17, 25, 26, 204], [17, 25, 28, 210],
 ]
 
 ## 内接円・外接円がきれいな三角形 [a, b, c, S, r, R]
@@ -21,6 +26,8 @@ const INCIRCLE_SETS := [
 	[3, 4, 5, 6, 1.0, 2.5], [6, 8, 10, 24, 2.0, 5.0], [5, 12, 13, 30, 2.0, 6.5],
 	[9, 12, 15, 54, 3.0, 7.5], [13, 14, 15, 84, 4.0, 8.125], [10, 10, 12, 48, 3.0, 6.25],
 	[7, 15, 20, 42, 2.0, 12.5], [11, 13, 20, 66, 3.0, 12.1875], [17, 17, 16, 120, 4.8, 10.15625],
+	[8, 15, 17, 60, 3.0, 8.5], [7, 24, 25, 84, 3.0, 12.5], [20, 21, 29, 210, 6.0, 14.5],
+	[9, 40, 41, 180, 4.0, 20.5], [12, 16, 20, 96, 4.0, 10.0], [13, 13, 24, 60, 2.4, 16.9],
 ]
 
 
@@ -105,15 +112,16 @@ static func _s2(rng: RandomNumberGenerator, tier: int) -> Dictionary:
 		kind = rng.randi_range(0, 2)
 	var r := 5.0
 	if kind == 0:
-		# A = 30° → R = a
-		var a := rng.randi_range(3, 12)
-		var fig := _sine_fig(30.0)
+		# A = 30° または 150° → R = a(sin はどちらも 1/2)
+		var deg := 30 if rng.randf() < 0.65 else 150
+		var a := rng.randi_range(3, 15)
+		var fig := _sine_fig(float(deg))
 		return {
-			"q": "三角形 ABC で、角 A = 30°、BC = %d です。この三角形の外接円の半径 R を求めなさい。" % a,
+			"q": "三角形 ABC で、角 A = %d°、BC = %d です。この三角形の外接円の半径 R を求めなさい。" % [deg, a],
 			"answer": float(a), "unit": "",
-			"hint1": "正弦定理: BC / sinA = 2R。sin30° = 1/2 だよ。",
+			"hint1": "正弦定理: BC / sinA = 2R。sin%d° = 1/2 だよ。" % deg,
 			"hint2": "2R = %d ÷ (1/2) = %d" % [a, 2 * a],
-			"expl": "2R = %d / sin30° = %d。R = %d です。" % [a, 2 * a, a],
+			"expl": "2R = %d / sin%d° = %d。R = %d です。" % [a, deg, 2 * a, a],
 			"fig": fig,
 		}
 	elif kind == 1:
@@ -138,8 +146,20 @@ static func _s2(rng: RandomNumberGenerator, tier: int) -> Dictionary:
 			"fig": _sine_fig(30.0),
 		}
 	else:
+		if rng.randf() < 0.4:
+			# A = 60°、R 既知 → BC = R√3(√3 = 1.73)
+			var r6 := rng.randi_range(2, 12)
+			var ans6 := r6 * 1.73
+			return {
+				"q": "外接円の半径が %d の三角形 ABC で、角 A = 60° です。辺 BC の長さを求めなさい。√3 = 1.73 として小数で答えなさい。" % r6,
+				"answer": ans6, "unit": "", "tol": 0.02,
+				"hint1": "正弦定理 BC = 2R sinA。sin60° = √3/2 だよ。",
+				"hint2": "BC = 2 × %d × 1.73 ÷ 2 = %d × 1.73" % [r6, r6],
+				"expl": "BC = 2R sin60° = %d × √3 = %s です。" % [r6, ProblemGen.fmt(ans6)],
+				"fig": _sine_fig(60.0),
+			}
 		# A = 45° → R = a√2/2(√2 = 1.41)
-		var a3 := 2 * rng.randi_range(2, 8)
+		var a3 := 2 * rng.randi_range(2, 10)
 		var ans := a3 * 1.41 / 2.0
 		return {
 			"q": "三角形 ABC で、角 A = 45°、BC = %d です。外接円の半径 R を求めなさい。√2 = 1.41 として小数で答えなさい。" % a3,
@@ -153,11 +173,20 @@ static func _s2(rng: RandomNumberGenerator, tier: int) -> Dictionary:
 
 static func _sine_fig(deg_a: float) -> Dictionary:
 	var r := 5.0
-	var pa := Vector2(cos(deg_to_rad(110.0)), sin(deg_to_rad(110.0))) * r
-	# 円周角 A に対する弧 BC: 中心角 = 2A。B, C を対称に置く
-	var half := deg_a
-	var pb := Vector2(cos(deg_to_rad(270.0 - half)), sin(deg_to_rad(270.0 - half))) * r
-	var pc := Vector2(cos(deg_to_rad(270.0 + half)), sin(deg_to_rad(270.0 + half))) * r
+	var pa: Vector2
+	var pb: Vector2
+	var pc: Vector2
+	if deg_a <= 90.0:
+		# 円周角 A に対する弧 BC: 中心角 = 2A。B, C を下側に対称に置く
+		pa = Vector2(cos(deg_to_rad(110.0)), sin(deg_to_rad(110.0))) * r
+		pb = Vector2(cos(deg_to_rad(270.0 - deg_a)), sin(deg_to_rad(270.0 - deg_a))) * r
+		pc = Vector2(cos(deg_to_rad(270.0 + deg_a)), sin(deg_to_rad(270.0 + deg_a))) * r
+	else:
+		# 鈍角: A は BC の短い方の弧の上に乗る
+		var half := 180.0 - deg_a
+		pb = Vector2(cos(deg_to_rad(240.0 - half)), sin(deg_to_rad(240.0 - half))) * r
+		pc = Vector2(cos(deg_to_rad(240.0 + half)), sin(deg_to_rad(240.0 + half))) * r
+		pa = Vector2(cos(deg_to_rad(240.0 + half * 0.45)), sin(deg_to_rad(240.0 + half * 0.45))) * r
 	return {"shapes": [
 		ProblemGen.circle(Vector2.ZERO, r, null, ProblemGen.COL_DIM, 3.0),
 		ProblemGen.poly([pa, pb, pc], ProblemGen.FILL_MAIN, Color.WHITE, 3.0),
@@ -179,10 +208,10 @@ static func _s3(rng: RandomNumberGenerator, tier: int) -> Dictionary:
 		cc = angles_hard[rng.randi_range(0, angles_hard.size() - 1)]
 	else:
 		cc = angles_easy[rng.randi_range(0, angles_easy.size() - 1)]
-	var a := rng.randi_range(2, 9)
-	var b := rng.randi_range(2, 9)
+	var a := rng.randi_range(2, 12)
+	var b := rng.randi_range(2, 12)
 	while (a * b) % 4 != 0:
-		b = rng.randi_range(2, 9)
+		b = rng.randi_range(2, 12)
 	var sin_v: float
 	var sin_str: String
 	var note := ""
@@ -257,10 +286,10 @@ static func _s5(rng: RandomNumberGenerator, tier: int) -> Dictionary:
 	var r: float = s[4]
 	var rr: float = s[5]
 	var v: Array = ProblemGen.tri_from_sides(float(a), float(b), float(c))
-	var use_circum: bool = tier >= 2 and rng.randf() < 0.5 and absf(rr - round(rr * 8.0) / 8.0) < 0.0001 and rr * 8.0 == floor(rr * 8.0)
+	var use_circum: bool = tier >= 2 and rng.randf() < 0.5
 	# 内接円の中心(角の二等分線の交点 = 重み付き平均)
 	var inc: Vector2 = (v[0] * a + v[1] * b + v[2] * c) / float(a + b + c)
-	if use_circum and (rr == 2.5 or rr == 5.0 or rr == 6.5 or rr == 7.5 or rr == 6.25 or rr == 12.5):
+	if use_circum:
 		var fig2 := {"shapes": [
 			ProblemGen.poly(v, ProblemGen.FILL_MAIN),
 			ProblemGen.side_label(v[1], v[2], str(a), 1.0),
@@ -355,8 +384,8 @@ static func _s7(rng: RandomNumberGenerator, tier: int) -> Dictionary:
 		}
 	elif kind == 1:
 		# S = ½ r l(有理数)
-		var r2 := rng.randi_range(2, 9)
-		var l2 := rng.randi_range(2, 12)
+		var r2 := rng.randi_range(2, 12)
+		var l2 := rng.randi_range(2, 18)
 		var ans := 0.5 * r2 * l2
 		return {
 			"q": "半径 %d、弧の長さ %d のおうぎ形の面積 S を求めなさい。" % [r2, l2],
@@ -395,11 +424,11 @@ static func _rad_fig(r: float, th: float) -> Dictionary:
 ## s8: 放物線と直線(6分の1公式)
 static func _s8(rng: RandomNumberGenerator, _tier: int) -> Dictionary:
 	# (a, β−α) → 面積 a(β−α)³/6 がきれいな組
-	var sets := [[1, 3], [1, 6], [2, 3], [3, 2], [3, 4], [2, 6], [1, 4]]
+	var sets := [[1, 3], [1, 6], [2, 3], [3, 2], [3, 4], [2, 6], [1, 4], [1, 2], [2, 2], [2, 4], [3, 6], [1, 12]]
 	var s: Array = sets[rng.randi_range(0, sets.size() - 1)]
 	var a: int = s[0]
 	var d: int = s[1]
-	var alpha := rng.randi_range(-4, 1)
+	var alpha := rng.randi_range(-5, 2)
 	var beta := alpha + d
 	var ans := a * pow(d, 3) / 6.0
 	# 直線 y = m x + n が y = a x² と x=α, β で交わる: m = a(α+β), n = −aαβ
@@ -470,11 +499,11 @@ static func _lin_str(m: int, n: int) -> String:
 ## s9: 2 つの放物線で囲まれた面積
 static func _s9(rng: RandomNumberGenerator, _tier: int) -> Dictionary:
 	# 上に凸 y = -x² + p x + q と下に凸 y = x² の差: Δa = 2
-	var sets := [[2, 3], [2, 6], [1, 6], [3, 2], [3, 4], [4, 3], [6, 2]]
+	var sets := [[2, 3], [2, 6], [3, 2], [3, 4], [4, 3], [6, 2], [2, 2], [2, 4], [3, 6], [5, 2], [4, 6]]
 	var s: Array = sets[rng.randi_range(0, sets.size() - 1)]
 	var da: int = s[0]
 	var d: int = s[1]
-	var alpha := rng.randi_range(-3, 0)
+	var alpha := rng.randi_range(-4, 1)
 	var beta := alpha + d
 	var ans := da * pow(d, 3) / 6.0
 	# f(x) = x², g(x) = f + da(x−α)(β−x) → g − f = da(x−α)(β−x)
@@ -586,7 +615,7 @@ static func _s10(rng: RandomNumberGenerator, tier: int) -> Dictionary:
 		}
 	else:
 		# 放物線 y = a(x−p)(x−q) と x 軸(下に凸を x 軸の下で)
-		var sets := [[1, 2], [1, 4], [1, 6], [2, 2], [2, 4], [3, 2], [2, 6], [3, 4]]
+		var sets := [[1, 2], [1, 3], [1, 4], [1, 5], [1, 6], [2, 2], [2, 3], [2, 4], [3, 2], [2, 6], [3, 4], [3, 6]]
 		var s: Array = sets[rng.randi_range(0, sets.size() - 1)]
 		var a2: int = s[0]
 		var d: int = s[1]

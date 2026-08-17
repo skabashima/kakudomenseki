@@ -6,6 +6,8 @@ class_name GenJunior
 const TRIPLES := [
 	[3, 4, 5], [6, 8, 10], [5, 12, 13], [8, 15, 17], [9, 12, 15],
 	[7, 24, 25], [12, 16, 20], [15, 20, 25], [10, 24, 26], [20, 21, 29],
+	[9, 40, 41], [16, 30, 34], [18, 24, 30], [28, 45, 53], [33, 56, 65],
+	[48, 55, 73], [65, 72, 97], [21, 28, 35], [24, 32, 40], [27, 36, 45],
 ]
 
 
@@ -25,11 +27,12 @@ static func gen(stage_id: String, rng: RandomNumberGenerator, tier: int) -> Dict
 
 ## j1: 三角形の外角(外角 = 残り 2 つの内角の和)
 static func _j1(rng: RandomNumberGenerator, tier: int) -> Dictionary:
-	var a := 5 * rng.randi_range(6, 16)     # 30..80
-	var b := 5 * rng.randi_range(6, 16)
+	var step := 5 if tier == 0 else 1
+	var a := step * rng.randi_range(30 / step, 80 / step)
+	var b := step * rng.randi_range(30 / step, 80 / step)
 	var ext := a + b
 	while ext >= 150:
-		b = 5 * rng.randi_range(6, 16)
+		b = step * rng.randi_range(30 / step, 80 / step)
 		ext = a + b
 	var v: Array = ProblemGen.tri_from_angles(float(a), 180.0 - float(ext), 10.0)
 	var far: Vector2 = v[2] + (v[2] - v[1]).normalized() * 3.5
@@ -68,14 +71,15 @@ static func _j1(rng: RandomNumberGenerator, tier: int) -> Dictionary:
 
 
 ## j2: 平行線と三角形の複合(平行線 + 三角形の内角)
-static func _j2(rng: RandomNumberGenerator, _tier: int) -> Dictionary:
+static func _j2(rng: RandomNumberGenerator, tier: int) -> Dictionary:
 	# 平行線の間に三角形。上の平行線との角 a、下の平行線との角 b、頂点の角 x
-	var a := 5 * rng.randi_range(7, 15)     # 35..75
-	var b := 5 * rng.randi_range(7, 15)
+	var step := 5 if tier == 0 else 1
+	var a := step * rng.randi_range(35 / step, 75 / step)
+	var b := step * rng.randi_range(35 / step, 75 / step)
 	var x := 180 - a - b
 	while x < 30 or x > 110:
-		a = 5 * rng.randi_range(7, 15)
-		b = 5 * rng.randi_range(7, 15)
+		a = step * rng.randi_range(35 / step, 75 / step)
+		b = step * rng.randi_range(35 / step, 75 / step)
 		x = 180 - a - b
 	var w := 12.0
 	# 頂点 P は 2 直線の間。P から上の l へ角 a、下の m へ角 b で腕を伸ばす
@@ -303,8 +307,28 @@ static func _j6(rng: RandomNumberGenerator, tier: int) -> Dictionary:
 	if rng.randf() < 0.3:
 		kind = rng.randi_range(0, 2)
 	if kind == 0:
+		if rng.randf() < 0.4:
+			# 直角二等辺: 1 辺 → 斜辺(√2 = 1.41)
+			var leg := rng.randi_range(2, 20)
+			var ans_h := leg * 1.41
+			var vv := [Vector2(0, 0), Vector2(float(leg), 0), Vector2(0, float(leg))]
+			var fig_h := {"shapes": [
+				ProblemGen.poly(vv, ProblemGen.FILL_MAIN),
+				ProblemGen.right(vv[0], vv[1], vv[2]),
+				ProblemGen.side_label(vv[0], vv[1], str(leg), 1.0),
+				ProblemGen.side_label(vv[1], vv[2], "x", -1.0),
+				ProblemGen.tick(vv[0], vv[1]), ProblemGen.tick(vv[0], vv[2]),
+			]}
+			return {
+				"q": "直角をはさむ 2 辺がどちらも %d の直角二等辺三角形で、斜辺 x を求めなさい。√2 = 1.41 として小数で答えなさい。" % leg,
+				"answer": ans_h, "unit": "", "tol": 0.02,
+				"hint1": "辺の比は 1 : 1 : √2。斜辺 = 1辺 × √2 だよ。",
+				"hint2": "x = %d × 1.41" % leg,
+				"expl": "x = %d × √2 = %d × 1.41 = %s です。" % [leg, leg, ProblemGen.fmt(ans_h)],
+				"fig": fig_h,
+			}
 		# 直角二等辺: 斜辺 → 面積(h²/4 で有理数)
-		var h := 2 * rng.randi_range(2, 8)
+		var h := 2 * rng.randi_range(2, 12)
 		var half := h * 0.5
 		var v := [Vector2(0, 0), Vector2(float(h), 0), Vector2(half, half)]
 		var fig := {"shapes": [
@@ -322,8 +346,28 @@ static func _j6(rng: RandomNumberGenerator, tier: int) -> Dictionary:
 			"fig": fig,
 		}
 	elif kind == 1:
+		if rng.randf() < 0.4:
+			# 30-60-90: 短辺 → 長辺(√3 = 1.73)
+			var sh := rng.randi_range(2, 12)
+			var ans_l := sh * 1.73
+			var vv := [Vector2(0, 0), Vector2(sh * 1.73, 0), Vector2(sh * 1.73, float(sh))]
+			var fig_l := {"shapes": [
+				ProblemGen.poly(vv, ProblemGen.FILL_MAIN),
+				ProblemGen.ang(vv[0], vv[1], vv[2], "30°"),
+				ProblemGen.right(vv[1], vv[0], vv[2]),
+				ProblemGen.side_label(vv[1], vv[2], str(sh), 1.0),
+				ProblemGen.side_label(vv[0], vv[1], "x", 1.0),
+			]}
+			return {
+				"q": "30°、60°、90° の直角三角形で、いちばん短い辺が %d のとき、直角をはさむもう 1 つの辺 x を求めなさい。√3 = 1.73 として小数で答えなさい。" % sh,
+				"answer": ans_l, "unit": "", "tol": 0.02,
+				"hint1": "辺の比は 1 : 2 : √3。長い方の辺 = 短い辺 × √3 だよ。",
+				"hint2": "x = %d × 1.73" % sh,
+				"expl": "x = %d × √3 = %d × 1.73 = %s です。" % [sh, sh, ProblemGen.fmt(ans_l)],
+				"fig": fig_l,
+			}
 		# 30-60-90: 斜辺 → 最短辺
-		var h2 := 2 * rng.randi_range(2, 10)
+		var h2 := 2 * rng.randi_range(2, 15)
 		var short := h2 / 2
 		var lng := short * 1.73
 		var v2 := [Vector2(0, 0), Vector2(lng, 0), Vector2(lng, float(short))]
@@ -344,7 +388,7 @@ static func _j6(rng: RandomNumberGenerator, tier: int) -> Dictionary:
 		}
 	else:
 		# 正三角形の高さ(√3=1.73 として)
-		var a := 2 * rng.randi_range(2, 8)
+		var a := 2 * rng.randi_range(2, 12)
 		var ans := a * 1.73 / 2.0
 		var v3 := [Vector2(0, 0), Vector2(float(a), 0), Vector2(a * 0.5, a * 0.866)]
 		var fig3 := {"shapes": [
@@ -526,8 +570,8 @@ static func _j9(rng: RandomNumberGenerator, tier: int) -> Dictionary:
 static func _j10(rng: RandomNumberGenerator, tier: int) -> Dictionary:
 	if tier < 1 and rng.randf() < 0.5:
 		# ウォームアップ: 同心円のリング
-		var r_out := rng.randi_range(5, 10)
-		var r_in := rng.randi_range(2, r_out - 2)
+		var r_out := rng.randi_range(4, 13)
+		var r_in := rng.randi_range(1, r_out - 2)
 		var ans := 3.14 * (r_out * r_out - r_in * r_in)
 		var fig := {"shapes": [
 			ProblemGen.circle(Vector2.ZERO, float(r_out), ProblemGen.FILL_ACCENT),

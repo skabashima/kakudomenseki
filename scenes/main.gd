@@ -74,8 +74,8 @@ func _ready() -> void:
 				done += 1
 			total_stars += st
 	var progress := Label.new()
-	progress.text = "クリア %d / %d   ★ %d / %d   最高コンボ %d" % [
-		done, total, total_stars, total * 3, GameState.best_combo]
+	progress.text = "クリア %d / %d   ★ %d / %d   解いた問題 %d 問" % [
+		done, total, total_stars, total * 3, int(GameState.stats.get("correct", 0))]
 	progress.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	progress.add_theme_font_size_override("font_size", 22)
 	progress.add_theme_color_override("font_color", Color(0.78, 0.85, 0.96))

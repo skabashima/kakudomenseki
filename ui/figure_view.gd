@@ -305,7 +305,7 @@ func _draw_leaf(sh: Dictionary) -> void:
 	for i in n + 1:
 		var t := PI * (1.0 + 0.5 * i / n)
 		pts.append(_px(Vector2(a, a) + Vector2(cos(t), sin(t)) * a))
-	draw_colored_polygon(pts, ProblemGen.FILL_ACCENT)
+	draw_colored_polygon(pts, sh.get("fill", ProblemGen.FILL_ACCENT))
 	draw_polyline(pts, COL_LINE, 3.5, true)
 
 

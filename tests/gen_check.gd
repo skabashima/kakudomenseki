@@ -26,7 +26,7 @@ func _ready() -> void:
 				total += 1
 				_check_problem(sid, i, p)
 				answers[String(p["q"]) + "|" + str(p["answer"])] = true
-			if answers.size() < 5:
+			if answers.size() < 12:
 				failures.append("%s: バリエーションが少なすぎる (%d 通り)" % [sid, answers.size()])
 	if failures.is_empty():
 		print("GEN CHECK OK: %d problems generated and validated" % total)
