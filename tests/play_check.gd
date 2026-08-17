@@ -106,8 +106,14 @@ func _test_fail_out() -> void:
 func _test_clear_with_miss() -> void:
 	var scene: Node = await _open_stage("e", 2)
 	await _type_answer(scene, "999999")   # 1 ミス
+	# こわれた式はハートを消費しないこと
+	var hearts_before: int = scene.hearts
+	await _type_answer(scene, "3++4")
+	if scene.hearts != hearts_before:
+		failures.append("expr: こわれた式でハートが減った")
 	for q in GameState.QUESTIONS_PER_STAGE:
-		await _type_answer(scene, _answer_str(scene))
+		# 電卓: 式のままでも答えられること(答えを (ans)+0 の式で入れる)
+		await _type_answer(scene, "(%s)+0" % _answer_str(scene))
 	if int(GameState.stars.get("e3", 0)) != 2:
 		failures.append("miss-clear: ★2 のはずが %d" % int(GameState.stars.get("e3", 0)))
 	# 1 問目クリア済みなので次のステージが解放されているはず

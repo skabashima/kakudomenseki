@@ -180,35 +180,65 @@ func _build_ui() -> void:
 	unit_lbl.custom_minimum_size = Vector2(70, 0)
 	ans_row.add_child(unit_lbl)
 
-	# --- キーパッド ---
+	# --- キーパッド(電卓つき: 式を組んでそのまま答えられる) ---
 	var pad := GridContainer.new()
-	pad.columns = 4
+	pad.columns = 5
 	pad.add_theme_constant_override("h_separation", 10)
 	pad.add_theme_constant_override("v_separation", 10)
 	root.add_child(pad)
 	var keys := [
-		"7", "8", "9", "⌫",
-		"4", "5", "6", "C",
-		"1", "2", "3", "ヒント",
-		"0", ".", "−", "OK",
+		"7", "8", "9", "⌫", "C",
+		"4", "5", "6", "×", "÷",
+		"1", "2", "3", "+", "−",
+		"0", ".", "(", ")", "√",
 	]
+	var op_col := Color(0.33, 0.3, 0.5)
 	for k in keys:
 		var btn := Button.new()
 		btn.text = k
-		btn.custom_minimum_size = Vector2(0, 88)
+		btn.custom_minimum_size = Vector2(0, 80)
 		btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		btn.add_theme_font_size_override("font_size", 34 if k != "ヒント" else 24)
+		btn.add_theme_font_size_override("font_size", 32)
 		var col := Color(0.2, 0.28, 0.46)
-		if k == "OK":
-			col = Color(0.2, 0.55, 0.35)
-		elif k == "⌫" or k == "C":
+		if k == "⌫" or k == "C":
 			col = Color(0.45, 0.3, 0.3)
-		elif k == "ヒント":
-			col = Color(0.35, 0.4, 0.2)
-			hint_btn = btn
+		elif k in ["×", "÷", "+", "−", "(", ")", "√"]:
+			col = op_col
 		GameState.style_button(btn, col)
 		btn.pressed.connect(_on_key.bind(k))
 		pad.add_child(btn)
+
+	# --- 下段: ヒント / =(計算) / こたえる ---
+	var bottom := HBoxContainer.new()
+	bottom.add_theme_constant_override("separation", 10)
+	root.add_child(bottom)
+	hint_btn = Button.new()
+	hint_btn.text = "ヒント"
+	hint_btn.custom_minimum_size = Vector2(0, 84)
+	hint_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	hint_btn.size_flags_stretch_ratio = 1.0
+	hint_btn.add_theme_font_size_override("font_size", 26)
+	GameState.style_button(hint_btn, Color(0.35, 0.4, 0.2))
+	hint_btn.pressed.connect(_on_key.bind("ヒント"))
+	bottom.add_child(hint_btn)
+	var eq_btn := Button.new()
+	eq_btn.text = "＝ 計算"
+	eq_btn.custom_minimum_size = Vector2(0, 84)
+	eq_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	eq_btn.size_flags_stretch_ratio = 1.0
+	eq_btn.add_theme_font_size_override("font_size", 26)
+	GameState.style_button(eq_btn, Color(0.24, 0.42, 0.72))
+	eq_btn.pressed.connect(_on_key.bind("="))
+	bottom.add_child(eq_btn)
+	var ok_btn := Button.new()
+	ok_btn.text = "こたえる"
+	ok_btn.custom_minimum_size = Vector2(0, 84)
+	ok_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	ok_btn.size_flags_stretch_ratio = 1.4
+	ok_btn.add_theme_font_size_override("font_size", 28)
+	GameState.style_button(ok_btn, Color(0.2, 0.55, 0.35))
+	ok_btn.pressed.connect(_on_key.bind("OK"))
+	bottom.add_child(ok_btn)
 
 
 func _unhandled_key_input(event: InputEvent) -> void:
@@ -216,12 +246,18 @@ func _unhandled_key_input(event: InputEvent) -> void:
 		return
 	var key := event as InputEventKey
 	var s := char(key.unicode)
-	if s >= "0" and s <= "9":
+	if (s >= "0" and s <= "9") or s in [".", "(", ")"]:
 		_on_key(s)
-	elif s == ".":
-		_on_key(".")
 	elif s == "-":
 		_on_key("−")
+	elif s == "*":
+		_on_key("×")
+	elif s == "/":
+		_on_key("÷")
+	elif s == "+":
+		_on_key("+")
+	elif s == "=":
+		_on_key("=")
 	elif key.keycode == KEY_BACKSPACE:
 		_on_key("⌫")
 	elif key.keycode == KEY_ENTER or key.keycode == KEY_KP_ENTER:
@@ -252,7 +288,9 @@ func _next_question(first := false) -> void:
 	problem = ProblemGen.generate(sid, rng, tier)
 	figure.set_spec(problem["fig"])
 	question_lbl.text = String(problem["q"])
-	hint_lbl.text = ""
+	# 電卓の存在をそっと知らせる(ヒントを出すと上書きされる)
+	hint_lbl.text = "そのまま式で答えてOK(例: 12×8÷2)。＝計算 で途中計算もできるよ"
+	hint_lbl.add_theme_color_override("font_color", Color(0.55, 0.62, 0.75, 0.8))
 	unit_lbl.text = String(problem["unit"])
 	if GameState.mode != "normal":
 		title_lbl.text = ("タイムアタック  " if GameState.mode == "time" else "サバイバル  ") \
@@ -287,6 +325,9 @@ func _hearts_str(n: int) -> String:
 
 func _update_answer() -> void:
 	answer_lbl.text = input_text if input_text != "" else " "
+	# 長い式は文字を小さくして収める
+	var n := input_text.length()
+	answer_lbl.add_theme_font_size_override("font_size", 44 if n <= 12 else (34 if n <= 19 else 28))
 
 
 # ---------------------------------------------------------
@@ -299,6 +340,8 @@ func _on_key(k: String) -> void:
 	match k:
 		"OK":
 			_submit()
+		"=":
+			_calc_in_place()
 		"⌫":
 			GameState.play_sfx("type")
 			input_text = input_text.substr(0, input_text.length() - 1)
@@ -309,14 +352,35 @@ func _on_key(k: String) -> void:
 			_show_hint()
 		_:
 			GameState.play_sfx("type")
-			if input_text.length() >= 9:
+			if input_text.length() >= 26:
 				return
-			if k == "." and input_text.contains("."):
-				return
-			if k == "−" and input_text != "":
+			if k == "." and _current_number_has_dot():
 				return
 			input_text += k
 	_update_answer()
+
+
+## いま入力中の数(最後の演算子より後ろ)にすでに小数点があるか
+func _current_number_has_dot() -> bool:
+	var tail := input_text
+	for op in ["+", "−", "×", "÷", "(", ")", "√"]:
+		var idx := tail.rfind(op)
+		if idx >= 0:
+			tail = tail.substr(idx + 1)
+	return tail.contains(".")
+
+
+## ＝キー: 式をその場で計算して、答え欄を計算結果に置きかえる
+func _calc_in_place() -> void:
+	if input_text == "":
+		return
+	var res: Dictionary = ExprEval.eval(input_text)
+	if not res["ok"]:
+		GameState.play_sfx("fail")
+		_show_flash(String(res["err"]), Color(1.0, 0.75, 0.4))
+		return
+	GameState.play_sfx("type")
+	input_text = ExprEval.fmt(float(res["value"]))
 
 
 func _show_hint() -> void:
@@ -326,6 +390,7 @@ func _show_hint() -> void:
 	hints_used += 1
 	var text := String(problem["hint1"]) if hints_used == 1 else String(problem["hint2"])
 	hint_lbl.text = "ヒント%d: %s" % [hints_used, text]
+	hint_lbl.add_theme_color_override("font_color", Color(0.65, 0.9, 1.0))
 	if hints_used >= 2:
 		hint_btn.disabled = true
 
@@ -333,7 +398,14 @@ func _show_hint() -> void:
 func _submit() -> void:
 	if input_text == "" or input_text == "−" or input_text == ".":
 		return
-	var v := input_text.replace("−", "-").to_float()
+	# 式でもそのまま計算して答え合わせできる(紙とペンいらず)。
+	# 式のかたちがおかしいときはハートを減らさずに教える
+	var res: Dictionary = ExprEval.eval(input_text)
+	if not res["ok"]:
+		GameState.play_sfx("fail")
+		_show_flash(String(res["err"]), Color(1.0, 0.75, 0.4))
+		return
+	var v := float(res["value"])
 	var ans := float(problem["answer"])
 	var tol := float(problem["tol"])
 	tries += 1
