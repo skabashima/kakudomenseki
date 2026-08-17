@@ -33,6 +33,27 @@ func _run() -> void:
 		await _shot("res://scenes/problem.tscn", p[2])
 	await _shot("res://scenes/challenge_select.tscn", "03_challenge")
 	await _shot("res://scenes/records.tscn", "04_records")
+
+	# --- 同じステージを 3 回出題: 数値と図が毎回変わることの確認 ---
+	GameState.current_course = "e"
+	GameState.current_stage = 0
+	for i in 3:
+		await _shot("res://scenes/problem.tscn", "30_vary_e1_%d" % i)
+	GameState.current_course = "j"
+	GameState.current_stage = 4
+	for i in 3:
+		await _shot("res://scenes/problem.tscn", "31_vary_j5_%d" % i)
+
+	# --- iPhone のノッチ/ホームバーを再現してレイアウト検証 ---
+	# (論理座標で 上 118 / 下 66 は iPhone 15 クラス相当)
+	GameState.debug_safe_insets = {"top": 118.0, "bottom": 66.0}
+	await _shot("res://scenes/main.tscn", "40_notch_main")
+	GameState.current_course = "e"
+	await _shot("res://scenes/stage_select.tscn", "41_notch_stage_select")
+	GameState.current_stage = 0
+	await _shot("res://scenes/problem.tscn", "42_notch_problem")
+	GameState.debug_safe_insets = {}
+
 	print("SHOTS DONE -> " + out_dir)
 	get_tree().quit(0)
 
