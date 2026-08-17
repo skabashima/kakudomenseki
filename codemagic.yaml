@@ -1,0 +1,132 @@
+# Codemagic CI/CD ― Godot 4.7 製「角度と面積」のビルド定義。
+# (さわる物理と同じパイプライン。IAP がないぶんシンプル)
+# Codemagic は Godot を自動検出できないため、Godot 本体と export テンプレートの
+# 取得からこの YAML で明示する。
+#
+# ■ ワークフローは iOS だけ
+#   ios-kakudomenseki … Mac で IPA を作り TestFlight へ(Apple Developer Program 必須)
+#
+# ■ Codemagic にはビルド以外をさせない(ビルド分が課金されるため)
+#   テストは手元で走らせてから push すること:
+#     godot --headless --path <proj> res://tests/gen_check.tscn
+#     godot --headless --path <proj> res://tests/calc_check.tscn
+#     godot --headless --path <proj> res://tests/play_check.tscn
+#     godot --headless --path <proj> res://tests/smoke.tscn
+#
+# ■ 事前に Codemagic 側で用意するもの(コードだけでは設定できないもの)
+#
+#   登録する環境変数は **1個だけ**:
+#       group: appstore_credentials / name: CERTIFICATE_PRIVATE_KEY / Secret: ✅
+#     ※ 環境変数グループは**アプリごと**です。さわる物理で作った appstore_credentials は
+#       このアプリには引き継がれません。Teams → Global variables and secrets に
+#       置けば全アプリで共用できます。
+#
+#   [iOS の前提]
+#     1. Apple Developer Program に加入(さわる物理と同じアカウント / Team R6TSKT9T8L)
+#     2. App Store Connect に Bundle ID「jp.snaplace.kakudomenseki」を登録
+#     3. App Store Connect の API キーは**アカウント単位**なので、登録済みの
+#        `historygamekey` をそのまま使う(アプリごとに作り直す必要はない)
+
+workflows:
+
+  # ════════════════════════════════════════════════════════════
+  ios-kakudomenseki:
+    name: 角度と面積 iOS (TestFlight)
+    instance_type: mac_mini_m2        # iOS ビルドは Mac 必須
+    max_build_duration: 90
+    integrations:
+      # Codemagic の App Store Connect integration で登録したキー名と完全一致させる。
+      # API キーはアカウント単位なので、既存のものを使い回す
+      app_store_connect: historygamekey
+    environment:
+      groups:
+        - appstore_credentials        # CERTIFICATE_PRIVATE_KEY を入れる
+      vars:
+        GODOT_VERSION: "4.7.1-stable"
+        BUNDLE_ID: "jp.snaplace.kakudomenseki"
+        XCODE_PROJECT: "build/ios/kakudomenseki.xcodeproj"
+        XCODE_SCHEME: "kakudomenseki"
+      xcode: latest
+    # 自動トリガーは付けない(Mac は分単価が高い)。TestFlight に上げたいときだけ手動で回す。
+    # ※ 最初のステップが argparse の usage を出して落ちる場合は、
+    #   CERTIFICATE_PRIVATE_KEY が未設定(環境変数グループはアプリごと)。
+    scripts:
+      - name: コード署名(証明書とプロファイルを取得/作成)
+        script: |
+          set -euo pipefail
+          # 重い Godot のダウンロード前に署名準備を済ませ、失敗を早く出す
+          keychain initialize
+          app-store-connect fetch-signing-files "$BUNDLE_ID" \
+            --type IOS_APP_STORE \
+            --certificate-key=@env:CERTIFICATE_PRIVATE_KEY \
+            --create
+          keychain add-certificates
+
+      - name: Godot と iOS export テンプレートを取得
+        script: |
+          set -euo pipefail
+          BASE="https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}"
+          curl -fL -o godot.zip "${BASE}/Godot_v${GODOT_VERSION}_macos.universal.zip"
+          unzip -q godot.zip
+          GODOT_BIN="$PWD/Godot.app/Contents/MacOS/Godot"
+          chmod +x "$GODOT_BIN"
+          echo "GODOT_BIN=$GODOT_BIN" >> "$CM_ENV"
+          curl -fL -o templates.tpz "${BASE}/Godot_v${GODOT_VERSION}_export_templates.tpz"
+          unzip -q templates.tpz -d tpl
+          TDIR="$HOME/Library/Application Support/Godot/export_templates/${GODOT_VERSION//-/.}"
+          mkdir -p "$TDIR"
+          cp tpl/templates/* "$TDIR/"
+          "$GODOT_BIN" --version
+
+      - name: スクリプトを import(クラスキャッシュ生成)
+        script: |
+          set -euo pipefail
+          # cold 環境ではグローバル class_name 登録と autoload コンパイルの順序問題で
+          # 1 回目の import が失敗しうる。2 回走らせて確実にキャッシュを作る
+          "$GODOT_BIN" --headless --import || true
+          "$GODOT_BIN" --headless --import
+
+      - name: iOS 用 Xcode プロジェクトを export
+        script: |
+          set -euo pipefail
+          mkdir -p "$CM_BUILD_DIR/build/ios"
+          # TestFlight は同一バージョン内でのビルド番号重複を拒否するので毎回ユニークにする
+          V="${BUILD_NUMBER:-1}"
+          sed -i '' "s|^application/version=.*|application/version=\"${V}\"|" export_presets.cfg
+          echo "→ CFBundleVersion=${V}"
+          # Godot の iOS export は .ipa ではなく Xcode プロジェクトを生成する
+          "$GODOT_BIN" --headless --export-release "iOS" "$CM_BUILD_DIR/${XCODE_PROJECT}"
+          echo "→ 利用可能な scheme(想定と違えば XCODE_SCHEME を直す)"
+          ls "$CM_BUILD_DIR/${XCODE_PROJECT}/xcshareddata/xcschemes" 2>/dev/null || \
+            xcodebuild -list -project "$CM_BUILD_DIR/${XCODE_PROJECT}" || true
+
+      - name: バイナリの言語を日本語にする
+        script: |
+          set -euo pipefail
+          # App Store の「言語」欄は .ipa 内の CFBundleDevelopmentRegion から自動取得される。
+          # Godot のテンプレートは "en" 固定で export 設定からは変えられないため、生成後に直す
+          PLIST=$(find "$CM_BUILD_DIR/build/ios" -name "*-Info.plist" -not -path "*.xcframework/*" | head -1)
+          /usr/libexec/PlistBuddy -c "Set :CFBundleDevelopmentRegion ja" "$PLIST"
+          /usr/libexec/PlistBuddy -c "Delete :CFBundleLocalizations" "$PLIST" 2>/dev/null || true
+          /usr/libexec/PlistBuddy -c "Add :CFBundleLocalizations array" "$PLIST"
+          /usr/libexec/PlistBuddy -c "Add :CFBundleLocalizations:0 string ja" "$PLIST"
+          PBX="$CM_BUILD_DIR/${XCODE_PROJECT}/project.pbxproj"
+          sed -i '' 's|developmentRegion = en;|developmentRegion = ja;|' "$PBX"
+          sed -i '' 's|knownRegions = (|knownRegions = (\n\t\t\t\tja,|' "$PBX"
+
+      - name: 署名して IPA をビルド
+        script: |
+          set -euo pipefail
+          xcode-project use-profiles
+          xcode-project build-ipa \
+            --project "$XCODE_PROJECT" \
+            --scheme "$XCODE_SCHEME"
+
+    artifacts:
+      - build/ios/**/*.ipa
+      - /tmp/xcodebuild_logs/*.log
+
+    publishing:
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: true

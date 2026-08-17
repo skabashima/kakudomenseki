@@ -6,3 +6,4 @@
 *.aab
 *.ipa
 export/
+build/

@@ -64,6 +64,30 @@ godot --path "<このフォルダ>"
   日本語フォント(Noto Sans JP)同梱
 - **効果音はプログラム生成**(外部アセットなし)
 
+## iOS ビルド(Codemagic)
+
+さわる物理と同じパイプライン。`codemagic.yaml` の `ios-kakudomenseki` ワークフローを
+**手動で**回すと、Mac インスタンスで IPA をビルドして TestFlight へ自動アップロードする。
+(自動トリガーは付けていない。Mac は分単価が高いので、上げたいときだけ回す)
+
+流れ: 署名ファイル取得 → Godot 4.7.1 + iOS export テンプレート取得 → import ×2 →
+`--export-release "iOS"` で Xcode プロジェクト生成(`export_presets.cfg` の iOS プリセット、
+`application/export_project_only=true`)→ CFBundleDevelopmentRegion を ja に修正 →
+署名して IPA → TestFlight。ビルド番号は Codemagic の `BUILD_NUMBER` で毎回ユニークになる。
+
+事前に Codemagic 側で必要なもの(詳細は `codemagic.yaml` 冒頭のコメント):
+
+1. App Store Connect integration に API キー `historygamekey`(アカウント単位・登録済みを使い回す)
+2. 環境変数グループ `appstore_credentials` に `CERTIFICATE_PRIVATE_KEY`(Secret)
+3. App Store Connect に Bundle ID `jp.snaplace.kakudomenseki` を登録
+
+App Store 用の 1024×1024 アイコンは `store/icon/icon_1024.png`(透過なし)。
+元 SVG から作り直すときは:
+
+```
+godot --headless --path . -s tools/make_icons.gd
+```
+
 ## デバッグ
 
 タイトル画面左下の「デバッグ: 全ステージ解放」トグルで、進捗に関係なく全ステージを遊べる(設定はセーブされる)。

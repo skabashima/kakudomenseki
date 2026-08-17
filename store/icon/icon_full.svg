@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+  <!-- App Store 用のフルブリード版アイコン(角丸なし・透過なし。角丸は OS 側が付ける) -->
+  <rect width="128" height="128" fill="#14203a"/>
+  <circle cx="104" cy="26" r="34" fill="#1b2c4e"/>
+  <circle cx="18" cy="112" r="26" fill="#182647"/>
+  <path d="M22 102 L106 102 L106 30 Z" fill="#2f5aa8" stroke="#8fb8ff" stroke-width="4" stroke-linejoin="round"/>
+  <path d="M85 102 A21 21 0 0 1 91 87" fill="none" stroke="#ffd447" stroke-width="5" stroke-linecap="round"/>
+  <circle cx="106" cy="30" r="6" fill="#ffd447"/>
+</svg>
