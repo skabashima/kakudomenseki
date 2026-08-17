@@ -9,7 +9,7 @@
 
 ## 動かし方
 
-1. Godot 4.3 以降でプロジェクトを開く(`project.godot`)
+1. Godot 4.7 以降でプロジェクトを開く(`project.godot`)
 2. F5 で実行(メインシーン: `scenes/main.tscn`)
 
 CLI から:

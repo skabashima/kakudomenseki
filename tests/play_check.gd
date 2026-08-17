@@ -10,7 +10,11 @@ var failures: Array = []
 
 func _ready() -> void:
 	await get_tree().process_frame
-	# テストがセーブを汚さないよう、別ファイルに退避はせずメモリだけ初期化
+	# クリア処理が save_game() を呼ぶので、元のセーブ内容を控えて最後に戻す
+	var keep_stars: Dictionary = GameState.stars.duplicate(true)
+	var keep_scores: Dictionary = GameState.scores.duplicate(true)
+	var keep_best_combo := GameState.best_combo
+	var keep_stats: Dictionary = GameState.stats.duplicate(true)
 	GameState.stars.clear()
 	GameState.scores.clear()
 	GameState.combo = 0
@@ -18,6 +22,13 @@ func _ready() -> void:
 	await _test_clear_all_correct()
 	await _test_fail_out()
 	await _test_clear_with_miss()
+
+	GameState.stars = keep_stars
+	GameState.scores = keep_scores
+	GameState.best_combo = keep_best_combo
+	GameState.stats = keep_stats
+	GameState.combo = 0
+	GameState.save_game()
 
 	if failures.is_empty():
 		print("PLAY CHECK OK")
