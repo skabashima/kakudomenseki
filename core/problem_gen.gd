@@ -167,9 +167,12 @@ static func circle(c: Vector2, r: float, fill = null, stroke = null, w := 4.0) -
 	return d
 
 
-## at を頂点に、p1 方向から p2 方向までの角の印。unknown の角は黄色で描かれる
-static func ang(at: Vector2, p1: Vector2, p2: Vector2, label: String, r := 0.0) -> Dictionary:
-	return {"t": "angle", "at": at, "p1": p1, "p2": p2, "label": label, "r": r}
+## at を頂点に、p1 方向から p2 方向までの角の印。unknown の角は黄色で描かれる。
+## 通常は 180° 以下の側(劣角)を自動で描く。おうぎ形の中心角のように
+## 180° を超える印をそのまま描きたいときだけ reflex=true にする
+## (このとき p1 → p2 は反時計回りに測る)
+static func ang(at: Vector2, p1: Vector2, p2: Vector2, label: String, r := 0.0, reflex := false) -> Dictionary:
+	return {"t": "angle", "at": at, "p1": p1, "p2": p2, "label": label, "r": r, "reflex": reflex}
 
 
 static func right(at: Vector2, p1: Vector2, p2: Vector2) -> Dictionary:

@@ -21,8 +21,10 @@ func _run() -> void:
 	GameState.current_course = "e"
 	await _shot("res://scenes/stage_select.tscn", "02_stage_select_e")
 	# 各コースの代表ステージ
-	var picks := [["e", 0, "10_problem_e1"], ["e", 7, "11_problem_e8"], ["e", 9, "12_problem_e10"],
-		["j", 2, "13_problem_j3"], ["j", 8, "14_problem_j9"], ["j", 9, "15_problem_j10"],
+	var picks := [["e", 0, "10_problem_e1"], ["e", 3, "10b_problem_e4"], ["e", 7, "11_problem_e8"],
+		["e", 9, "12_problem_e10"],
+		["j", 1, "12b_problem_j2"], ["j", 2, "13_problem_j3"], ["j", 3, "13b_problem_j4"],
+		["j", 8, "14_problem_j9"], ["j", 9, "15_problem_j10"],
 		["s", 0, "16_problem_s1"], ["s", 5, "17_problem_s6"], ["s", 7, "18_problem_s8"], ["s", 9, "19_problem_s10"]]
 	for p in picks:
 		GameState.current_course = p[0]

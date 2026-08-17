@@ -25,7 +25,7 @@ const HERON_SETS := [
 const INCIRCLE_SETS := [
 	[3, 4, 5, 6, 1.0, 2.5], [6, 8, 10, 24, 2.0, 5.0], [5, 12, 13, 30, 2.0, 6.5],
 	[9, 12, 15, 54, 3.0, 7.5], [13, 14, 15, 84, 4.0, 8.125], [10, 10, 12, 48, 3.0, 6.25],
-	[7, 15, 20, 42, 2.0, 12.5], [11, 13, 20, 66, 3.0, 12.1875], [17, 17, 16, 120, 4.8, 10.15625],
+	[7, 15, 20, 42, 2.0, 12.5], [11, 13, 20, 66, 3.0, 10.8333333], [17, 17, 16, 120, 4.8, 9.6333333],
 	[8, 15, 17, 60, 3.0, 8.5], [7, 24, 25, 84, 3.0, 12.5], [20, 21, 29, 210, 6.0, 14.5],
 	[9, 40, 41, 180, 4.0, 20.5], [12, 16, 20, 96, 4.0, 10.0], [13, 13, 24, 60, 2.4, 16.9],
 ]
@@ -64,9 +64,7 @@ static func _s1(rng: RandomNumberGenerator, tier: int) -> Dictionary:
 	var b: int = s[1]
 	var cc: int = s[2]
 	var c: int = s[3]
-	# 図: C を頂点に辺 a=BC? 定義: C の両側の辺が a, b で間の角 C
-	var v: Array = ProblemGen.tri_from_sides(float(a), _third_side(float(a), float(b), float(cc)), float(b))
-	# ↑複雑なので、シンプルに: C=(0,0)、B=(a,0)、A=角C方向に b
+	# 図: C=(0,0)、B=(a,0)、A は角 C の方向に距離 b
 	var rad := deg_to_rad(float(cc))
 	var pc := Vector2.ZERO
 	var pb := Vector2(float(a), 0)
@@ -99,10 +97,6 @@ static func _s1(rng: RandomNumberGenerator, tier: int) -> Dictionary:
 		"expl": "c² = %d + %d %s %d = %d。c = %d です。" % [a * a, b * b, sign_str, a * b, c * c, c],
 		"fig": fig,
 	}
-
-
-static func _third_side(a: float, b: float, c_deg: float) -> float:
-	return sqrt(a * a + b * b - 2.0 * a * b * cos(deg_to_rad(c_deg)))
 
 
 ## s2: 正弦定理と外接円
@@ -371,7 +365,6 @@ static func _s7(rng: RandomNumberGenerator, tier: int) -> Dictionary:
 	if kind == 0:
 		# θ = l / r(有理数)
 		var r := rng.randi_range(2, 8)
-		var num := rng.randi_range(1, 3) * r    # l = rθ で θ が 1, 1.5, 2, 3 など
 		var th_num: float = [1.0, 1.5, 2.0, 2.5, 3.0][rng.randi_range(0, 4)]
 		var l := r * th_num
 		return {
@@ -385,7 +378,7 @@ static func _s7(rng: RandomNumberGenerator, tier: int) -> Dictionary:
 	elif kind == 1:
 		# S = ½ r l(有理数)
 		var r2 := rng.randi_range(2, 12)
-		var l2 := rng.randi_range(2, 18)
+		var l2 := rng.randi_range(2, mini(18, r2 * 5))   # θ = l/r が 5 rad を超えない範囲で
 		var ans := 0.5 * r2 * l2
 		return {
 			"q": "半径 %d、弧の長さ %d のおうぎ形の面積 S を求めなさい。" % [r2, l2],
@@ -416,7 +409,7 @@ static func _rad_fig(r: float, th: float) -> Dictionary:
 	var deg := rad_to_deg(th)
 	return {"shapes": [
 		ProblemGen.sector(Vector2.ZERO, r, 0.0, deg, ProblemGen.FILL_MAIN, Color.WHITE),
-		ProblemGen.ang(Vector2.ZERO, Vector2(r, 0), Vector2(cos(th), sin(th)) * r, "θ"),
+		ProblemGen.ang(Vector2.ZERO, Vector2(r, 0), Vector2(cos(th), sin(th)) * r, "θ", 0.0, true),
 		ProblemGen.label(Vector2(r * 0.6, -0.9), ProblemGen.fmt(r)),
 	]}
 

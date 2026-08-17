@@ -56,12 +56,15 @@ func _collect_bounds() -> Rect2:
 				pts.append(Vector2.ZERO)
 				pts.append(Vector2(sh["a"], sh["a"]))
 			"lune":
-				# 半円が三角形の外へふくらむ分も含める
+				# 半円が三角形の外へふくらむ分も正確に含める。
+				# 左は縦の辺の半円(x = −a/2)か斜辺半円の左端、
+				# 下は横の辺の半円(y = −b/2)か斜辺半円の下端の遠い方
 				var a: float = sh["a"]
 				var b: float = sh["b"]
-				pts.append(Vector2(-a * 0.5, -0.5))
-				pts.append(Vector2(b + 0.5, a + b * 0.35))
-				pts.append(Vector2(b * 0.2, a + a * 0.4))
+				var hyp_r := sqrt(a * a + b * b) * 0.5
+				pts.append(Vector2(minf(-a * 0.5, b * 0.5 - hyp_r),
+					minf(-b * 0.5, a * 0.5 - hyp_r)))
+				pts.append(Vector2(b, a))
 	for p in pts:
 		lo.x = minf(lo.x, p.x)
 		lo.y = minf(lo.y, p.y)
@@ -205,6 +208,11 @@ func _draw_angle(sh: Dictionary) -> void:
 	var sweep := fposmod(a2 - a1, TAU)
 	if sweep > PI * 1.999:
 		sweep = TAU
+	# 指定がなければ 180° 以下の側(劣角)を描く。呼び出し側の p1/p2 の順序に
+	# よらず、図形として意味のある内側の角に印が付く
+	if sweep > PI and not sh.get("reflex", false):
+		a1 = a2
+		sweep = TAU - sweep
 	# 角の印の半径: 図形サイズに応じて。狭い角は少し大きく
 	var r_px := 44.0 if sh.get("r", 0.0) == 0.0 else float(sh["r"]) * _scale
 	if sweep < deg_to_rad(35.0):

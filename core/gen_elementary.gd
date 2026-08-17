@@ -155,11 +155,9 @@ static func _e4(rng: RandomNumberGenerator, tier: int) -> Dictionary:
 		# 錯角: 平行線を横切る直線
 		var a := step * rng.randi_range(35 / step, 120 / step)
 		var rad := deg_to_rad(float(a))
-		var d := Vector2(cos(rad), sin(rad)) * 4.5
-		var p_low := Vector2(4, 0)
-		var p_high := Vector2(4 + 5.0 / tan(rad) * 1.0, 5)
 		# 横切る線は下の平行線上 p_low から上の平行線上 p_high へ
-		p_high = p_low + Vector2(5.0 / tan(rad), 5.0)
+		var p_low := Vector2(4, 0)
+		var p_high := p_low + Vector2(5.0 / tan(rad), 5.0)
 		var fig := {"shapes": [
 			ProblemGen.seg(Vector2(0, 0), Vector2(w, 0)), ProblemGen.seg(Vector2(0, 5), Vector2(w, 5)),
 			ProblemGen.label(Vector2(w + 0.7, 0), "m"), ProblemGen.label(Vector2(w + 0.7, 5), "l"),
@@ -179,7 +177,6 @@ static func _e4(rng: RandomNumberGenerator, tier: int) -> Dictionary:
 	var a2 := step * rng.randi_range(20 / step, 60 / step)
 	var b2 := step * rng.randi_range(20 / step, 60 / step)
 	var p := Vector2(6, 2.5)
-	var to_l := p + Vector2(-cos(deg_to_rad(float(a2))), sin(deg_to_rad(float(a2)))).normalized() * 20.0
 	# l 上の点(y=5)と m 上の点(y=0)へ、指定角度で線を引く
 	var la := deg_to_rad(float(a2))
 	var lb := deg_to_rad(float(b2))
@@ -420,7 +417,7 @@ static func _e8(rng: RandomNumberGenerator, tier: int) -> Dictionary:
 		var ans3 := r3 * r3 * 3.14 * th / 360.0
 		var fig3 := {"shapes": [
 			ProblemGen.sector(Vector2.ZERO, float(r3), 0.0, float(th), ProblemGen.FILL_ACCENT, Color.WHITE),
-			ProblemGen.ang(Vector2.ZERO, Vector2(r3, 0), Vector2(cos(deg_to_rad(float(th))), sin(deg_to_rad(float(th)))) * r3, "%d°" % th),
+			ProblemGen.ang(Vector2.ZERO, Vector2(r3, 0), Vector2(cos(deg_to_rad(float(th))), sin(deg_to_rad(float(th)))) * r3, "%d°" % th, 0.0, true),
 			ProblemGen.label(Vector2(r3 * 0.6, -0.9), "%dcm" % r3),
 		]}
 		return {

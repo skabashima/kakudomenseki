@@ -18,6 +18,10 @@ func _init() -> void:
 		quit(1)
 		return
 	img.convert(Image.FORMAT_RGB8)   # アルファを外す(App Store 要件)
-	img.save_png("res://store/icon/icon_1024.png")
+	err = img.save_png("res://store/icon/icon_1024.png")
+	if err != OK:
+		push_error("PNG の書き出しに失敗: err=%d" % err)
+		quit(1)
+		return
 	print("wrote store/icon/icon_1024.png (%dx%d)" % [img.get_width(), img.get_height()])
 	quit(0)

@@ -47,6 +47,10 @@ workflows:
         XCODE_PROJECT: "build/ios/kakudomenseki.xcodeproj"
         XCODE_SCHEME: "kakudomenseki"
       xcode: latest
+    cache:
+      cache_paths:
+        # Godot 本体と export テンプレート(計 ~1GB)は毎回落とさずキャッシュする
+        - $CM_BUILD_DIR/godot_dl
     # 自動トリガーは付けない(Mac は分単価が高い)。TestFlight に上げたいときだけ手動で回す。
     # ※ 最初のステップが argparse の usage を出して落ちる場合は、
     #   CERTIFICATE_PRIVATE_KEY が未設定(環境変数グループはアプリごと)。
@@ -66,13 +70,18 @@ workflows:
         script: |
           set -euo pipefail
           BASE="https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}"
-          curl -fL -o godot.zip "${BASE}/Godot_v${GODOT_VERSION}_macos.universal.zip"
-          unzip -q godot.zip
+          DL="$CM_BUILD_DIR/godot_dl/${GODOT_VERSION}"
+          mkdir -p "$DL"
+          # キャッシュ済みならダウンロードを飛ばす(Mac 分の節約)
+          [ -s "$DL/godot.zip" ] || curl -fL -o "$DL/godot.zip" \
+            "${BASE}/Godot_v${GODOT_VERSION}_macos.universal.zip"
+          [ -s "$DL/templates.tpz" ] || curl -fL -o "$DL/templates.tpz" \
+            "${BASE}/Godot_v${GODOT_VERSION}_export_templates.tpz"
+          unzip -q -o "$DL/godot.zip"
           GODOT_BIN="$PWD/Godot.app/Contents/MacOS/Godot"
           chmod +x "$GODOT_BIN"
           echo "GODOT_BIN=$GODOT_BIN" >> "$CM_ENV"
-          curl -fL -o templates.tpz "${BASE}/Godot_v${GODOT_VERSION}_export_templates.tpz"
-          unzip -q templates.tpz -d tpl
+          unzip -q -o "$DL/templates.tpz" -d tpl
           TDIR="$HOME/Library/Application Support/Godot/export_templates/${GODOT_VERSION//-/.}"
           mkdir -p "$TDIR"
           cp tpl/templates/* "$TDIR/"
@@ -112,18 +121,25 @@ workflows:
           /usr/libexec/PlistBuddy -c "Add :CFBundleLocalizations:0 string ja" "$PLIST"
           PBX="$CM_BUILD_DIR/${XCODE_PROJECT}/project.pbxproj"
           sed -i '' 's|developmentRegion = en;|developmentRegion = ja;|' "$PBX"
-          sed -i '' 's|knownRegions = (|knownRegions = (\n\t\t\t\tja,|' "$PBX"
+          # BSD sed は置換文字列の \n を解釈しないので、同一行に挿入する
+          # (pbxproj のリストは 1 行に並んでいてもよい)
+          sed -i '' 's|knownRegions = (|knownRegions = (ja, |' "$PBX"
+          grep -A2 "knownRegions" "$PBX"
 
       - name: 署名して IPA をビルド
         script: |
           set -euo pipefail
           xcode-project use-profiles
+          # --ipa-directory を明示する(既定の build/ipa だと artifacts の
+          # パターンに合わず、TestFlight へ渡す IPA が拾われない)
           xcode-project build-ipa \
             --project "$XCODE_PROJECT" \
-            --scheme "$XCODE_SCHEME"
+            --scheme "$XCODE_SCHEME" \
+            --ipa-directory "$CM_BUILD_DIR/build/ios"
 
     artifacts:
       - build/ios/**/*.ipa
+      - build/ipa/*.ipa
       - /tmp/xcodebuild_logs/*.log
 
     publishing:

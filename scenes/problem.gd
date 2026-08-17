@@ -445,6 +445,9 @@ func _on_correct() -> void:
 		_update_status()
 		_show_flash("+1  (%d問目)" % challenge_count, Color(0.55, 1.0, 0.6))
 		await get_tree().create_timer(0.6).timeout
+		# 演出待ちの間にタイムアップして結果画面が出ていたら何もしない
+		if overlay != null:
+			return
 		_next_question()
 
 
@@ -458,6 +461,8 @@ func _on_wrong() -> void:
 			# 時間ロスがペナルティ。答えを変えて次へ
 			_show_flash("ミス!", Color(1.0, 0.5, 0.5))
 			await get_tree().create_timer(0.6).timeout
+			if overlay != null:
+				return
 			_update_status()
 			_next_question()
 		"survival":
@@ -468,6 +473,8 @@ func _on_wrong() -> void:
 			else:
 				_show_flash("ミス! のこり %s" % _hearts_str(lives), Color(1.0, 0.5, 0.5))
 				await get_tree().create_timer(0.7).timeout
+				if overlay != null:
+					return
 				_next_question()
 		_:
 			hearts -= 1

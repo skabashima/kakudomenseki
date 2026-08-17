@@ -82,24 +82,26 @@ static func _j2(rng: RandomNumberGenerator, tier: int) -> Dictionary:
 		b = step * rng.randi_range(35 / step, 75 / step)
 		x = 180 - a - b
 	var w := 12.0
-	# 頂点 P は 2 直線の間。P から上の l へ角 a、下の m へ角 b で腕を伸ばす
-	var p := Vector2(5.5, 2.5)
-	var arm_l := p + Vector2(2.5 / tan(deg_to_rad(float(a))), 2.5)
-	var arm_m := p + Vector2(2.5 / tan(deg_to_rad(float(b))), -2.5)
+	# 三角形 ABC: 頂点 A は上の直線 l 上、B・C は下の直線 m 上。
+	# A で l の左向きと AB がつくる角 a は、錯角で三角形の角 B に等しい。
+	# C の内角を b とすると、頂点の角 x = 180 − a − b(内角の和)
+	var pa := Vector2(6.0, 5.0)
+	var pb := Vector2(6.0 - 5.0 / tan(deg_to_rad(float(a))), 0.0)
+	var pc := Vector2(6.0 + 5.0 / tan(deg_to_rad(float(b))), 0.0)
 	var fig := {"shapes": [
-		ProblemGen.seg(Vector2(0, 5), Vector2(w, 5)), ProblemGen.seg(Vector2(0, 0), Vector2(w, 0)),
+		ProblemGen.seg(Vector2(-2, 5), Vector2(w, 5)), ProblemGen.seg(Vector2(-2, 0), Vector2(w, 0)),
 		ProblemGen.label(Vector2(w + 0.7, 5), "l"), ProblemGen.label(Vector2(w + 0.7, 0), "m"),
-		ProblemGen.seg(arm_l, p, ProblemGen.COL_DIM), ProblemGen.seg(p, arm_m, ProblemGen.COL_DIM),
-		ProblemGen.ang(arm_l, p, Vector2(0, 5), "%d°" % a),
-		ProblemGen.ang(arm_m, Vector2(0, 0), p, "%d°" % b),
-		ProblemGen.ang(p, arm_l, arm_m, "x"),
+		ProblemGen.poly([pa, pb, pc], ProblemGen.FILL_MAIN, Color.WHITE, 3.0),
+		ProblemGen.ang(pa, Vector2(-2, 5), pb, "%d°" % a),
+		ProblemGen.ang(pc, pa, pb, "%d°" % b),
+		ProblemGen.ang(pa, pb, pc, "x"),
 	]}
 	return {
-		"q": "直線 l と m は平行です。角 x は何度ですか。",
+		"q": "直線 l と m は平行です。三角形の角 x は何度ですか。",
 		"answer": float(x), "unit": "度",
-		"hint1": "頂点を通る平行線を引くと、錯角で %d° と %d° が頂点のまわりに移ってくるよ。" % [a, b],
-		"hint2": "x = 180 − %d − %d" % [a, b],
-		"expl": "錯角により頂点の左右に %d° と %d° が現れ、一直線(180°)から x = 180 − %d − %d = %d° です。" % [a, b, a, b, x],
+		"hint1": "%d° の角は、錯角で三角形の左下の角にそのまま移せるよ。" % a,
+		"hint2": "x = 180 − %d − %d(三角形の内角の和)" % [a, b],
+		"expl": "錯角より左下の内角は %d°。内角の和から x = 180 − %d − %d = %d° です。" % [a, a, b, x],
 		"fig": fig,
 	}
 
@@ -111,11 +113,11 @@ static func _j3(rng: RandomNumberGenerator, tier: int) -> Dictionary:
 		kind = rng.randi_range(0, 2)
 	var r := 5.0
 	if kind == 0:
-		# 中心角 → 円周角
+		# 中心角 → 円周角(図は出題値どおりの角度で描く)
 		var c := 2 * rng.randi_range(20, 80)    # 40..160(偶数)
 		var x := c / 2
-		var pa := _on_circle(r, 210.0)
-		var pb := _on_circle(r, 330.0)
+		var pa := _on_circle(r, 270.0 - c * 0.5)
+		var pb := _on_circle(r, 270.0 + c * 0.5)
 		var pt := _on_circle(r, 90.0)
 		var fig := {"shapes": [
 			ProblemGen.circle(Vector2.ZERO, r),
@@ -135,10 +137,10 @@ static func _j3(rng: RandomNumberGenerator, tier: int) -> Dictionary:
 			"fig": fig,
 		}
 	elif kind == 1:
-		# 円周角 → 中心角
+		# 円周角 → 中心角(中心角 2a になるよう弧を張る)
 		var a := rng.randi_range(25, 85)
-		var pa := _on_circle(r, 210.0)
-		var pb := _on_circle(r, 330.0)
+		var pa := _on_circle(r, 270.0 - float(a))
+		var pb := _on_circle(r, 270.0 + float(a))
 		var pt := _on_circle(r, 90.0)
 		var fig2 := {"shapes": [
 			ProblemGen.circle(Vector2.ZERO, r),
@@ -158,12 +160,12 @@ static func _j3(rng: RandomNumberGenerator, tier: int) -> Dictionary:
 			"fig": fig2,
 		}
 	else:
-		# 直径 → 90°(タレスの定理)
+		# 直径 → 90°(タレスの定理)。T の位置は角 A が a2 になる場所
 		var a2 := rng.randi_range(20, 70)
 		var x2 := 90 - a2
 		var pa := Vector2(-r, 0)
 		var pb := Vector2(r, 0)
-		var pt := _on_circle(r, 115.0)
+		var pt := _on_circle(r, 2.0 * a2)
 		var fig3 := {"shapes": [
 			ProblemGen.circle(Vector2.ZERO, r),
 			ProblemGen.seg(pa, pb, ProblemGen.COL_DIM, 3.0),
@@ -191,13 +193,14 @@ static func _on_circle(r: float, deg: float) -> Vector2:
 ## j4: 内接四角形・接線の角
 static func _j4(rng: RandomNumberGenerator, tier: int) -> Dictionary:
 	if tier < 2 and rng.randf() < 0.6:
-		# 円に内接する四角形: 向かい合う角の和 180°
+		# 円に内接する四角形: 向かい合う角の和 180°。
+		# 頂点 B の円周角が a になるよう、B を含まない弧 CA を 2a に張る
 		var a := rng.randi_range(55, 125)
 		var r := 5.0
-		var pa := _on_circle(r, 100.0)
-		var pb := _on_circle(r, 200.0)
+		var pa := _on_circle(r, fposmod(300.0 + 2.0 * a, 360.0))
+		var pb := _on_circle(r, 220.0)
 		var pc := _on_circle(r, 300.0)
-		var pd := _on_circle(r, 30.0)
+		var pd := _on_circle(r, 340.0)
 		var fig := {"shapes": [
 			ProblemGen.circle(Vector2.ZERO, r),
 			ProblemGen.poly([pa, pb, pc, pd], ProblemGen.FILL_MAIN, Color.WHITE, 3.0),
@@ -425,7 +428,7 @@ static func _j7(rng: RandomNumberGenerator, tier: int) -> Dictionary:
 	var arc_len := 2.0 * 3.14 * r * th / 360.0
 	var fig := {"shapes": [
 		ProblemGen.sector(Vector2.ZERO, float(r), 0.0, float(th), ProblemGen.FILL_MAIN, Color.WHITE),
-		ProblemGen.ang(Vector2.ZERO, Vector2(float(r), 0), _on_circle(float(r), float(th)), "%d°" % th),
+		ProblemGen.ang(Vector2.ZERO, Vector2(float(r), 0), _on_circle(float(r), float(th)), "%d°" % th, 0.0, true),
 		ProblemGen.label(Vector2(r * 0.6, -0.9), "%dcm" % r),
 	]}
 	if kind == 0:
@@ -446,7 +449,7 @@ static func _j7(rng: RandomNumberGenerator, tier: int) -> Dictionary:
 		var area := 3.14 * r * r * th / 360.0
 		fig = {"shapes": [
 			ProblemGen.sector(Vector2.ZERO, float(r), 0.0, float(th), ProblemGen.FILL_ACCENT, Color.WHITE),
-			ProblemGen.ang(Vector2.ZERO, Vector2(float(r), 0), _on_circle(float(r), float(th)), "%d°" % th),
+			ProblemGen.ang(Vector2.ZERO, Vector2(float(r), 0), _on_circle(float(r), float(th)), "%d°" % th, 0.0, true),
 			ProblemGen.label(Vector2(r * 0.6, -0.9), "%dcm" % r),
 		]}
 		return {
