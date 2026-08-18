@@ -11,25 +11,96 @@ const TRIPLES := [
 ]
 
 
+## 各ステージの「難度ラダー」。tier(0-9)を解法の種類に割り当てる。
+## 挑戦モード 10 問は 1 問ごとに解法そのものが変わっていく。
 static func gen(stage_id: String, rng: RandomNumberGenerator, tier: int) -> Dictionary:
+	var t := clampi(tier, 0, 9)
 	match stage_id:
-		"j1": return _j1(rng, tier)
-		"j2": return _j2(rng, tier)
-		"j3": return _j3(rng, tier)
-		"j4": return _j4(rng, tier)
-		"j5": return _j5(rng, tier)
-		"j6": return _j6(rng, tier)
-		"j7": return _j7(rng, tier)
-		"j8": return _j8(rng, tier)
-		"j9": return _j9(rng, tier)
-		"j11": return _j11(rng, tier)
-		"j12": return _j12(rng, tier)
-		_: return _j10(rng, tier)
+		"j1":
+			# 外角の和 → 逆算 → 3 直線の交点
+			match [0, 0, 0, 1, 1, 1, 2, 2, 2, 2][t]:
+				0: return _j1(rng, 0)
+				1: return _j1(rng, 1)
+				_: return _j1_three(rng)
+		"j2":
+			# 平行線と三角形 → 逆算 → 二等辺との複合
+			match [0, 0, 0, 1, 1, 1, 2, 2, 2, 2][t]:
+				0: return _j2(rng, 0)
+				1: return _j2_rev(rng)
+				_: return _j2_iso(rng)
+		"j3":
+			# 中心角→円周角 → 円周角→中心角 → タレス → 半径の二等辺
+			match [0, 0, 1, 1, 2, 2, 3, 3, 3, 3][t]:
+				0: return _j3(rng, 0)
+				1: return _j3(rng, 1)
+				2: return _j3(rng, 2)
+				_: return _j3_iso(rng)
+		"j4":
+			# 内接四角形 → 接線 2 本 → 接弦定理
+			match [0, 0, 0, 1, 1, 1, 2, 2, 2, 2][t]:
+				0: return _j4(rng, 0)
+				1: return _j4(rng, 1)
+				_: return _j4_tanchord(rng)
+		"j5":
+			# 斜辺 → 残りの辺 → 面積 → 長方形の対角線 → 2 点間の距離
+			match [0, 0, 1, 1, 2, 2, 3, 3, 4, 4][t]:
+				0: return _j5(rng, 0)
+				1: return _j5(rng, 1)
+				2: return _j5(rng, 2)
+				3: return _j5_diag(rng)
+				_: return _j5_dist(rng)
+		"j6":
+			# 45°面積 → 30°短辺 → 45°斜辺(√2) → 30°長辺(√3) → 正三角形の高さ
+			match [0, 0, 2, 2, 1, 1, 3, 3, 4, 4][t]:
+				0: return _j6(rng, 0)
+				1: return _j6(rng, 1)
+				2: return _j6(rng, 2)
+				3: return _j6(rng, 3)
+				_: return _j6(rng, 4)
+		"j7":
+			# 弧 → 面積 → 中心角逆算 → 弓形 → 半円−三角形
+			match [0, 1, 1, 2, 2, 3, 3, 4, 4, 4][t]:
+				0: return _j7(rng, 0)
+				1: return _j7(rng, 1)
+				2: return _j7(rng, 2)
+				3: return _j7_segment(rng)
+				_: return _j7_semi(rng)
+		"j8":
+			# 相似比→面積 → 中点連結 → 面積比→辺 → 周の比
+			match [0, 0, 0, 1, 1, 2, 2, 2, 3, 3][t]:
+				0: return _j8(rng, 0)
+				1: return _j8(rng, 1)
+				2: return _j8_side(rng)
+				_: return _j8_perim(rng)
+		"j9":
+			# 原点三角形 → 切片三角形 → 格子点の三角形(囲み法)
+			match [0, 0, 0, 1, 1, 1, 2, 2, 2, 2][t]:
+				0: return _j9(rng, 0)
+				1: return _j9(rng, 1)
+				_: return _j9_shoelace(rng)
+		"j11":
+			# 星形五芒 → 細かい角度 → 六芒星
+			match [0, 0, 0, 1, 1, 1, 2, 2, 2, 2][t]:
+				0: return _j11(rng, 0)
+				1: return _j11(rng, 1)
+				_: return _j11_hex(rng)
+		"j12":
+			# 弧の比→円周角 → 弧の比→中心角 → 別の頂点の角
+			match [0, 0, 0, 1, 1, 1, 2, 2, 2, 2][t]:
+				0: return _j12(rng, 0)
+				1: return _j12_central(rng)
+				_: return _j12_other(rng)
+		_:
+			# j10: ドーナツ → ヒポクラテスの月 → 半円から半円 2 つ
+			match [0, 0, 1, 1, 1, 1, 2, 2, 2, 2][t]:
+				0: return _j10(rng, 0)
+				1: return _j10(rng, 1)
+				_: return _j10_semi(rng)
 
 
 ## j1: 三角形の外角(外角 = 残り 2 つの内角の和)
-static func _j1(rng: RandomNumberGenerator, tier: int) -> Dictionary:
-	var step := 5 if tier == 0 else 1
+static func _j1(rng: RandomNumberGenerator, kind: int) -> Dictionary:
+	var step := 5 if kind == 0 else 1
 	var a := step * rng.randi_range(30 / step, 80 / step)
 	var b := step * rng.randi_range(30 / step, 80 / step)
 	var ext := a + b
@@ -38,7 +109,7 @@ static func _j1(rng: RandomNumberGenerator, tier: int) -> Dictionary:
 		ext = a + b
 	var v: Array = ProblemGen.tri_from_angles(float(a), 180.0 - float(ext), 10.0)
 	var far: Vector2 = v[2] + (v[2] - v[1]).normalized() * 3.5
-	if tier >= 1 and rng.randf() < 0.5:
+	if kind == 1:
 		# 外角と 1 つの内角から残りの内角
 		var fig2 := {"shapes": [
 			ProblemGen.poly(v, ProblemGen.FILL_MAIN),
@@ -73,9 +144,9 @@ static func _j1(rng: RandomNumberGenerator, tier: int) -> Dictionary:
 
 
 ## j2: 平行線と三角形の複合(平行線 + 三角形の内角)
-static func _j2(rng: RandomNumberGenerator, tier: int) -> Dictionary:
+static func _j2(rng: RandomNumberGenerator, kind: int) -> Dictionary:
 	# 平行線の間に三角形。上の平行線との角 a、下の平行線との角 b、頂点の角 x
-	var step := 5 if tier == 0 else 1
+	var step := 5 if kind == 0 else 1
 	var a := step * rng.randi_range(35 / step, 75 / step)
 	var b := step * rng.randi_range(35 / step, 75 / step)
 	var x := 180 - a - b
@@ -110,9 +181,7 @@ static func _j2(rng: RandomNumberGenerator, tier: int) -> Dictionary:
 
 ## j3: 円周角の定理
 static func _j3(rng: RandomNumberGenerator, tier: int) -> Dictionary:
-	var kind := mini(tier, 2)
-	if rng.randf() < 0.3:
-		kind = rng.randi_range(0, 2)
+	var kind := clampi(tier, 0, 2)
 	var r := 5.0
 	if kind == 0:
 		# 中心角 → 円周角(図は出題値どおりの角度で描く)
@@ -194,7 +263,7 @@ static func _on_circle(r: float, deg: float) -> Vector2:
 
 ## j4: 内接四角形・接線の角
 static func _j4(rng: RandomNumberGenerator, tier: int) -> Dictionary:
-	if tier < 2 and rng.randf() < 0.6:
+	if tier == 0:
 		# 円に内接する四角形: 向かい合う角の和 180°。
 		# 頂点 B の円周角が a になるよう、B を含まない弧 CA を 2a に張る
 		var a := rng.randi_range(55, 125)
@@ -252,27 +321,8 @@ static func _j5(rng: RandomNumberGenerator, tier: int) -> Dictionary:
 	var a: int = t[0]
 	var b: int = t[1]
 	var c: int = t[2]
-	if tier >= 3:
-		# 高難度: 長方形の対角線(図形への応用)
-		var figd := {"shapes": [
-			ProblemGen.poly([Vector2(0, 0), Vector2(b, 0), Vector2(b, a), Vector2(0, a)], ProblemGen.FILL_MAIN),
-			ProblemGen.seg(Vector2(0, 0), Vector2(b, a), ProblemGen.COL_YELLOW, 3.5),
-			ProblemGen.side_label(Vector2(0, 0), Vector2(b, 0), str(b), 1.0),
-			ProblemGen.side_label(Vector2(b, 0), Vector2(b, a), str(a), -1.0),
-			ProblemGen.right(Vector2(b, 0), Vector2(0, 0), Vector2(b, a)),
-		]}
-		return {
-			"q": "たて %d、よこ %d の長方形の対角線の長さを求めなさい。" % [a, b],
-			"answer": float(c), "unit": "",
-			"hint1": "対角線で長方形を切ると直角三角形。三平方の定理が使えるよ。",
-			"hint2": "対角線² = %d² + %d² = %d" % [a, b, c * c],
-			"expl": "対角線² = %d² + %d² = %d。対角線 = %d です。" % [a, b, c * c, c],
-			"fig": figd,
-		}
 	var v: Array = [Vector2(0, float(a)), Vector2(0, 0), Vector2(float(b), 0)]
-	var kind := mini(tier, 2)
-	if rng.randf() < 0.3:
-		kind = rng.randi_range(0, 2)
+	var kind := clampi(tier, 0, 2)
 	if kind == 0:
 		var fig := {"shapes": [
 			ProblemGen.poly(v, ProblemGen.FILL_MAIN),
@@ -325,11 +375,10 @@ static func _j5(rng: RandomNumberGenerator, tier: int) -> Dictionary:
 
 ## j6: 特別な直角三角形(45°/30°/60°、√2=1.41・√3=1.73)
 static func _j6(rng: RandomNumberGenerator, tier: int) -> Dictionary:
-	var kind := mini(tier, 2)
-	if rng.randf() < 0.3:
-		kind = rng.randi_range(0, 2)
-	if kind == 0:
-		if rng.randf() < 0.4:
+	# kind 0: 45° 斜辺→面積 / 1: 45° 辺→斜辺(√2) / 2: 30° 斜辺→短辺
+	# kind 3: 30° 短辺→長辺(√3) / 4: 正三角形の高さ
+	var kind := clampi(tier, 0, 4)
+	if kind == 1:
 			# 直角二等辺: 1 辺 → 斜辺(√2 = 1.41)
 			var leg := rng.randi_range(2, 20)
 			var ans_h := leg * 1.41
@@ -349,26 +398,7 @@ static func _j6(rng: RandomNumberGenerator, tier: int) -> Dictionary:
 				"expl": "x = %d × √2 = %d × 1.41 = %s です。" % [leg, leg, ProblemGen.fmt(ans_h)],
 				"fig": fig_h,
 			}
-		# 直角二等辺: 斜辺 → 面積(h²/4 で有理数)
-		var h := 2 * rng.randi_range(2, 12)
-		var half := h * 0.5
-		var v := [Vector2(0, 0), Vector2(float(h), 0), Vector2(half, half)]
-		var fig := {"shapes": [
-			ProblemGen.poly(v, ProblemGen.FILL_MAIN),
-			ProblemGen.ang(v[0], v[1], v[2], "45°"), ProblemGen.ang(v[1], v[2], v[0], "45°"),
-			ProblemGen.right(v[2], v[0], v[1]),
-			ProblemGen.side_label(v[0], v[1], str(h), 1.0),
-		]}
-		return {
-			"q": "斜辺が %d の直角二等辺三角形の面積を求めなさい。" % h,
-			"answer": h * h / 4.0, "unit": "",
-			"hint1": "斜辺を底辺と見ると、高さは斜辺の半分になるよ。",
-			"hint2": "面積 = %d × %d ÷ 2" % [h, h / 2],
-			"expl": "高さは斜辺の半分の %s。面積 = %d × %s ÷ 2 = %s です。" % [ProblemGen.fmt(half), h, ProblemGen.fmt(half), ProblemGen.fmt(h * h / 4.0)],
-			"fig": fig,
-		}
-	elif kind == 1:
-		if rng.randf() < 0.4:
+	if kind == 3:
 			# 30-60-90: 短辺 → 長辺(√3 = 1.73)
 			var sh := rng.randi_range(2, 12)
 			var ans_l := sh * 1.73
@@ -388,27 +418,28 @@ static func _j6(rng: RandomNumberGenerator, tier: int) -> Dictionary:
 				"expl": "x = %d × √3 = %d × 1.73 = %s です。" % [sh, sh, ProblemGen.fmt(ans_l)],
 				"fig": fig_l,
 			}
+	if kind == 2:
 		# 30-60-90: 斜辺 → 最短辺
 		var h2 := 2 * rng.randi_range(2, 15)
 		var short := h2 / 2
 		var lng := short * 1.73
 		var v2 := [Vector2(0, 0), Vector2(lng, 0), Vector2(lng, float(short))]
 		var fig2 := {"shapes": [
-			ProblemGen.poly(v2, ProblemGen.FILL_MAIN),
-			ProblemGen.ang(v2[0], v2[1], v2[2], "30°"),
-			ProblemGen.right(v2[1], v2[0], v2[2]),
-			ProblemGen.side_label(v2[0], v2[2], str(h2), -1.0),
-			ProblemGen.side_label(v2[1], v2[2], "x", 1.0),
+		ProblemGen.poly(v2, ProblemGen.FILL_MAIN),
+		ProblemGen.ang(v2[0], v2[1], v2[2], "30°"),
+		ProblemGen.right(v2[1], v2[0], v2[2]),
+		ProblemGen.side_label(v2[0], v2[2], str(h2), -1.0),
+		ProblemGen.side_label(v2[1], v2[2], "x", 1.0),
 		]}
 		return {
-			"q": "30°、60°、90° の直角三角形で、斜辺が %d のとき、30° の角と向かい合う辺 x を求めなさい。" % h2,
-			"answer": float(short), "unit": "",
-			"hint1": "30° の対辺は斜辺のちょうど半分だよ(1 : 2 : √3)。",
-			"hint2": "x = %d ÷ 2" % h2,
-			"expl": "辺の比は 1 : 2 : √3。30° の対辺 = 斜辺 ÷ 2 = %d です。" % short,
-			"fig": fig2,
+		"q": "30°、60°、90° の直角三角形で、斜辺が %d のとき、30° の角と向かい合う辺 x を求めなさい。" % h2,
+		"answer": float(short), "unit": "",
+		"hint1": "30° の対辺は斜辺のちょうど半分だよ(1 : 2 : √3)。",
+		"hint2": "x = %d ÷ 2" % h2,
+		"expl": "辺の比は 1 : 2 : √3。30° の対辺 = 斜辺 ÷ 2 = %d です。" % short,
+		"fig": fig2,
 		}
-	else:
+	if kind == 4:
 		# 正三角形の高さ(√3=1.73 として)
 		var a := 2 * rng.randi_range(2, 12)
 		var ans := a * 1.73 / 2.0
@@ -428,6 +459,24 @@ static func _j6(rng: RandomNumberGenerator, tier: int) -> Dictionary:
 			"expl": "高さ = %d × √3 ÷ 2 = %d × 1.73 ÷ 2 = %s です。" % [a, a, ProblemGen.fmt(ans)],
 			"fig": fig3,
 		}
+	# kind 0: 直角二等辺 斜辺 → 面積(h²/4 で有理数)
+	var h := 2 * rng.randi_range(2, 12)
+	var half := h * 0.5
+	var v := [Vector2(0, 0), Vector2(float(h), 0), Vector2(half, half)]
+	var fig := {"shapes": [
+		ProblemGen.poly(v, ProblemGen.FILL_MAIN),
+		ProblemGen.ang(v[0], v[1], v[2], "45°"), ProblemGen.ang(v[1], v[2], v[0], "45°"),
+		ProblemGen.right(v[2], v[0], v[1]),
+		ProblemGen.side_label(v[0], v[1], str(h), 1.0),
+	]}
+	return {
+		"q": "斜辺が %d の直角二等辺三角形の面積を求めなさい。" % h,
+		"answer": h * h / 4.0, "unit": "",
+		"hint1": "斜辺を底辺と見ると、高さは斜辺の半分になるよ。",
+		"hint2": "面積 = %d × %d ÷ 2" % [h, h / 2],
+		"expl": "高さは斜辺の半分の %s。面積 = %d × %s ÷ 2 = %s です。" % [ProblemGen.fmt(half), h, ProblemGen.fmt(half), ProblemGen.fmt(h * h / 4.0)],
+		"fig": fig,
+	}
 
 
 ## j7: おうぎ形の弧・面積・中心角(3.14)
@@ -441,30 +490,7 @@ static func _j7(rng: RandomNumberGenerator, tier: int) -> Dictionary:
 	var pick: Array = pairs[rng.randi_range(0, pairs.size() - 1)]
 	var r: int = pick[0]
 	var th: int = pick[1]
-	if tier >= 3:
-		# 高難度: 半円+直角三角形の複合(半円から三角形を引いた面積)
-		while (r * r) % 4 != 0:
-			pick = pairs[rng.randi_range(0, pairs.size() - 1)]
-			r = pick[0]
-		var half_area := 3.14 * r * r / 2.0
-		var tri := float(r) * r     # 底辺 2r × 高さ r ÷ 2
-		var ansd := half_area - tri
-		var figd := {"shapes": [
-			ProblemGen.sector(Vector2.ZERO, float(r), 0.0, 180.0, ProblemGen.FILL_ACCENT, Color.WHITE),
-			ProblemGen.poly([Vector2(-r, 0), Vector2(float(r), 0), Vector2(0, float(r))], Color(0.06, 0.09, 0.16, 0.9), Color.WHITE, 3.0),
-			ProblemGen.side_label(Vector2(-r, 0), Vector2(float(r), 0), "%d" % (2 * r), 1.0),
-		]}
-		return {
-			"q": "直径 %d の半円から、直径を底辺とし円周上に頂点をもつ三角形を切り取った、残りの面積を求めなさい。円周率は 3.14 とします。" % (2 * r),
-			"answer": ansd, "unit": "", "tol": 0.02,
-			"hint1": "三角形の高さは半径と同じ %d だよ(頂点がいちばん高いとき)。" % r,
-			"hint2": "3.14×%d²÷2 − %d×%d÷2" % [r, 2 * r, r],
-			"expl": "半円 %s − 三角形 %s = %s です。" % [ProblemGen.fmt(half_area), ProblemGen.fmt(tri), ProblemGen.fmt(ansd)],
-			"fig": figd,
-		}
-	var kind := mini(tier, 2)
-	if rng.randf() < 0.3:
-		kind = rng.randi_range(0, 2)
+	var kind := clampi(tier, 0, 2)
 	var arc_len := 2.0 * 3.14 * r * th / 360.0
 	var fig := {"shapes": [
 		ProblemGen.sector(Vector2.ZERO, float(r), 0.0, float(th), ProblemGen.FILL_MAIN, Color.WHITE),
@@ -513,7 +539,7 @@ static func _j7(rng: RandomNumberGenerator, tier: int) -> Dictionary:
 
 ## j8: 相似と面積比
 static func _j8(rng: RandomNumberGenerator, tier: int) -> Dictionary:
-	if tier >= 1 and rng.randf() < 0.4:
+	if tier >= 1:
 		# 中点連結: 中点三角形の面積は 1/4
 		var s := 4 * rng.randi_range(3, 15)
 		var v := [Vector2(0, 0), Vector2(10, 0), Vector2(3.5, 7)]
@@ -562,7 +588,7 @@ static func _j8(rng: RandomNumberGenerator, tier: int) -> Dictionary:
 
 ## j9: 座標平面の面積
 static func _j9(rng: RandomNumberGenerator, tier: int) -> Dictionary:
-	if tier < 1:
+	if tier == 0:
 		# 原点・x軸上の点・任意の点の三角形
 		var a := rng.randi_range(4, 10)
 		var cx := rng.randi_range(1, a - 1)
@@ -611,7 +637,7 @@ static func _j9(rng: RandomNumberGenerator, tier: int) -> Dictionary:
 
 ## j10: ヒポクラテスの月(円がらみの難問。答えは意外ときれい)
 static func _j10(rng: RandomNumberGenerator, tier: int) -> Dictionary:
-	if tier < 1 and rng.randf() < 0.5:
+	if tier == 0:
 		# ウォームアップ: 同心円のリング
 		var r_out := rng.randi_range(4, 13)
 		var r_in := rng.randi_range(1, r_out - 2)
@@ -656,8 +682,8 @@ static func _j10(rng: RandomNumberGenerator, tier: int) -> Dictionary:
 
 
 ## j11: 星形五角形のとがった角(和は 180°)
-static func _j11(rng: RandomNumberGenerator, tier: int) -> Dictionary:
-	var step := 5 if tier == 0 else 1
+static func _j11(rng: RandomNumberGenerator, kind: int) -> Dictionary:
+	var step := 5 if kind == 0 else 1
 	var tips: Array = []
 	var x := 0
 	# 4 つのとがった角を決め、残り 1 つが x。ありえない形にならない範囲で選び直す
@@ -699,7 +725,7 @@ static func _j11(rng: RandomNumberGenerator, tier: int) -> Dictionary:
 
 
 ## j12: 弧の長さの比と円周角(円周角は弧に比例する)
-static func _j12(rng: RandomNumberGenerator, _tier: int) -> Dictionary:
+static func _j12(rng: RandomNumberGenerator, _kind: int) -> Dictionary:
 	# 比 p:q:r で、答えの角 180p/(p+q+r) が整数になる組だけ使う
 	var p := 0
 	var q := 0
@@ -740,5 +766,498 @@ static func _j12(rng: RandomNumberGenerator, _tier: int) -> Dictionary:
 		"hint1": "円周角は弧の長さに比例する。円周ぜんぶの弧に対する円周角の合計は 180° だよ。",
 		"hint2": "x = 180 × %d ÷ (%d + %d + %d)" % [p, p, q, r],
 		"expl": "∠ACB は弧 AB に対する円周角。x = 180 × %d/%d = %d° です。" % [p, sum, x],
+		"fig": fig,
+	}
+
+
+# =========================================================
+# 挑戦モード用の追加解法(高校受験の入試定番から)
+# =========================================================
+
+## j1-交点: 1 点で交わる 3 本の直線(一直線 180° と対頂角)
+static func _j1_three(rng: RandomNumberGenerator) -> Dictionary:
+	var a := rng.randi_range(30, 75)
+	var b := rng.randi_range(30, 75)
+	var x := 180 - a - b
+	while x < 25:
+		b = rng.randi_range(30, 75)
+		x = 180 - a - b
+	var r := 6.0
+	var d1 := Vector2(1, 0)
+	var d2 := Vector2(cos(deg_to_rad(float(a))), sin(deg_to_rad(float(a))))
+	var d3 := Vector2(cos(deg_to_rad(float(a + b))), sin(deg_to_rad(float(a + b))))
+	var fig := {"shapes": [
+		ProblemGen.seg(-d1 * r, d1 * r), ProblemGen.seg(-d2 * r, d2 * r), ProblemGen.seg(-d3 * r, d3 * r),
+		ProblemGen.ang(Vector2.ZERO, d1, d2, "%d°" % a, 1.3),
+		ProblemGen.ang(Vector2.ZERO, d2, d3, "%d°" % b, 1.9),
+		ProblemGen.ang(Vector2.ZERO, d3, -d1, "x", 1.3),
+	]}
+	return {
+		"q": "3 本の直線が 1 点で交わっています。角 x は何度ですか。",
+		"answer": float(x), "unit": "度",
+		"hint1": "上半分の 3 つの角をたすと一直線で 180° だよ。",
+		"hint2": "x = 180 − %d − %d" % [a, b],
+		"expl": "一直線の上側で %d + %d + x = 180。x = %d° です。" % [a, b, x],
+		"fig": fig,
+	}
+
+
+## j2-逆算: 頂点の角がわかっていて、下の角を求める
+static func _j2_rev(rng: RandomNumberGenerator) -> Dictionary:
+	var a := rng.randi_range(35, 75)
+	var b := rng.randi_range(35, 75)
+	var apex := 180 - a - b
+	while apex < 30 or apex > 110:
+		b = rng.randi_range(35, 75)
+		apex = 180 - a - b
+	var w := 12.0
+	var pa := Vector2(6.0, 5.0)
+	var pb := Vector2(6.0 - 5.0 / tan(deg_to_rad(float(a))), 0.0)
+	var pc := Vector2(6.0 + 5.0 / tan(deg_to_rad(float(b))), 0.0)
+	var fig := {"shapes": [
+		ProblemGen.seg(Vector2(-2, 5), Vector2(w, 5)), ProblemGen.seg(Vector2(-2, 0), Vector2(w, 0)),
+		ProblemGen.label(Vector2(w + 0.7, 5), "l"), ProblemGen.label(Vector2(w + 0.7, 0), "m"),
+		ProblemGen.poly([pa, pb, pc], ProblemGen.FILL_MAIN, Color.WHITE, 3.0),
+		ProblemGen.ang(pa, Vector2(-2, 5), pb, "%d°" % a),
+		ProblemGen.ang(pa, pb, pc, "%d°" % apex),
+		ProblemGen.ang(pc, pa, pb, "x"),
+	]}
+	return {
+		"q": "直線 l と m は平行です。三角形の角 x は何度ですか。",
+		"answer": float(b), "unit": "度",
+		"hint1": "%d° は錯角で三角形の左下の角に移せる。あとは内角の和だよ。" % a,
+		"hint2": "x = 180 − %d − %d" % [a, apex],
+		"expl": "左下の内角は錯角で %d°。x = 180 − %d − %d = %d° です。" % [a, a, apex, b],
+		"fig": fig,
+	}
+
+
+## j2-二等辺: 平行線の間の二等辺三角形
+static func _j2_iso(rng: RandomNumberGenerator) -> Dictionary:
+	var a := rng.randi_range(35, 74)
+	var x := 180 - 2 * a
+	var w := 12.0
+	var pa := Vector2(6.0, 5.0)
+	var pb := Vector2(6.0 - 5.0 / tan(deg_to_rad(float(a))), 0.0)
+	var pc := Vector2(6.0 + 5.0 / tan(deg_to_rad(float(a))), 0.0)
+	var fig := {"shapes": [
+		ProblemGen.seg(Vector2(-2, 5), Vector2(w, 5)), ProblemGen.seg(Vector2(-2, 0), Vector2(w, 0)),
+		ProblemGen.label(Vector2(w + 0.7, 5), "l"), ProblemGen.label(Vector2(w + 0.7, 0), "m"),
+		ProblemGen.poly([pa, pb, pc], ProblemGen.FILL_MAIN, Color.WHITE, 3.0),
+		ProblemGen.tick(pa, pb), ProblemGen.tick(pa, pc),
+		ProblemGen.ang(pa, Vector2(-2, 5), pb, "%d°" % a),
+		ProblemGen.ang(pa, pb, pc, "x"),
+	]}
+	return {
+		"q": "直線 l と m は平行で、三角形は AB = AC の二等辺三角形です。角 x は何度ですか。",
+		"answer": float(x), "unit": "度",
+		"hint1": "%d° は錯角で底角に移る。二等辺だからもう一方の底角も %d° だよ。" % [a, a],
+		"hint2": "x = 180 − %d × 2" % a,
+		"expl": "底角は錯角と二等辺の性質からどちらも %d°。x = 180 − 2×%d = %d° です。" % [a, a, x],
+		"fig": fig,
+	}
+
+
+## j3-二等辺: 半径 2 本がつくる二等辺三角形と円周角
+static func _j3_iso(rng: RandomNumberGenerator) -> Dictionary:
+	var t := rng.randi_range(20, 70)
+	var x := 90 - t
+	var r := 5.0
+	var half := 90.0 - t
+	var pa := _on_circle(r, 270.0 - half)
+	var pb := _on_circle(r, 270.0 + half)
+	var pt := _on_circle(r, 90.0)
+	var fig := {"shapes": [
+		ProblemGen.circle(Vector2.ZERO, r),
+		ProblemGen.poly([Vector2.ZERO, pa, pb], null, ProblemGen.COL_YELLOW, 3.0),
+		ProblemGen.seg(pt, pa, ProblemGen.COL_DIM, 3.0), ProblemGen.seg(pt, pb, ProblemGen.COL_DIM, 3.0),
+		ProblemGen.circle(Vector2.ZERO, 0.12, Color.WHITE),
+		ProblemGen.label(Vector2(0.7, 0.5), "O"),
+		ProblemGen.tick(Vector2.ZERO, pa), ProblemGen.tick(Vector2.ZERO, pb),
+		ProblemGen.ang(pa, Vector2.ZERO, pb, "%d°" % t),
+		ProblemGen.ang(pt, pa, pb, "x"),
+	]}
+	return {
+		"q": "OA・OB は円 O の半径です。∠OAB = %d° のとき、円周角 x は何度ですか。" % t,
+		"answer": float(x), "unit": "度",
+		"hint1": "OA = OB だから三角形 OAB は二等辺。まず中心角 ∠AOB を求めよう。",
+		"hint2": "中心角 = 180 − %d×2 = %d。x はその半分。" % [t, 180 - 2 * t],
+		"expl": "中心角 = 180 − 2×%d = %d°。円周角はその半分で x = %d° です。" % [t, 180 - 2 * t, x],
+		"fig": fig,
+	}
+
+
+## j4-接弦: 接線と弦のつくる角(接弦定理)
+static func _j4_tanchord(rng: RandomNumberGenerator) -> Dictionary:
+	var a := rng.randi_range(25, 70)
+	var c := Vector2(0, 5)
+	var r := 5.0
+	var p := Vector2(0, 0)
+	var q: Vector2 = c + Vector2(cos(deg_to_rad(-90.0 + 2 * a)), sin(deg_to_rad(-90.0 + 2 * a))) * r
+	var rr: Vector2 = c + Vector2(cos(deg_to_rad(90.0 + a)), sin(deg_to_rad(90.0 + a))) * r
+	var fig := {"shapes": [
+		ProblemGen.circle(c, r),
+		ProblemGen.seg(Vector2(-6.5, 0), Vector2(6.5, 0), ProblemGen.COL_DIM, 3.5),
+		ProblemGen.poly([p, q, rr], null, Color.WHITE, 3.0),
+		ProblemGen.label(p + Vector2(-0.5, -0.8), "P"),
+		ProblemGen.label(q + (q - c).normalized() * 0.9, "Q"),
+		ProblemGen.label(rr + (rr - c).normalized() * 0.9, "R"),
+		ProblemGen.ang(p, Vector2(6.5, 0), q, "%d°" % a),
+		ProblemGen.ang(rr, q, p, "x"),
+	]}
+	return {
+		"q": "直線は点 P で円に接しています。接線と弦 PQ のつくる角が %d° のとき、円周角 x(∠PRQ)は何度ですか。" % a,
+		"answer": float(a), "unit": "度",
+		"hint1": "接線と弦のつくる角は、その弦に対する円周角と等しい(接弦定理)。",
+		"hint2": "x = %d°(そのまま等しい)" % a,
+		"expl": "接弦定理より x = %d° です。" % a,
+		"fig": fig,
+	}
+
+
+## j5-対角線: 長方形の対角線(三平方の応用)
+static func _j5_diag(rng: RandomNumberGenerator) -> Dictionary:
+	var t: Array = TRIPLES[rng.randi_range(0, TRIPLES.size() - 1)]
+	var a: int = t[0]
+	var b: int = t[1]
+	var c: int = t[2]
+	var fig := {"shapes": [
+		ProblemGen.poly([Vector2(0, 0), Vector2(b, 0), Vector2(b, a), Vector2(0, a)], ProblemGen.FILL_MAIN),
+		ProblemGen.seg(Vector2(0, 0), Vector2(b, a), ProblemGen.COL_YELLOW, 3.5),
+		ProblemGen.side_label(Vector2(0, 0), Vector2(b, 0), str(b), 1.0),
+		ProblemGen.side_label(Vector2(b, 0), Vector2(b, a), str(a), -1.0),
+	]}
+	return {
+		"q": "たて %d、よこ %d の長方形の対角線の長さを求めなさい。" % [a, b],
+		"answer": float(c), "unit": "",
+		"hint1": "対角線で長方形を切ると直角三角形。三平方の定理が使えるよ。",
+		"hint2": "対角線² = %d² + %d² = %d" % [a, b, c * c],
+		"expl": "対角線² = %d² + %d² = %d。対角線 = %d です。" % [a, b, c * c, c],
+		"fig": fig,
+	}
+
+
+## j5-距離: 座標平面の 2 点間の距離
+static func _j5_dist(rng: RandomNumberGenerator) -> Dictionary:
+	var small := [[3, 4, 5], [6, 8, 10], [5, 12, 13], [9, 12, 15], [8, 6, 10], [4, 3, 5]]
+	var t: Array = small[rng.randi_range(0, small.size() - 1)]
+	var dx: int = t[0]
+	var dy: int = t[1]
+	var c: int = t[2]
+	var x0 := rng.randi_range(0, 2)
+	var y0 := rng.randi_range(0, 2)
+	var pa := Vector2(x0, y0)
+	var pb := Vector2(x0 + dx, y0 + dy)
+	var corner := Vector2(x0 + dx, y0)
+	var fig := {"shapes": [
+		ProblemGen.grid(Vector2(-1, -1), pb + Vector2(1.5, 1.5)),
+		ProblemGen.axes(Vector2(-1, -1), pb + Vector2(1.5, 1.5)),
+		ProblemGen.seg(pa, pb, ProblemGen.COL_YELLOW, 3.5),
+		ProblemGen.seg(pa, corner, ProblemGen.COL_DIM, 2.5, true),
+		ProblemGen.seg(corner, pb, ProblemGen.COL_DIM, 2.5, true),
+		ProblemGen.circle(pa, 0.14, Color.WHITE), ProblemGen.circle(pb, 0.14, Color.WHITE),
+		ProblemGen.label(pa + Vector2(-0.9, -0.5), "A"),
+		ProblemGen.label(pb + Vector2(0.9, 0.4), "B"),
+	]}
+	return {
+		"q": "2 点 A(%d, %d)、B(%d, %d) の間の距離を求めなさい。" % [x0, y0, x0 + dx, y0 + dy],
+		"answer": float(c), "unit": "",
+		"hint1": "よこに %d、たてに %d 進む直角三角形を作って三平方の定理だよ。" % [dx, dy],
+		"hint2": "距離² = %d² + %d² = %d" % [dx, dy, c * c],
+		"expl": "距離 = √(%d² + %d²) = %d です。" % [dx, dy, c],
+		"fig": fig,
+	}
+
+
+## j7-弓形: 四分円から三角形を引いた弓形の面積
+static func _j7_segment(rng: RandomNumberGenerator) -> Dictionary:
+	var r := 2 * rng.randi_range(2, 6)
+	var ans := 3.14 * r * r / 4.0 - r * r / 2.0
+	var fig := {"shapes": [
+		ProblemGen.sector(Vector2.ZERO, float(r), 0.0, 90.0, ProblemGen.FILL_ACCENT, Color.WHITE),
+		ProblemGen.poly([Vector2.ZERO, Vector2(r, 0), Vector2(0, r)], Color(0.06, 0.09, 0.16, 0.9), Color.WHITE, 3.0),
+		ProblemGen.seg(Vector2(r, 0), Vector2(0, r), ProblemGen.COL_YELLOW, 3.5),
+		ProblemGen.label(Vector2(r * 0.55, -0.9), "%d" % r),
+	]}
+	return {
+		"q": "半径 %d、中心角 90° のおうぎ形から、2 つの半径と弦で囲まれた三角形を除いた「弓形」の面積を求めなさい。円周率は 3.14 とします。" % r,
+		"answer": ans, "unit": "", "tol": 0.02,
+		"hint1": "弓形 = おうぎ形 − 直角二等辺三角形 だよ。",
+		"hint2": "3.14×%d²÷4 − %d×%d÷2" % [r, r, r],
+		"expl": "おうぎ形 %s − 三角形 %s = %s です。" % [ProblemGen.fmt(3.14 * r * r / 4.0), ProblemGen.fmt(r * r / 2.0), ProblemGen.fmt(ans)],
+		"fig": fig,
+	}
+
+
+## j7-半円: 半円から内接する三角形を除いた面積
+static func _j7_semi(rng: RandomNumberGenerator) -> Dictionary:
+	var opts := [4, 6, 8, 10, 12]
+	var r: int = opts[rng.randi_range(0, opts.size() - 1)]
+	var half_area := 3.14 * r * r / 2.0
+	var tri := float(r) * r
+	var ans := half_area - tri
+	var fig := {"shapes": [
+		ProblemGen.sector(Vector2.ZERO, float(r), 0.0, 180.0, ProblemGen.FILL_ACCENT, Color.WHITE),
+		ProblemGen.poly([Vector2(-r, 0), Vector2(float(r), 0), Vector2(0, float(r))], Color(0.06, 0.09, 0.16, 0.9), Color.WHITE, 3.0),
+		ProblemGen.side_label(Vector2(-r, 0), Vector2(float(r), 0), "%d" % (2 * r), 1.0),
+	]}
+	return {
+		"q": "直径 %d の半円から、直径を底辺とし円周上の頂点がいちばん高い位置にある三角形を切り取った、残りの面積を求めなさい。円周率は 3.14 とします。" % (2 * r),
+		"answer": ans, "unit": "", "tol": 0.02,
+		"hint1": "三角形の高さは半径と同じ %d だよ。" % r,
+		"hint2": "3.14×%d²÷2 − %d×%d÷2" % [r, 2 * r, r],
+		"expl": "半円 %s − 三角形 %s = %s です。" % [ProblemGen.fmt(half_area), ProblemGen.fmt(tri), ProblemGen.fmt(ans)],
+		"fig": fig,
+	}
+
+
+## j8-辺: 面積比から対応する辺を求める(比の逆向き)
+static func _j8_side(rng: RandomNumberGenerator) -> Dictionary:
+	var m := rng.randi_range(2, 4)
+	var n := rng.randi_range(m + 1, 6)
+	var k := rng.randi_range(1, 3)
+	var s1 := m * m * k
+	var s2 := n * n * k
+	var j := rng.randi_range(2, 5)
+	var side_small := m * j
+	var side_big := n * j
+	var v1: Array = ProblemGen.tri_from_sides(6.0, 5.0, 4.0)
+	var scale := float(n) / float(m) * 0.85
+	var v2: Array = []
+	for pt in v1:
+		v2.append(Vector2(pt.x * scale + 8.0, pt.y * scale))
+	var fig := {"shapes": [
+		ProblemGen.poly(v1, ProblemGen.FILL_MAIN),
+		ProblemGen.poly(v2, ProblemGen.FILL_ACCENT),
+		ProblemGen.label(Vector2(3.0, -1.2), "面積 %d・辺 %d" % [s1, side_small], null, 24),
+		ProblemGen.label(Vector2(8.0 + 3.0 * scale, -1.2), "面積 %d・辺 x" % s2, null, 24),
+	]}
+	return {
+		"q": "相似な 2 つの三角形の面積は %d と %d です。小さい方の 1 辺が %d のとき、大きい方の対応する辺 x を求めなさい。" % [s1, s2, side_small],
+		"answer": float(side_big), "unit": "",
+		"hint1": "面積比 %d : %d は相似比の 2 乗。相似比は %d : %d だよ。" % [s1, s2, m, n],
+		"hint2": "x = %d × %d ÷ %d" % [side_small, n, m],
+		"expl": "面積比 %d:%d → 相似比 %d:%d。x = %d×%d/%d = %d です。" % [s1, s2, m, n, side_small, n, m, side_big],
+		"fig": fig,
+	}
+
+
+## j8-周: 相似な図形の周の長さ(周は相似比そのまま)
+static func _j8_perim(rng: RandomNumberGenerator) -> Dictionary:
+	var m := rng.randi_range(2, 4)
+	var n := rng.randi_range(m + 1, 6)
+	var j := rng.randi_range(3, 8)
+	var p_small := m * j
+	var p_big := n * j
+	var v1: Array = ProblemGen.tri_from_sides(6.0, 5.0, 4.0)
+	var scale := float(n) / float(m) * 0.85
+	var v2: Array = []
+	for pt in v1:
+		v2.append(Vector2(pt.x * scale + 8.0, pt.y * scale))
+	var fig := {"shapes": [
+		ProblemGen.poly(v1, ProblemGen.FILL_MAIN),
+		ProblemGen.poly(v2, ProblemGen.FILL_ACCENT),
+		ProblemGen.label(Vector2(3.0, -1.2), "周 %d" % p_small, null, 24),
+		ProblemGen.label(Vector2(8.0 + 3.0 * scale, -1.2), "周 x", null, 24),
+		ProblemGen.label(Vector2(7.0, 6.8), "相似比 %d : %d" % [m, n]),
+	]}
+	return {
+		"q": "相似比が %d : %d の相似な三角形があります。小さい方の周の長さが %d のとき、大きい方の周の長さ x を求めなさい。" % [m, n, p_small],
+		"answer": float(p_big), "unit": "",
+		"hint1": "周の長さの比は相似比とまったく同じ(2 乗するのは面積だけ)。",
+		"hint2": "x = %d × %d ÷ %d" % [p_small, n, m],
+		"expl": "周の比 = 相似比 %d:%d。x = %d×%d/%d = %d です。" % [m, n, p_small, n, m, p_big],
+		"fig": fig,
+	}
+
+
+## j9-囲み: 格子点の三角形(囲む長方形から引く)
+static func _j9_shoelace(rng: RandomNumberGenerator) -> Dictionary:
+	var pa := Vector2(rng.randi_range(0, 2), rng.randi_range(0, 2))
+	var pb := Vector2(rng.randi_range(4, 7), rng.randi_range(0, 3))
+	var pc := Vector2(rng.randi_range(1, 5), rng.randi_range(4, 7))
+	var det := (pb.x - pa.x) * (pc.y - pa.y) - (pc.x - pa.x) * (pb.y - pa.y)
+	while absf(det) < 8.0:
+		pc = Vector2(rng.randi_range(1, 5), rng.randi_range(4, 7))
+		det = (pb.x - pa.x) * (pc.y - pa.y) - (pc.x - pa.x) * (pb.y - pa.y)
+	var ans := absf(det) / 2.0
+	var lo := Vector2(minf(pa.x, minf(pb.x, pc.x)) - 1, minf(pa.y, minf(pb.y, pc.y)) - 1)
+	var hi := Vector2(maxf(pa.x, maxf(pb.x, pc.x)) + 1, maxf(pa.y, maxf(pb.y, pc.y)) + 1)
+	var fig := {"shapes": [
+		ProblemGen.grid(lo, hi), ProblemGen.axes(lo, hi),
+		ProblemGen.poly([pa, pb, pc], ProblemGen.FILL_MAIN, Color.WHITE, 3.0),
+		ProblemGen.label(pa + Vector2(-0.7, -0.5), "A"),
+		ProblemGen.label(pb + Vector2(0.8, -0.4), "B"),
+		ProblemGen.label(pc + Vector2(0, 0.9), "C"),
+	]}
+	return {
+		"q": "3 点 A(%d, %d)、B(%d, %d)、C(%d, %d) を頂点とする三角形の面積を求めなさい。" % [int(pa.x), int(pa.y), int(pb.x), int(pb.y), int(pc.x), int(pc.y)],
+		"answer": ans, "unit": "",
+		"hint1": "三角形を囲む長方形をかいて、まわりの直角三角形を引くと求められるよ。",
+		"hint2": "囲む長方形 − 角の直角三角形 3 つ",
+		"expl": "囲み法(または公式)で面積 = %s です。" % ProblemGen.fmt(ans),
+		"fig": fig,
+	}
+
+
+## j10-半円: 大きい半円から小さい半円 2 つを引く
+static func _j10_semi(rng: RandomNumberGenerator) -> Dictionary:
+	var r := 2 * rng.randi_range(2, 6)
+	var ans := 3.14 * r * r / 4.0     # πR²/2 − 2·π(R/2)²/2 = πR²/4
+	var half := r / 2
+	var fig := {"shapes": [
+		ProblemGen.sector(Vector2.ZERO, float(r), 0.0, 180.0, ProblemGen.FILL_ACCENT, Color.WHITE),
+		ProblemGen.sector(Vector2(-half, 0), float(half), 0.0, 180.0, Color(0.06, 0.09, 0.16, 0.95), Color.WHITE),
+		ProblemGen.sector(Vector2(half, 0), float(half), 0.0, 180.0, Color(0.06, 0.09, 0.16, 0.95), Color.WHITE),
+		ProblemGen.side_label(Vector2(-r, 0), Vector2(float(r), 0), "%d" % (2 * r), 1.0),
+	]}
+	return {
+		"q": "直径 %d の半円から、直径 %d の半円を 2 つ切り取った、残りの面積を求めなさい。円周率は 3.14 とします。" % [2 * r, r],
+		"answer": ans, "unit": "", "tol": 0.02,
+		"hint1": "小さい半円の半径は %d。大きい半円から 2 つ分を引こう。" % half,
+		"hint2": "3.14×%d²÷2 − 3.14×%d²÷2 × 2" % [r, half],
+		"expl": "%s − %s×2 = %s です。" % [ProblemGen.fmt(3.14 * r * r / 2.0), ProblemGen.fmt(3.14 * half * half / 2.0), ProblemGen.fmt(ans)],
+		"fig": fig,
+	}
+
+
+## j11-六芒星: 星形六角形は 2 つの三角形の重なり
+static func _j11_hex(rng: RandomNumberGenerator) -> Dictionary:
+	# 偶数番の頂点の三角形と奇数番の三角形、それぞれ先端の和は 180°
+	var tips: Array = []
+	var gaps: Array = []
+	while true:
+		var t0 := rng.randi_range(40, 80)
+		var t2 := rng.randi_range(40, 80)
+		var t4 := 180 - t0 - t2
+		var t1 := rng.randi_range(40, 80)
+		var t3 := rng.randi_range(40, 80)
+		var t5 := 180 - t1 - t3
+		if t4 < 30 or t5 < 25 or t5 > 95:
+			continue
+		tips = [t0, t1, t2, t3, t4, t5]
+		# 弧の長さを逆算(g2 を自由に選び、正になる組を探す)
+		var found := false
+		for g2 in range(20, 2 * t0 - 19):
+			var g3 := 2 * t0 - g2
+			var g4 := 2 * t1 - g3
+			var g5 := 2 * t2 - g4
+			var g0 := 2 * t3 - g5
+			var g1 := 2 * t4 - g0
+			if g3 >= 20 and g4 >= 20 and g5 >= 20 and g0 >= 20 and g1 >= 20:
+				gaps = [g0, g1, g2, g3, g4, g5]
+				found = true
+				break
+		if found:
+			break
+	var pts: Array = []
+	var deg := 90.0
+	for i in 6:
+		pts.append(Vector2(cos(deg_to_rad(deg)), sin(deg_to_rad(deg))) * 5.0)
+		deg += float(gaps[i])
+	var shapes: Array = []
+	for i in 6:
+		shapes.append(ProblemGen.seg(pts[i], pts[(i + 2) % 6], Color.WHITE, 3.0))
+	for i in 6:
+		var lbl := "x" if i == 5 else "%d°" % int(tips[i])
+		shapes.append(ProblemGen.ang(pts[i], pts[(i + 2) % 6], pts[(i + 4) % 6], lbl))
+	return {
+		"q": "星形六角形(六芒星)のとがった 6 つの角のうち 5 つが図の通りのとき、角 x は何度ですか。",
+		"answer": float(tips[5]), "unit": "度",
+		"hint1": "六芒星は 2 つの三角形が重なった形。x と同じ三角形の先端は、1 つおきの 2 か所だよ。",
+		"hint2": "x = 180 − %d − %d" % [tips[1], tips[3]],
+		"expl": "x をふくむ三角形の先端は %d° と %d°。x = 180 − %d − %d = %d° です。" % [tips[1], tips[3], tips[1], tips[3], tips[5]],
+		"fig": {"shapes": shapes},
+	}
+
+
+## j12-中心角: 弧の比から中心角を求める
+static func _j12_central(rng: RandomNumberGenerator) -> Dictionary:
+	var p := 0
+	var q := 0
+	var r := 0
+	var x := 0
+	while true:
+		p = rng.randi_range(1, 6)
+		q = rng.randi_range(1, 6)
+		r = rng.randi_range(1, 6)
+		var sum := p + q + r
+		if (360 * p) % sum == 0 and 360 * p / sum >= 40 and 360 * p / sum <= 160:
+			x = 360 * p / sum
+			break
+	var sum := p + q + r
+	var rr := 5.0
+	var deg_a := 90.0
+	var deg_b := deg_a + 360.0 * p / sum
+	var deg_c := deg_b + 360.0 * q / sum
+	var pa := _on_circle(rr, deg_a)
+	var pb := _on_circle(rr, deg_b)
+	var pc := _on_circle(rr, deg_c)
+	var mid_ab := deg_a + 180.0 * p / sum
+	var mid_bc := deg_b + 180.0 * q / sum
+	var mid_ca := deg_c + 180.0 * r / sum
+	var fig := {"shapes": [
+		ProblemGen.circle(Vector2.ZERO, rr),
+		ProblemGen.poly([pa, pb, pc], null, ProblemGen.COL_DIM, 2.5),
+		ProblemGen.seg(Vector2.ZERO, pa, ProblemGen.COL_YELLOW, 3.0),
+		ProblemGen.seg(Vector2.ZERO, pb, ProblemGen.COL_YELLOW, 3.0),
+		ProblemGen.circle(Vector2.ZERO, 0.12, Color.WHITE),
+		ProblemGen.label(Vector2(0.8, -0.5), "O"),
+		ProblemGen.label(pa * 1.18, "A"), ProblemGen.label(pb * 1.18, "B"), ProblemGen.label(pc * 1.18, "C"),
+		ProblemGen.label(_on_circle(rr + 0.9, mid_ab), str(p), ProblemGen.COL_YELLOW, 26),
+		ProblemGen.label(_on_circle(rr + 0.9, mid_bc), str(q), ProblemGen.COL_YELLOW, 26),
+		ProblemGen.label(_on_circle(rr + 0.9, mid_ca), str(r), ProblemGen.COL_YELLOW, 26),
+		ProblemGen.ang(Vector2.ZERO, pa, pb, "x"),
+	]}
+	return {
+		"q": "円周上の点 A・B・C は、弧の長さの比が AB : BC : CA = %d : %d : %d になっています。中心角 x(∠AOB)は何度ですか。" % [p, q, r],
+		"answer": float(x), "unit": "度",
+		"hint1": "中心角も弧の長さに比例する。ぐるっと 1 周で 360° だよ。",
+		"hint2": "x = 360 × %d ÷ %d" % [p, sum],
+		"expl": "x = 360 × %d/%d = %d° です。" % [p, sum, x],
+		"fig": fig,
+	}
+
+
+## j12-別頂点: 弧の比から別の頂点の円周角を求める
+static func _j12_other(rng: RandomNumberGenerator) -> Dictionary:
+	var p := 0
+	var q := 0
+	var r := 0
+	var x := 0
+	while true:
+		p = rng.randi_range(1, 6)
+		q = rng.randi_range(1, 6)
+		r = rng.randi_range(1, 6)
+		var sum := p + q + r
+		if (180 * q) % sum == 0 and 180 * q / sum >= 20 and 180 * q / sum <= 120:
+			x = 180 * q / sum
+			break
+	var sum := p + q + r
+	var rr := 5.0
+	var deg_a := 90.0
+	var deg_b := deg_a + 360.0 * p / sum
+	var deg_c := deg_b + 360.0 * q / sum
+	var pa := _on_circle(rr, deg_a)
+	var pb := _on_circle(rr, deg_b)
+	var pc := _on_circle(rr, deg_c)
+	var mid_ab := deg_a + 180.0 * p / sum
+	var mid_bc := deg_b + 180.0 * q / sum
+	var mid_ca := deg_c + 180.0 * r / sum
+	var fig := {"shapes": [
+		ProblemGen.circle(Vector2.ZERO, rr),
+		ProblemGen.poly([pa, pb, pc], ProblemGen.FILL_MAIN, Color.WHITE, 3.0),
+		ProblemGen.label(pa * 1.18, "A"), ProblemGen.label(pb * 1.18, "B"), ProblemGen.label(pc * 1.18, "C"),
+		ProblemGen.label(_on_circle(rr + 0.9, mid_ab), str(p), ProblemGen.COL_YELLOW, 26),
+		ProblemGen.label(_on_circle(rr + 0.9, mid_bc), str(q), ProblemGen.COL_YELLOW, 26),
+		ProblemGen.label(_on_circle(rr + 0.9, mid_ca), str(r), ProblemGen.COL_YELLOW, 26),
+		ProblemGen.ang(pa, pb, pc, "x"),
+	]}
+	return {
+		"q": "円周上の点 A・B・C は、弧の長さの比が AB : BC : CA = %d : %d : %d になっています。角 x(∠BAC)は何度ですか。" % [p, q, r],
+		"answer": float(x), "unit": "度",
+		"hint1": "∠BAC は弧 BC に対する円周角。どの弧を見ている角なのかに注意!",
+		"hint2": "x = 180 × %d ÷ %d(弧 BC の割合)" % [q, sum],
+		"expl": "∠BAC は弧 BC に対する円周角なので x = 180 × %d/%d = %d° です。" % [q, sum, x],
 		"fig": fig,
 	}

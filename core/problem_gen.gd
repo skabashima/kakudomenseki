@@ -91,7 +91,9 @@ static func stages_of(course_id: String) -> Array:
 
 
 ## ステージ ID("e4" など)から問題を 1 問生成する。
-## tier: ステージ内の何問目か (0..2)。大きいほど難しいバリエーションを選ぶ
+## tier: 難度ラダーの段(0..9)。通常ステージは 0..2、挑戦モードは 0..9 を順に登る。
+## 各ステージは gen() の中で tier を「解法の種類 × 数値の難しさ」に割り当てていて、
+## 同じ挑戦 10 問の中で解法が次々に変わる
 static func generate(stage_id: String, rng: RandomNumberGenerator, tier: int = 0) -> Dictionary:
 	var p: Dictionary
 	match stage_id[0]:

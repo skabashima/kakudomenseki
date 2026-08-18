@@ -7,8 +7,6 @@ extends Control
 
 const TIME_LIMIT := 180.0     # タイムアタックの制限時間(秒)
 const SURVIVAL_LIVES := 3
-## 挑戦モードの出題難度(何問目にどの tier のバリエーションを出すか)
-const GAUNTLET_TIERS := [1, 2, 2, 3, 3, 3, 4, 4, 4, 4]
 
 var course: Dictionary
 var stage: Dictionary
@@ -293,9 +291,10 @@ func _next_question(first := false) -> void:
 	var sid: String
 	var tier: int
 	if GameState.mode == "gauntlet":
-		# 挑戦モード: 同じ単元の高難度バリエーションを 10 問
+		# 挑戦モード: 単元の難度ラダーを 1 問目から 10 問目まで登る
+		# (各ステージが tier 0-9 を「解法の種類 × 難しさ」の階段に割り当てている)
 		sid = stage_id
-		tier = GAUNTLET_TIERS[mini(q_index, GAUNTLET_TIERS.size() - 1)]
+		tier = q_index
 	elif GameState.mode == "normal":
 		sid = stage_id
 		tier = q_index
@@ -303,7 +302,7 @@ func _next_question(first := false) -> void:
 		# チャレンジ: 正解数が増えるほど難しいステージ・難しいバリエーションが出る
 		var ramp := clampf(challenge_count / 15.0, 0.0, 1.0)
 		sid = ProblemGen.random_stage(GameState.challenge_course, rng, ramp)
-		tier = rng.randi_range(0, mini(2 + int(ramp * 3.0), 4))
+		tier = rng.randi_range(0, mini(2 + int(ramp * 7.0), 9))
 	problem = ProblemGen.generate(sid, rng, tier)
 	figure.set_spec(problem["fig"])
 	question_lbl.text = String(problem["q"])

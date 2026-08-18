@@ -32,20 +32,85 @@ const INCIRCLE_SETS := [
 ]
 
 
+## 各ステージの「難度ラダー」。tier(0-9)を解法の種類に割り当てる。
+## 挑戦モード 10 問は 1 問ごとに解法そのものが変わっていく。
 static func gen(stage_id: String, rng: RandomNumberGenerator, tier: int) -> Dictionary:
+	var t := clampi(tier, 0, 9)
 	match stage_id:
-		"s1": return _s1(rng, tier)
-		"s2": return _s2(rng, tier)
-		"s3": return _s3(rng, tier)
-		"s4": return _s4(rng, tier)
-		"s5": return _s5(rng, tier)
-		"s6": return _s6(rng, tier)
-		"s7": return _s7(rng, tier)
-		"s8": return _s8(rng, tier)
-		"s9": return _s9(rng, tier)
-		"s11": return _s11(rng, tier)
-		"s12": return _s12(rng, tier)
-		_: return _s10(rng, tier)
+		"s1":
+			# c を求める → c² を求める → 3 辺から角 C(cos の逆算)
+			match [0, 0, 0, 1, 1, 1, 2, 2, 2, 2][t]:
+				0: return _s1(rng, 0)
+				1: return _s1(rng, 1)
+				_: return _s1_cos(rng)
+		"s2":
+			# 30°→R → 90°→R → R→BC → 45°→R(√2) → 60°→BC(√3)
+			match [0, 0, 1, 1, 2, 2, 3, 3, 4, 4][t]:
+				0: return _s2(rng, 0)
+				1: return _s2(rng, 1)
+				2: return _s2(rng, 2)
+				3: return _s2(rng, 3)
+				_: return _s2(rng, 4)
+		"s3":
+			# sin が有理数 → √2 → √3 → 面積から角度の逆算
+			match [0, 0, 0, 1, 1, 2, 2, 3, 3, 3][t]:
+				0: return _s3(rng, 0)
+				1: return _s3(rng, 1)
+				2: return _s3(rng, 2)
+				_: return _s3(rng, 3)
+		"s4":
+			# ヘロンで面積 → ヘロン+最長辺への高さ(2 段階)
+			match [0, 0, 0, 0, 0, 1, 1, 1, 1, 1][t]:
+				0: return _s4(rng, 0)
+				_: return _s4_height(rng)
+		"s5":
+			# 内接円 r → S = rs → 外接円 R
+			match [0, 0, 0, 1, 1, 1, 2, 2, 2, 2][t]:
+				0: return _s5(rng, 0)
+				1: return _s5(rng, 1)
+				_: return _s5(rng, 2)
+		"s6":
+			# 原点三角形 → ベクトル表記 → 平行移動が必要な 3 点
+			match [0, 0, 0, 1, 1, 1, 2, 2, 2, 2][t]:
+				0: return _s6(rng, 0)
+				1: return _s6(rng, 1)
+				_: return _s6(rng, 2)
+		"s7":
+			# θ = l/r → S = rl/2 → S = ½r²θ → θ の逆算
+			match [0, 0, 1, 1, 2, 2, 2, 3, 3, 3][t]:
+				0: return _s7(rng, 0)
+				1: return _s7(rng, 1)
+				2: return _s7(rng, 2)
+				_: return _s7_rev(rng)
+		"s8":
+			# 6分の1公式 → 水平線との囲み → 接線の 1/3 公式
+			match [0, 0, 0, 0, 1, 1, 1, 2, 2, 2][t]:
+				0: return _s8(rng, 0)
+				1: return _s8_horiz(rng)
+				_: return _s8_tangent(rng)
+		"s9":
+			# 交点が与えられる → 交点も自分で解く
+			match [0, 0, 0, 0, 0, 1, 1, 1, 1, 1][t]:
+				0: return _s9(rng, 0)
+				_: return _s9(rng, 1)
+		"s11":
+			# 有名角の値 → 鈍角の範囲 → 方程式のかたち
+			match [0, 0, 0, 1, 1, 1, 2, 2, 2, 2][t]:
+				0: return _s11(rng, 0)
+				1: return _s11(rng, 1)
+				_: return _s11(rng, 2)
+		"s12":
+			# 垂直(内積 0) → 45°/135° → 垂直条件から成分の逆算
+			match [0, 0, 0, 1, 1, 1, 1, 2, 2, 2][t]:
+				0: return _s12(rng, 0)
+				1: return _s12(rng, 1)
+				_: return _s12_perp(rng)
+		_:
+			# s10: 絶対値 → sin → 放物線と x 軸
+			match [1, 1, 1, 0, 0, 0, 0, 2, 2, 2][t]:
+				0: return _s10(rng, 0)
+				1: return _s10(rng, 1)
+				_: return _s10(rng, 2)
 
 
 static func _tri_fig(a: float, b: float, c: float, extra: Array = []) -> Dictionary:
@@ -72,7 +137,7 @@ static func _s1(rng: RandomNumberGenerator, tier: int) -> Dictionary:
 	var pc := Vector2.ZERO
 	var pb := Vector2(float(a), 0)
 	var pa := Vector2(cos(rad), sin(rad)) * b
-	var ask_sq := tier >= 2 and rng.randf() < 0.5
+	var ask_sq := tier == 1
 	var fig := {"shapes": [
 		ProblemGen.poly([pa, pb, pc], ProblemGen.FILL_MAIN),
 		ProblemGen.label(pa + Vector2(0, 0.9), "A"), ProblemGen.label(pb + Vector2(0.8, -0.4), "B"), ProblemGen.label(pc + Vector2(-0.8, -0.4), "C"),
@@ -104,10 +169,7 @@ static func _s1(rng: RandomNumberGenerator, tier: int) -> Dictionary:
 
 ## s2: 正弦定理と外接円
 static func _s2(rng: RandomNumberGenerator, tier: int) -> Dictionary:
-	var kind := mini(tier, 2)
-	if rng.randf() < 0.3:
-		kind = rng.randi_range(0, 2)
-	var r := 5.0
+	var kind := clampi(tier, 0, 4)
 	if kind == 0:
 		# A = 30° または 150° → R = a(sin はどちらも 1/2)
 		var deg := 30 if rng.randf() < 0.65 else 150
@@ -121,9 +183,9 @@ static func _s2(rng: RandomNumberGenerator, tier: int) -> Dictionary:
 			"expl": "2R = %d / sin%d° = %d。R = %d です。" % [a, deg, 2 * a, a],
 			"fig": fig,
 		}
-	elif kind == 1:
-		# A = 90° → R = a/2、または R 与えて a = 2R sinA
-		if rng.randf() < 0.5:
+	elif kind == 1 or kind == 2:
+		# kind 1: A = 90° → R / kind 2: R がわかっていて BC を求める
+		if kind == 1:
 			var a2 := 2 * rng.randi_range(2, 10)
 			return {
 				"q": "三角形 ABC で、角 A = 90°、BC = %d です。外接円の半径 R を求めなさい。" % a2,
@@ -143,7 +205,7 @@ static func _s2(rng: RandomNumberGenerator, tier: int) -> Dictionary:
 			"fig": _sine_fig(30.0),
 		}
 	else:
-		if rng.randf() < 0.4:
+		if kind == 4:
 			# A = 60°、R 既知 → BC = R√3(√3 = 1.73)
 			var r6 := rng.randi_range(2, 12)
 			var ans6 := r6 * 1.73
@@ -198,7 +260,7 @@ static func _sine_fig(deg_a: float) -> Dictionary:
 ## s3: 面積公式 S = ½ab sinC
 static func _s3(rng: RandomNumberGenerator, tier: int) -> Dictionary:
 	if tier >= 3:
-		# 高難度: 面積から角度を逆算(sinC = 2S/ab)
+		# 面積から角度を逆算(sinC = 2S/ab)
 		var ha := 2 * rng.randi_range(2, 6)
 		var hb := rng.randi_range(3, 9)
 		var deg_c: int = [30, 90][rng.randi_range(0, 1)]
@@ -220,14 +282,12 @@ static func _s3(rng: RandomNumberGenerator, tier: int) -> Dictionary:
 			"expl": "sinC = 2S/ab = %s なので C = %d° です。" % ["1/2" if deg_c == 30 else "1", deg_c],
 			"fig": figh,
 		}
-	var angles_easy := [30, 90, 150]
-	var angles_hard := [45, 60, 120, 135]
+	# kind 0: sin が有理数 / 1: √2 の角 / 2: √3 の角
 	var cc: int
-	var irr := tier >= 1 and rng.randf() < 0.65
-	if irr:
-		cc = angles_hard[rng.randi_range(0, angles_hard.size() - 1)]
-	else:
-		cc = angles_easy[rng.randi_range(0, angles_easy.size() - 1)]
+	match clampi(tier, 0, 2):
+		0: cc = [30, 90, 150][rng.randi_range(0, 2)]
+		1: cc = [45, 135][rng.randi_range(0, 1)]
+		_: cc = [60, 120][rng.randi_range(0, 1)]
 	var a := rng.randi_range(2, 12)
 	var b := rng.randi_range(2, 12)
 	while (a * b) % 4 != 0:
@@ -306,7 +366,7 @@ static func _s5(rng: RandomNumberGenerator, tier: int) -> Dictionary:
 	var r: float = s[4]
 	var rr: float = s[5]
 	var v: Array = ProblemGen.tri_from_sides(float(a), float(b), float(c))
-	var use_circum: bool = tier >= 2 and rng.randf() < 0.5
+	var use_circum: bool = tier == 2
 	# 内接円の中心(角の二等分線の交点 = 重み付き平均)
 	var inc: Vector2 = (v[0] * a + v[1] * b + v[2] * c) / float(a + b + c)
 	if use_circum:
@@ -332,8 +392,8 @@ static func _s5(rng: RandomNumberGenerator, tier: int) -> Dictionary:
 		ProblemGen.side_label(v[2], v[0], str(b), -1.0),
 		ProblemGen.side_label(v[0], v[1], str(c), -1.0),
 	]}
-	if tier >= 3:
-		# 高難度: 内接円の半径から面積を出す(S = r × s)
+	if tier == 1:
+		# 内接円の半径から面積を出す(S = r × s)
 		return {
 			"q": "3 辺が %d、%d、%d の三角形の内接円の半径は %s です。この三角形の面積 S を求めなさい。" % [a, b, c, ProblemGen.fmt(r)],
 			"answer": float(area), "unit": "",
@@ -354,8 +414,8 @@ static func _s5(rng: RandomNumberGenerator, tier: int) -> Dictionary:
 
 ## s6: ベクトル・座標の三角形の面積
 static func _s6(rng: RandomNumberGenerator, tier: int) -> Dictionary:
-	if tier >= 3:
-		# 高難度: 原点を通らない 3 点(平行移動してから公式)
+	if tier >= 2:
+		# 原点を通らない 3 点(平行移動してから公式)
 		var pax := rng.randi_range(-2, 2)
 		var pay := rng.randi_range(-2, 2)
 		var pbx := pax + rng.randi_range(2, 5)
@@ -427,9 +487,7 @@ static func _s6(rng: RandomNumberGenerator, tier: int) -> Dictionary:
 
 ## s7: 弧度法(l = rθ、S = ½r²θ、S = ½rl)
 static func _s7(rng: RandomNumberGenerator, tier: int) -> Dictionary:
-	var kind := mini(tier, 2)
-	if rng.randf() < 0.3:
-		kind = rng.randi_range(0, 2)
+	var kind := clampi(tier, 0, 2)
 	if kind == 0:
 		# θ = l / r(有理数)
 		var r := rng.randi_range(2, 8)
@@ -557,8 +615,8 @@ static func _lin_str(m: int, n: int) -> String:
 	return s
 
 
-## s9: 2 つの放物線で囲まれた面積
-static func _s9(rng: RandomNumberGenerator, _tier: int) -> Dictionary:
+## s9: 2 つの放物線で囲まれた面積(kind 1 は交点を自分で解く)
+static func _s9(rng: RandomNumberGenerator, kind: int) -> Dictionary:
 	# 上に凸 y = -x² + p x + q と下に凸 y = x² の差: Δa = 2
 	var sets := [[2, 3], [2, 6], [3, 2], [3, 4], [4, 3], [6, 2], [2, 2], [2, 4], [3, 6], [5, 2], [4, 6]]
 	var s: Array = sets[rng.randi_range(0, sets.size() - 1)]
@@ -597,6 +655,16 @@ static func _s9(rng: RandomNumberGenerator, _tier: int) -> Dictionary:
 		ProblemGen.curve(pts_f, Color.WHITE, 4.0),
 		ProblemGen.curve(pts_g, ProblemGen.COL_YELLOW, 4.0),
 	]}
+	if kind >= 1:
+		# 交点を自分で解かせる(x² = g(x) の 2 次方程式)
+		return {
+			"q": "2 つの放物線 y = x² と y = %s で囲まれた部分の面積 S を求めなさい。" % g_str,
+			"answer": ans, "unit": "",
+			"hint1": "まず x² = %s を解いて交点の x 座標を求めよう(x = %d, %d になるよ)。" % [g_str, alpha, beta],
+			"hint2": "S = |係数の差| × (β−α)³ ÷ 6 = %d × %d³ ÷ 6" % [da, d],
+			"expl": "交点は x = %d, %d。係数の差 %d の6分の1公式で S = %d×%d³/6 = %s です。" % [alpha, beta, da, da, d, ProblemGen.fmt(ans)],
+			"fig": fig,
+		}
 	return {
 		"q": "2 つの放物線 y = x² と y = %s は x = %d と x = %d で交わります。囲まれた部分の面積 S を求めなさい。" % [g_str, alpha, beta],
 		"answer": ans, "unit": "",
@@ -628,9 +696,7 @@ static func _quad_str(a: int, b: int, c: int) -> String:
 
 ## s10: 面積の総合問題(sin・絶対値・放物線と x 軸)
 static func _s10(rng: RandomNumberGenerator, tier: int) -> Dictionary:
-	var kind := mini(tier, 2)
-	if rng.randf() < 0.3:
-		kind = rng.randi_range(0, 2)
+	var kind := clampi(tier, 0, 2)
 	if kind == 0:
 		# y = a sin x (0 ≤ x ≤ π) と x 軸 → 2a
 		var a := rng.randi_range(1, 6)
@@ -735,12 +801,10 @@ static func _s11(rng: RandomNumberGenerator, tier: int) -> Dictionary:
 		["2sinθ − 1 = 0", 90, 180, 150], ["√2 cosθ + 1 = 0", 0, 180, 135], ["2cosθ − 1 = 0", 0, 90, 60],
 	]
 	var pool: Array
-	match mini(tier, 2):
+	match clampi(tier, 0, 2):
 		0: pool = EASY
 		1: pool = OBTUSE
 		_: pool = EQUATION
-	if rng.randf() < 0.3:
-		pool = [EASY, OBTUSE, EQUATION][rng.randi_range(0, 2)]
 	var pick: Array = pool[rng.randi_range(0, pool.size() - 1)]
 	var expr := String(pick[0])
 	var range_min := int(pick[1])
@@ -783,8 +847,6 @@ static func _s12(rng: RandomNumberGenerator, tier: int) -> Dictionary:
 		[4, 2, -2, 4, 90], [2, 4, -4, 2, 90], [6, 2, -1, 3, 90],
 	]
 	var pool: Array = RIGHT if tier == 0 else OTHERS
-	if rng.randf() < 0.3:
-		pool = RIGHT if pool == OTHERS else OTHERS
 	var s: Array = pool[rng.randi_range(0, pool.size() - 1)]
 	var ax := int(s[0])
 	var ay := int(s[1])
@@ -812,5 +874,203 @@ static func _s12(rng: RandomNumberGenerator, tier: int) -> Dictionary:
 			ax, bx, ay, by, dot,
 			"0" if dot == 0 else ("√2/2" if ans == 45 else "−√2/2")],
 		"expl": "a・b = %d。cosθ = %d/(|a||b|) から θ = %d° です。" % [dot, dot, ans],
+		"fig": fig,
+	}
+
+
+# =========================================================
+# 挑戦モード用の追加解法(大学受験の定番から)
+# =========================================================
+
+## s1-逆算: 3 辺から角 C を求める(cos の値の逆算)
+static func _s1_cos(rng: RandomNumberGenerator) -> Dictionary:
+	var s: Array = COS_SETS[rng.randi_range(0, COS_SETS.size() - 1)]
+	var a: int = s[0]
+	var b: int = s[1]
+	var cc: int = s[2]
+	var c: int = s[3]
+	var rad := deg_to_rad(float(cc))
+	var pc := Vector2.ZERO
+	var pb := Vector2(float(a), 0)
+	var pa := Vector2(cos(rad), sin(rad)) * b
+	var fig := {"shapes": [
+		ProblemGen.poly([pa, pb, pc], ProblemGen.FILL_MAIN),
+		ProblemGen.label(pa + Vector2(0, 0.9), "A"), ProblemGen.label(pb + Vector2(0.8, -0.4), "B"), ProblemGen.label(pc + Vector2(-0.8, -0.4), "C"),
+		ProblemGen.ang(pc, pb, pa, "C"),
+		ProblemGen.side_label(pc, pb, str(a), 1.0),
+		ProblemGen.side_label(pa, pc, str(b), 1.0),
+		ProblemGen.side_label(pb, pa, str(c), -1.0),
+	]}
+	return {
+		"q": "三角形 ABC で BC = %d、CA = %d、AB = %d のとき、角 C を求めなさい。" % [a, b, c],
+		"answer": float(cc), "unit": "度",
+		"hint1": "余弦定理を変形して cosC = (a² + b² − c²) ÷ 2ab。",
+		"hint2": "cosC = (%d + %d − %d) ÷ %d = %s" % [a * a, b * b, c * c, 2 * a * b, "1/2" if cc == 60 else "−1/2"],
+		"expl": "cosC = %s なので C = %d° です。" % ["1/2" if cc == 60 else "−1/2", cc],
+		"fig": fig,
+	}
+
+
+## s4-高さ: ヘロンで面積 → 最長辺への高さ(2 段階)
+static func _s4_height(rng: RandomNumberGenerator) -> Dictionary:
+	# [a, b, c(最長辺), S, 高さ] 高さが 2 桁小数までに収まる組
+	const SETS := [
+		[3, 4, 5, 6, 2.4], [6, 8, 10, 24, 4.8], [9, 12, 15, 54, 7.2],
+		[13, 14, 15, 84, 11.2], [12, 16, 20, 96, 9.6], [10, 10, 12, 48, 8.0],
+		[5, 5, 6, 12, 4.0], [5, 5, 8, 12, 3.0], [7, 15, 20, 42, 4.2],
+		[10, 17, 21, 84, 8.0], [13, 13, 24, 60, 5.0], [11, 13, 20, 66, 6.6],
+		[13, 20, 21, 126, 12.0], [17, 25, 28, 210, 15.0],
+	]
+	var s: Array = SETS[rng.randi_range(0, SETS.size() - 1)]
+	var a: int = s[0]
+	var b: int = s[1]
+	var c: int = s[2]
+	var area: int = s[3]
+	var h: float = s[4]
+	var v: Array = ProblemGen.tri_from_sides(float(c), float(a), float(b))
+	var apex: Vector2 = v[0]
+	var fig := {"shapes": [
+		ProblemGen.poly(v, ProblemGen.FILL_MAIN),
+		ProblemGen.seg(Vector2(apex.x, 0), apex, ProblemGen.COL_YELLOW, 3.0, true),
+		ProblemGen.right(Vector2(apex.x, 0), Vector2(float(c), 0), apex),
+		ProblemGen.side_label(v[1], v[2], str(c), 1.0),
+		ProblemGen.side_label(v[2], v[0], str(a), -1.0),
+		ProblemGen.side_label(v[0], v[1], str(b), -1.0),
+		ProblemGen.label(Vector2(apex.x + 1.1, apex.y * 0.45), "x", ProblemGen.COL_YELLOW, 30),
+	]}
+	return {
+		"q": "3 辺が %d、%d、%d の三角形で、最も長い辺 %d を底辺としたときの高さ x を求めなさい。" % [a, b, c, c],
+		"answer": h, "unit": "",
+		"hint1": "まずヘロンの公式で面積を出そう(面積は %d になるよ)。" % area,
+		"hint2": "x = 2 × %d ÷ %d" % [area, c],
+		"expl": "ヘロンの公式で S = %d。x = 2S/底辺 = %s です。" % [area, ProblemGen.fmt(h)],
+		"fig": fig,
+	}
+
+
+## s7-逆算: 面積と半径から中心角 θ を求める
+static func _s7_rev(rng: RandomNumberGenerator) -> Dictionary:
+	var th: float = [0.5, 1.0, 1.5, 2.0, 2.5, 3.0][rng.randi_range(0, 5)]
+	var r := rng.randi_range(2, 6)
+	var s := 0.5 * r * r * th
+	return {
+		"q": "半径 %d、面積 %s のおうぎ形の中心角 θ は何ラジアンですか。" % [r, ProblemGen.fmt(s)],
+		"answer": th, "unit": "rad",
+		"hint1": "S = ½ r²θ を θ について解こう。θ = 2S ÷ r² だよ。",
+		"hint2": "θ = 2 × %s ÷ %d" % [ProblemGen.fmt(s), r * r],
+		"expl": "θ = 2S/r² = %s rad です。" % ProblemGen.fmt(th),
+		"fig": _rad_fig(float(r), th),
+	}
+
+
+## s8-水平線: 放物線と水平な直線で囲まれた面積(交点を解いてから公式)
+static func _s8_horiz(rng: RandomNumberGenerator) -> Dictionary:
+	# [a, t] 交点は x = ±t、面積 = a(2t)³/6
+	const SETS := [[1, 2], [1, 3], [3, 1], [3, 2], [2, 3], [1, 6], [2, 2]]
+	var st: Array = SETS[rng.randi_range(0, SETS.size() - 1)]
+	var a: int = st[0]
+	var tt: int = st[1]
+	var k := a * tt * tt
+	var d := 2 * tt
+	var ans := a * pow(d, 3) / 6.0
+	var a_str := "" if a == 1 else str(a)
+	var pts: Array = []
+	for i in 25:
+		var x := -tt - 0.6 + (2 * tt + 1.2) * i / 24.0
+		pts.append(Vector2(x, a * x * x))
+	var region: Array = [Vector2(-tt, float(k)), Vector2(float(tt), float(k))]
+	for i in 25:
+		var x := float(tt) - d * i / 24.0
+		region.append(Vector2(x, a * x * x))
+	var kk := _graph_k(2 * tt + 1.2, [0.0, a * pow(tt + 0.6, 2)])
+	for i in pts.size():
+		pts[i] = Vector2(pts[i].x, pts[i].y * kk)
+	for i in region.size():
+		region[i] = Vector2(region[i].x, region[i].y * kk)
+	var fig := {"shapes": [
+		ProblemGen.poly(region, ProblemGen.FILL_ACCENT, null, 0.0),
+		ProblemGen.curve(pts, Color.WHITE, 4.0),
+		ProblemGen.seg(Vector2(-tt - 0.8, k * kk), Vector2(tt + 0.8, k * kk), ProblemGen.COL_YELLOW, 4.0),
+		ProblemGen.label(Vector2(tt + 1.6, k * kk), "y = %d" % k),
+	]}
+	return {
+		"q": "放物線 y = %sx² と直線 y = %d で囲まれた部分の面積 S を求めなさい。" % [a_str, k],
+		"answer": ans, "unit": "",
+		"hint1": "まず %sx² = %d を解こう。交点は x = ±%d になるよ。" % [a_str, k, tt],
+		"hint2": "6分の1公式: S = %d × (%d − (−%d))³ ÷ 6" % [a, tt, tt],
+		"expl": "交点は x = ±%d。S = %d×%d³/6 = %s です。" % [tt, a, d, ProblemGen.fmt(ans)],
+		"fig": fig,
+	}
+
+
+## s8-接線: 放物線・接線・縦線で囲まれた面積(3分の1公式)
+static func _s8_tangent(rng: RandomNumberGenerator) -> Dictionary:
+	var tt := rng.randi_range(-2, 1)
+	var d: int = [3, 3, 6][rng.randi_range(0, 2)]
+	var beta := tt + d
+	var ans := pow(d, 3) / 3.0
+	# 接線: y = 2t x − t²
+	var m := 2 * tt
+	var n := -tt * tt
+	var pts: Array = []
+	for i in 29:
+		var x := tt - 0.8 + (d + 1.6) * i / 28.0
+		pts.append(Vector2(x, x * x))
+	var region: Array = []
+	for i in 25:
+		var x := float(tt) + d * i / 24.0
+		region.append(Vector2(x, x * x))
+	region.append(Vector2(float(beta), float(m * beta + n)))
+	var la := Vector2(tt - 0.8, m * (tt - 0.8) + n)
+	var lb := Vector2(beta + 0.6, m * (beta + 0.6) + n)
+	var kk := _graph_k(d + 1.6, [pow(tt - 0.8, 2), pow(beta + 0.8, 2), m * (tt - 0.8) + n])
+	for i in pts.size():
+		pts[i] = Vector2(pts[i].x, pts[i].y * kk)
+	for i in region.size():
+		region[i] = Vector2(region[i].x, region[i].y * kk)
+	la = Vector2(la.x, la.y * kk)
+	lb = Vector2(lb.x, lb.y * kk)
+	var fig := {"shapes": [
+		ProblemGen.poly(region, ProblemGen.FILL_ACCENT, null, 0.0),
+		ProblemGen.curve(pts, Color.WHITE, 4.0),
+		ProblemGen.seg(la, lb, ProblemGen.COL_YELLOW, 4.0),
+		ProblemGen.seg(Vector2(float(beta), m * beta * kk + n * kk), Vector2(float(beta), beta * beta * kk), ProblemGen.COL_DIM, 3.5),
+		ProblemGen.label(Vector2(beta, beta * beta * kk + 0.8), "x = %d" % beta),
+	]}
+	return {
+		"q": "放物線 y = x² の x = %d における接線と、放物線、直線 x = %d で囲まれた部分の面積 S を求めなさい。" % [tt, beta],
+		"answer": ans, "unit": "",
+		"hint1": "接点で囲む面積は S = (β − t)³ ÷ 3(接線の 1/3 公式)。x² − (接線) = (x − %d)² になるからだよ。" % tt,
+		"hint2": "S = (%d − (%d))³ ÷ 3 = %d³ ÷ 3" % [beta, tt, d],
+		"expl": "∫(x − %d)² dx を %d から %d まで計算して S = %d³/3 = %s です。" % [tt, tt, beta, d, ProblemGen.fmt(ans)],
+		"fig": fig,
+	}
+
+
+## s12-垂直: 垂直条件から成分を逆算する
+static func _s12_perp(rng: RandomNumberGenerator) -> Dictionary:
+	var p := rng.randi_range(1, 4)
+	var q := rng.randi_range(1, 6)
+	var m := rng.randi_range(1, 3)
+	var r := p * m
+	var t := -q * m
+	var va := Vector2(p, q)
+	var vb := Vector2(t, r)
+	var lo := Vector2(minf(0, vb.x) - 1, -1)
+	var hi := Vector2(maxf(float(p), vb.x) + 1, maxf(float(q), vb.y) + 1)
+	var fig := {"shapes": [
+		ProblemGen.grid(lo, hi), ProblemGen.axes(lo, hi),
+		ProblemGen.arrow(Vector2.ZERO, va, ProblemGen.COL_YELLOW),
+		ProblemGen.arrow(Vector2.ZERO, vb, Color(0.55, 0.85, 1.0)),
+		ProblemGen.right(Vector2.ZERO, va, vb),
+		ProblemGen.label(va + va.normalized() * 0.8, "a→"),
+		ProblemGen.label(vb + vb.normalized() * 0.8, "b→"),
+	]}
+	return {
+		"q": "a→ = (%d, %d) と b→ = (t, %d) が垂直になるとき、t を求めなさい。" % [p, q, r],
+		"answer": float(t), "unit": "",
+		"hint1": "垂直 ⇔ 内積が 0。a・b = %d×t + %d×%d = 0 だよ。" % [p, q, r],
+		"hint2": "t = −%d × %d ÷ %d" % [q, r, p],
+		"expl": "%d t + %d = 0 より t = %d です。" % [p, q * r, t],
 		"fig": fig,
 	}
