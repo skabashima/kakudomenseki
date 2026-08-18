@@ -21,7 +21,7 @@ func _ready() -> void:
 			for i in SEEDS_PER_STAGE:
 				var rng := RandomNumberGenerator.new()
 				rng.seed = hash(sid) + i
-				var tier := i % 3
+				var tier := i % 5   # 0-2: 通常ステージ / 3-4: 挑戦モードの高難度
 				var p: Dictionary = ProblemGen.generate(sid, rng, tier)
 				total += 1
 				_check_problem(sid, i, p)

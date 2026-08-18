@@ -71,6 +71,7 @@ func _ready() -> void:
 		var stages: Array = c["stages"]
 		var got := 0
 		var cleared := 0
+		var crowns := 0
 		var course_score := 0
 		for s in stages:
 			var id := String(s["id"])
@@ -78,11 +79,14 @@ func _ready() -> void:
 			got += st
 			if st > 0:
 				cleared += 1
-			course_score += int(GameState.scores.get(id, 0))
+			if int(GameState.gauntlet_best.get(id, 0)) >= GameState.GAUNTLET_QUESTIONS:
+				crowns += 1
+			course_score += int(GameState.scores.get(id, 0)) + int(GameState.scores.get("g:" + id, 0))
 		var col: Color = c["color"]
 		_lbl(cv, String(c["name"]), 28, col.lightened(0.45))
-		_lbl(cv, "クリア %d/%d   ★ %d/%d   %d点" % [
-			cleared, stages.size(), got, stages.size() * 3, course_score], 24, Color.WHITE)
+		_lbl(cv, "クリア %d/%d   ★ %d/%d   👑 %d/%d   %d点" % [
+			cleared, stages.size(), got, stages.size() * 3,
+			crowns, stages.size(), course_score], 24, Color.WHITE)
 
 	# チャレンジ
 	var ch := PanelContainer.new()

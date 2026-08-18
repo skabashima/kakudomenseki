@@ -7,6 +7,8 @@ extends Control
 
 const TIME_LIMIT := 180.0     # タイムアタックの制限時間(秒)
 const SURVIVAL_LIVES := 3
+## 挑戦モードの出題難度(何問目にどの tier のバリエーションを出すか)
+const GAUNTLET_TIERS := [1, 2, 2, 3, 3, 3, 4, 4, 4, 4]
 
 var course: Dictionary
 var stage: Dictionary
@@ -45,10 +47,21 @@ var overlay: Control = null
 var answer_panel: PanelContainer
 
 
+## ステージにひもづくモード(通常攻略 or 挑戦 10 問)か
+func _stage_based() -> bool:
+	return GameState.mode == "normal" or GameState.mode == "gauntlet"
+
+
+## このプレイの問数
+func _q_total() -> int:
+	return GameState.GAUNTLET_QUESTIONS if GameState.mode == "gauntlet" \
+		else GameState.QUESTIONS_PER_STAGE
+
+
 func _ready() -> void:
 	rng.randomize()
 	course = ProblemGen.course_by_id(GameState.current_course)
-	if GameState.mode == "normal":
+	if _stage_based():
 		stage = ProblemGen.stages_of(String(course["id"]))[GameState.current_stage]
 		stage_id = String(stage["id"])
 	_build_ui()
@@ -107,6 +120,8 @@ func _build_ui() -> void:
 			title_lbl.text = "タイムアタック"
 		"survival":
 			title_lbl.text = "サバイバル"
+		"gauntlet":
+			title_lbl.text = "挑戦: " + String(stage["title"])
 		_:
 			title_lbl.text = String(stage["title"])
 	head.add_child(title_lbl)
@@ -277,14 +292,18 @@ func _next_question(first := false) -> void:
 	locked = false
 	var sid: String
 	var tier: int
-	if GameState.mode == "normal":
+	if GameState.mode == "gauntlet":
+		# 挑戦モード: 同じ単元の高難度バリエーションを 10 問
+		sid = stage_id
+		tier = GAUNTLET_TIERS[mini(q_index, GAUNTLET_TIERS.size() - 1)]
+	elif GameState.mode == "normal":
 		sid = stage_id
 		tier = q_index
 	else:
-		# チャレンジ: 正解数が増えるほど後半の難しいステージから出る
+		# チャレンジ: 正解数が増えるほど難しいステージ・難しいバリエーションが出る
 		var ramp := clampf(challenge_count / 15.0, 0.0, 1.0)
 		sid = ProblemGen.random_stage(GameState.challenge_course, rng, ramp)
-		tier = rng.randi_range(0, 2)
+		tier = rng.randi_range(0, mini(2 + int(ramp * 3.0), 4))
 	problem = ProblemGen.generate(sid, rng, tier)
 	figure.set_spec(problem["fig"])
 	question_lbl.text = String(problem["q"])
@@ -292,7 +311,7 @@ func _next_question(first := false) -> void:
 	hint_lbl.text = "そのまま式で答えてOK(例: 12×8÷2)。＝計算 で途中計算もできるよ"
 	hint_lbl.add_theme_color_override("font_color", Color(0.55, 0.62, 0.75, 0.8))
 	unit_lbl.text = String(problem["unit"])
-	if GameState.mode != "normal":
+	if not _stage_based():
 		title_lbl.text = ("タイムアタック  " if GameState.mode == "time" else "サバイバル  ") \
 			+ ProblemGen.stage_title(sid)
 	hint_btn.disabled = false
@@ -310,9 +329,9 @@ func _update_status() -> void:
 			progress_lbl.text = "正解 %d" % challenge_count
 			hearts_lbl.text = _hearts_str(lives)
 		_:
-			progress_lbl.text = "問 %d / %d" % [q_index + 1, GameState.QUESTIONS_PER_STAGE]
+			progress_lbl.text = "問 %d / %d" % [q_index + 1, _q_total()]
 			hearts_lbl.text = _hearts_str(hearts)
-	score_lbl.text = "%d点" % (stage_score if GameState.mode == "normal" else GameState.total_score())
+	score_lbl.text = "%d点" % (stage_score if _stage_based() else GameState.total_score())
 	combo_lbl.text = ("コンボ ×%d" % GameState.combo) if GameState.combo > 1 else ""
 
 
@@ -430,14 +449,17 @@ func _on_correct() -> void:
 	GameState.bump_stat("correct")
 	if tries == 1 and hints_used == 0:
 		GameState.bump_stat("perfect")
-	if GameState.mode == "normal":
+	if _stage_based():
 		stage_score += pts
 		_update_status()
-		var last := q_index + 1 >= GameState.QUESTIONS_PER_STAGE
+		var last := q_index + 1 >= _q_total()
 		_show_flash("+%d点" % pts, Color(0.55, 1.0, 0.6))
 		await get_tree().create_timer(0.85).timeout
 		if last:
-			_finish_stage()
+			if GameState.mode == "gauntlet":
+				_finish_gauntlet()
+			else:
+				_finish_stage()
 		else:
 			_next_question()
 	else:
@@ -564,15 +586,45 @@ func _animate_stars(lbl: Label, earned: int) -> void:
 func _fail_stage() -> void:
 	GameState.play_sfx("fail")
 	GameState.bump_stat("fail")
+	if GameState.mode == "gauntlet":
+		GameState.record_gauntlet(stage_id, q_index)
 	var panel := _overlay_panel()
 	var v := panel.get_node("v") as VBoxContainer
-	_add_label(v, "ハートがなくなった…", 44, Color(1.0, 0.55, 0.55))
+	if GameState.mode == "gauntlet":
+		_add_label(v, "挑戦失敗… %d/%d 問まで" % [q_index, _q_total()], 40, Color(1.0, 0.55, 0.55))
+	else:
+		_add_label(v, "ハートがなくなった…", 44, Color(1.0, 0.55, 0.55))
 	_add_label(v, "正解は %s%s" % [ProblemGen.fmt(float(problem["answer"])), String(problem["unit"])],
 		34, Color(1.0, 0.9, 0.5))
 	var expl := _add_label(v, String(problem["expl"]), 24, Color(0.85, 0.9, 1.0))
 	expl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	expl.custom_minimum_size = Vector2(640, 0)
 	_add_button(v, "リトライ(べつの数値で)", Color(0.2, 0.55, 0.35), func() -> void:
+		GameState.change_scene("res://scenes/problem.tscn"))
+	_add_button(v, "ステージ一覧へ", Color(0.28, 0.32, 0.44), func() -> void:
+		GameState.change_scene("res://scenes/stage_select.tscn"))
+
+
+## 挑戦モード(単元 10 問)クリア
+func _finish_gauntlet() -> void:
+	GameState.play_sfx("clear")
+	GameState.bump_stat("gauntlet_clear")
+	var first_crown := GameState.record_gauntlet(stage_id, _q_total())
+	# 挑戦のスコアも自己ベストとして総得点に積む(ステージとは別枠)
+	if stage_score > int(GameState.scores.get("g:" + stage_id, 0)):
+		GameState.scores["g:" + stage_id] = stage_score
+		GameState.save_game()
+	var panel := _overlay_panel()
+	var v := panel.get_node("v") as VBoxContainer
+	_add_label(v, "👑 挑戦クリア!", 52, Color(1.0, 0.84, 0.3))
+	_add_label(v, "%d 問連続クリア" % _q_total(), 34, Color.WHITE)
+	_add_label(v, "スコア %d点(自己ベスト %d点)" % [stage_score, int(GameState.scores.get("g:" + stage_id, 0))],
+		26, Color.WHITE)
+	if first_crown:
+		_add_label(v, "この単元の王冠を獲得!", 28, Color(0.6, 1.0, 0.7))
+	if GameState.combo > 1:
+		_add_label(v, "コンボ継続中 ×%d" % GameState.combo, 24, Color(0.6, 0.95, 1.0))
+	_add_button(v, "もういちど(べつの数値で)", Color(0.24, 0.42, 0.72), func() -> void:
 		GameState.change_scene("res://scenes/problem.tscn"))
 	_add_button(v, "ステージ一覧へ", Color(0.28, 0.32, 0.44), func() -> void:
 		GameState.change_scene("res://scenes/stage_select.tscn"))
@@ -649,7 +701,7 @@ func _add_button(parent: Control, text: String, color: Color, cb: Callable) -> B
 
 func _quit() -> void:
 	GameState.play_sfx("tap")
-	if GameState.mode == "normal":
+	if _stage_based():
 		GameState.change_scene("res://scenes/stage_select.tscn")
 	else:
 		GameState.change_scene("res://scenes/challenge_select.tscn")

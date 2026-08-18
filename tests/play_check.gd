@@ -15,18 +15,22 @@ func _ready() -> void:
 	var keep_scores: Dictionary = GameState.scores.duplicate(true)
 	var keep_best_combo := GameState.best_combo
 	var keep_stats: Dictionary = GameState.stats.duplicate(true)
+	var keep_gauntlet: Dictionary = GameState.gauntlet_best.duplicate(true)
 	GameState.stars.clear()
 	GameState.scores.clear()
+	GameState.gauntlet_best.clear()
 	GameState.combo = 0
 
 	await _test_clear_all_correct()
 	await _test_fail_out()
 	await _test_clear_with_miss()
+	await _test_gauntlet()
 
 	GameState.stars = keep_stars
 	GameState.scores = keep_scores
 	GameState.best_combo = keep_best_combo
 	GameState.stats = keep_stats
+	GameState.gauntlet_best = keep_gauntlet
 	GameState.combo = 0
 	GameState.save_game()
 
@@ -40,10 +44,10 @@ func _ready() -> void:
 		get_tree().quit(1)
 
 
-func _open_stage(course: String, index: int) -> Node:
+func _open_stage(course: String, index: int, mode := "normal") -> Node:
 	GameState.current_course = course
 	GameState.current_stage = index
-	GameState.mode = "normal"
+	GameState.mode = mode
 	var inst: Node = (load("res://scenes/problem.tscn") as PackedScene).instantiate()
 	get_tree().root.add_child(inst)
 	await get_tree().process_frame
@@ -129,5 +133,20 @@ func _test_clear_with_miss() -> void:
 		failures.append("unlock: 面積編 3 番目が解放されていない")
 	if GameState.is_stage_unlocked("men", 5):
 		failures.append("unlock: 面積編 6 番目が解放されてしまっている")
+
+
+func _test_gauntlet() -> void:
+	# 挑戦モード: 高難度 10 問を全問正解 → 王冠(gauntlet_best = 10)
+	var scene: Node = await _open_stage("kaku", 0, "gauntlet")
+	for q in GameState.GAUNTLET_QUESTIONS:
+		await _type_answer(scene, _answer_str(scene))
+	if scene.overlay == null:
+		failures.append("gauntlet: 結果画面が出ていない")
+	if int(GameState.gauntlet_best.get("e1", 0)) != GameState.GAUNTLET_QUESTIONS:
+		failures.append("gauntlet: 王冠記録が %d(10 のはず)" % int(GameState.gauntlet_best.get("e1", 0)))
+	if int(GameState.scores.get("g:e1", 0)) <= 0:
+		failures.append("gauntlet: 挑戦スコアが記録されていない")
+	scene.queue_free()
+	await get_tree().process_frame
 	scene.queue_free()
 	await get_tree().process_frame

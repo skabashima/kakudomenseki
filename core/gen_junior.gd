@@ -252,6 +252,23 @@ static func _j5(rng: RandomNumberGenerator, tier: int) -> Dictionary:
 	var a: int = t[0]
 	var b: int = t[1]
 	var c: int = t[2]
+	if tier >= 3:
+		# 高難度: 長方形の対角線(図形への応用)
+		var figd := {"shapes": [
+			ProblemGen.poly([Vector2(0, 0), Vector2(b, 0), Vector2(b, a), Vector2(0, a)], ProblemGen.FILL_MAIN),
+			ProblemGen.seg(Vector2(0, 0), Vector2(b, a), ProblemGen.COL_YELLOW, 3.5),
+			ProblemGen.side_label(Vector2(0, 0), Vector2(b, 0), str(b), 1.0),
+			ProblemGen.side_label(Vector2(b, 0), Vector2(b, a), str(a), -1.0),
+			ProblemGen.right(Vector2(b, 0), Vector2(0, 0), Vector2(b, a)),
+		]}
+		return {
+			"q": "たて %d、よこ %d の長方形の対角線の長さを求めなさい。" % [a, b],
+			"answer": float(c), "unit": "",
+			"hint1": "対角線で長方形を切ると直角三角形。三平方の定理が使えるよ。",
+			"hint2": "対角線² = %d² + %d² = %d" % [a, b, c * c],
+			"expl": "対角線² = %d² + %d² = %d。対角線 = %d です。" % [a, b, c * c, c],
+			"fig": figd,
+		}
 	var v: Array = [Vector2(0, float(a)), Vector2(0, 0), Vector2(float(b), 0)]
 	var kind := mini(tier, 2)
 	if rng.randf() < 0.3:
@@ -424,6 +441,27 @@ static func _j7(rng: RandomNumberGenerator, tier: int) -> Dictionary:
 	var pick: Array = pairs[rng.randi_range(0, pairs.size() - 1)]
 	var r: int = pick[0]
 	var th: int = pick[1]
+	if tier >= 3:
+		# 高難度: 半円+直角三角形の複合(半円から三角形を引いた面積)
+		while (r * r) % 4 != 0:
+			pick = pairs[rng.randi_range(0, pairs.size() - 1)]
+			r = pick[0]
+		var half_area := 3.14 * r * r / 2.0
+		var tri := float(r) * r     # 底辺 2r × 高さ r ÷ 2
+		var ansd := half_area - tri
+		var figd := {"shapes": [
+			ProblemGen.sector(Vector2.ZERO, float(r), 0.0, 180.0, ProblemGen.FILL_ACCENT, Color.WHITE),
+			ProblemGen.poly([Vector2(-r, 0), Vector2(float(r), 0), Vector2(0, float(r))], Color(0.06, 0.09, 0.16, 0.9), Color.WHITE, 3.0),
+			ProblemGen.side_label(Vector2(-r, 0), Vector2(float(r), 0), "%d" % (2 * r), 1.0),
+		]}
+		return {
+			"q": "直径 %d の半円から、直径を底辺とし円周上に頂点をもつ三角形を切り取った、残りの面積を求めなさい。円周率は 3.14 とします。" % (2 * r),
+			"answer": ansd, "unit": "", "tol": 0.02,
+			"hint1": "三角形の高さは半径と同じ %d だよ(頂点がいちばん高いとき)。" % r,
+			"hint2": "3.14×%d²÷2 − %d×%d÷2" % [r, 2 * r, r],
+			"expl": "半円 %s − 三角形 %s = %s です。" % [ProblemGen.fmt(half_area), ProblemGen.fmt(tri), ProblemGen.fmt(ansd)],
+			"fig": figd,
+		}
 	var kind := mini(tier, 2)
 	if rng.randf() < 0.3:
 		kind = rng.randi_range(0, 2)

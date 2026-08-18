@@ -19,6 +19,7 @@ const HERON_SETS := [
 	[8, 15, 17, 60], [7, 24, 25, 84], [20, 21, 29, 210], [9, 40, 41, 180],
 	[12, 16, 20, 96], [10, 13, 13, 60], [13, 13, 24, 60], [12, 17, 25, 90],
 	[4, 13, 15, 24], [13, 20, 21, 126], [17, 25, 26, 204], [17, 25, 28, 210],
+	[10, 17, 21, 84], [6, 25, 29, 60], [15, 28, 41, 126], [5, 29, 30, 72],
 ]
 
 ## 内接円・外接円がきれいな三角形 [a, b, c, S, r, R]
@@ -196,6 +197,29 @@ static func _sine_fig(deg_a: float) -> Dictionary:
 
 ## s3: 面積公式 S = ½ab sinC
 static func _s3(rng: RandomNumberGenerator, tier: int) -> Dictionary:
+	if tier >= 3:
+		# 高難度: 面積から角度を逆算(sinC = 2S/ab)
+		var ha := 2 * rng.randi_range(2, 6)
+		var hb := rng.randi_range(3, 9)
+		var deg_c: int = [30, 90][rng.randi_range(0, 1)]
+		var hs := ha * hb / 4 if deg_c == 30 else ha * hb / 2
+		var hrad := deg_to_rad(float(deg_c))
+		var hpa := Vector2(cos(hrad), sin(hrad)) * hb
+		var figh := {"shapes": [
+			ProblemGen.poly([hpa, Vector2(float(ha), 0), Vector2.ZERO], ProblemGen.FILL_MAIN),
+			ProblemGen.ang(Vector2.ZERO, Vector2(float(ha), 0), hpa, "C"),
+			ProblemGen.side_label(Vector2.ZERO, Vector2(float(ha), 0), str(ha), 1.0),
+			ProblemGen.side_label(hpa, Vector2.ZERO, str(hb), 1.0),
+			ProblemGen.label(Vector2(ha * 0.55, hb * 0.45), "S = %d" % hs, ProblemGen.COL_YELLOW, 26),
+		]}
+		return {
+			"q": "2 辺が %d と %d で面積が %d の三角形があります。2 辺の間の角 C(0° < C ≤ 90°)を求めなさい。" % [ha, hb, hs],
+			"answer": float(deg_c), "unit": "度",
+			"hint1": "S = ½ab sinC を変形して sinC = 2S ÷ (ab)。",
+			"hint2": "sinC = 2×%d ÷ %d = %s" % [hs, ha * hb, "1/2" if deg_c == 30 else "1"],
+			"expl": "sinC = 2S/ab = %s なので C = %d° です。" % ["1/2" if deg_c == 30 else "1", deg_c],
+			"fig": figh,
+		}
 	var angles_easy := [30, 90, 150]
 	var angles_hard := [45, 60, 120, 135]
 	var cc: int
@@ -308,6 +332,16 @@ static func _s5(rng: RandomNumberGenerator, tier: int) -> Dictionary:
 		ProblemGen.side_label(v[2], v[0], str(b), -1.0),
 		ProblemGen.side_label(v[0], v[1], str(c), -1.0),
 	]}
+	if tier >= 3:
+		# 高難度: 内接円の半径から面積を出す(S = r × s)
+		return {
+			"q": "3 辺が %d、%d、%d の三角形の内接円の半径は %s です。この三角形の面積 S を求めなさい。" % [a, b, c, ProblemGen.fmt(r)],
+			"answer": float(area), "unit": "",
+			"hint1": "公式 S = r × s(s は周の長さの半分)。",
+			"hint2": "s = %s。S = %s × %s" % [ProblemGen.fmt((a + b + c) / 2.0), ProblemGen.fmt(r), ProblemGen.fmt((a + b + c) / 2.0)],
+			"expl": "s = %s。S = r×s = %s × %s = %d です。" % [ProblemGen.fmt((a + b + c) / 2.0), ProblemGen.fmt(r), ProblemGen.fmt((a + b + c) / 2.0), area],
+			"fig": fig,
+		}
 	return {
 		"q": "3 辺が %d、%d、%d の三角形の内接円の半径 r を求めなさい。(この三角形の面積は %d です)" % [a, b, c, area],
 		"answer": r, "unit": "",
@@ -320,6 +354,38 @@ static func _s5(rng: RandomNumberGenerator, tier: int) -> Dictionary:
 
 ## s6: ベクトル・座標の三角形の面積
 static func _s6(rng: RandomNumberGenerator, tier: int) -> Dictionary:
+	if tier >= 3:
+		# 高難度: 原点を通らない 3 点(平行移動してから公式)
+		var pax := rng.randi_range(-2, 2)
+		var pay := rng.randi_range(-2, 2)
+		var pbx := pax + rng.randi_range(2, 5)
+		var pby := pay + rng.randi_range(-2, 3)
+		var pcx := pax + rng.randi_range(-2, 3)
+		var pcy := pay + rng.randi_range(2, 5)
+		var det2 := (pbx - pax) * (pcy - pay) - (pcx - pax) * (pby - pay)
+		while det2 == 0 or absi(det2) < 4:
+			pcx = pax + rng.randi_range(-2, 3)
+			pcy = pay + rng.randi_range(2, 5)
+			det2 = (pbx - pax) * (pcy - pay) - (pcx - pax) * (pby - pay)
+		var ansh := absi(det2) / 2.0
+		var lo2 := Vector2(mini(pax, mini(pbx, pcx)) - 1, mini(pay, mini(pby, pcy)) - 1)
+		var hi2 := Vector2(maxi(pax, maxi(pbx, pcx)) + 1, maxi(pay, maxi(pby, pcy)) + 1)
+		var figh := {"shapes": [
+			ProblemGen.grid(lo2, hi2), ProblemGen.axes(lo2, hi2),
+			ProblemGen.poly([Vector2(pax, pay), Vector2(pbx, pby), Vector2(pcx, pcy)], ProblemGen.FILL_MAIN, Color.WHITE, 3.0),
+			ProblemGen.label(Vector2(pax, pay) + Vector2(-0.6, -0.6), "A"),
+			ProblemGen.label(Vector2(pbx, pby) + Vector2(0.7, -0.4), "B"),
+			ProblemGen.label(Vector2(pcx, pcy) + Vector2(0, 0.8), "C"),
+		]}
+		return {
+			"q": "3 点 A(%d, %d)、B(%d, %d)、C(%d, %d) を頂点とする三角形の面積 S を求めなさい。" % [pax, pay, pbx, pby, pcx, pcy],
+			"answer": ansh, "unit": "",
+			"hint1": "A が原点に来るように平行移動してから S = ½|x₁y₂ − x₂y₁| を使おう。",
+			"hint2": "S = ½ |(%d)×(%d) − (%d)×(%d)|" % [pbx - pax, pcy - pay, pcx - pax, pby - pay],
+			"expl": "平行移動後のベクトルは (%d, %d) と (%d, %d)。S = ½×%d = %s です。" % [
+				pbx - pax, pby - pay, pcx - pax, pcy - pay, absi(det2), ProblemGen.fmt(ansh)],
+			"fig": figh,
+		}
 	var x1 := rng.randi_range(1, 6)
 	var y1 := rng.randi_range(-2, 5)
 	var x2 := rng.randi_range(-3, 5)
@@ -650,21 +716,23 @@ static func _s10(rng: RandomNumberGenerator, tier: int) -> Dictionary:
 
 ## s11: 三角方程式(sin・cos・tan の値から角度を求める)
 static func _s11(rng: RandomNumberGenerator, tier: int) -> Dictionary:
-	# [問題文の式, 範囲(°), 答え(°)]
+	# [問題文の式, 範囲下限(°), 範囲上限(°), 答え(°)]
 	const EASY := [
-		["sinθ = 1/2", 90, 30], ["sinθ = √3/2", 90, 60], ["sinθ = √2/2", 90, 45],
-		["sinθ = 1", 90, 90], ["cosθ = 1/2", 90, 60], ["cosθ = √3/2", 90, 30],
-		["cosθ = √2/2", 90, 45], ["tanθ = 1", 90, 45], ["tanθ = √3", 90, 60],
-		["cosθ = 0", 90, 90],
+		["sinθ = 1/2", 0, 90, 30], ["sinθ = √3/2", 0, 90, 60], ["sinθ = √2/2", 0, 90, 45],
+		["sinθ = 1", 0, 90, 90], ["cosθ = 1/2", 0, 90, 60], ["cosθ = √3/2", 0, 90, 30],
+		["cosθ = √2/2", 0, 90, 45], ["tanθ = 1", 0, 90, 45], ["tanθ = √3", 0, 90, 60],
+		["cosθ = 0", 0, 90, 90],
 	]
 	const OBTUSE := [
-		["cosθ = −1/2", 180, 120], ["cosθ = −√3/2", 180, 150], ["cosθ = −√2/2", 180, 135],
-		["tanθ = −1", 180, 135], ["tanθ = −√3", 180, 120], ["cosθ = −1", 180, 180],
+		["cosθ = −1/2", 0, 180, 120], ["cosθ = −√3/2", 0, 180, 150], ["cosθ = −√2/2", 0, 180, 135],
+		["tanθ = −1", 0, 180, 135], ["tanθ = −√3", 0, 180, 120], ["cosθ = −1", 0, 180, 180],
+		["sinθ = 1/2", 90, 180, 150], ["sinθ = √3/2", 90, 180, 120], ["sinθ = √2/2", 90, 180, 135],
 	]
 	const EQUATION := [
-		["2sinθ = 1", 90, 30], ["2sinθ = √3", 90, 60], ["√2 sinθ = 1", 90, 45],
-		["2cosθ = 1", 90, 60], ["2cosθ + 1 = 0", 180, 120], ["tanθ + 1 = 0", 180, 135],
-		["√3 tanθ = 1", 90, 30], ["2cosθ = √2", 90, 45], ["2cosθ + √3 = 0", 180, 150],
+		["2sinθ = 1", 0, 90, 30], ["2sinθ = √3", 0, 90, 60], ["√2 sinθ = 1", 0, 90, 45],
+		["2cosθ = 1", 0, 90, 60], ["2cosθ + 1 = 0", 0, 180, 120], ["tanθ + 1 = 0", 0, 180, 135],
+		["√3 tanθ = 1", 0, 90, 30], ["2cosθ = √2", 0, 90, 45], ["2cosθ + √3 = 0", 0, 180, 150],
+		["2sinθ − 1 = 0", 90, 180, 150], ["√2 cosθ + 1 = 0", 0, 180, 135], ["2cosθ − 1 = 0", 0, 90, 60],
 	]
 	var pool: Array
 	match mini(tier, 2):
@@ -675,8 +743,9 @@ static func _s11(rng: RandomNumberGenerator, tier: int) -> Dictionary:
 		pool = [EASY, OBTUSE, EQUATION][rng.randi_range(0, 2)]
 	var pick: Array = pool[rng.randi_range(0, pool.size() - 1)]
 	var expr := String(pick[0])
-	var range_max := int(pick[1])
-	var ans := int(pick[2])
+	var range_min := int(pick[1])
+	var range_max := int(pick[2])
+	var ans := int(pick[3])
 	# 単位円の図(答えの角の位置に半径を引く)
 	var rr := 4.5
 	var rad := deg_to_rad(float(ans))
@@ -690,7 +759,7 @@ static func _s11(rng: RandomNumberGenerator, tier: int) -> Dictionary:
 		ProblemGen.ang(Vector2.ZERO, Vector2(rr, 0), tip, "θ"),
 	]}
 	return {
-		"q": "0° ≤ θ ≤ %d° のとき、%s を満たす θ を求めなさい。" % [range_max, expr],
+		"q": "%d° ≤ θ ≤ %d° のとき、%s を満たす θ を求めなさい。" % [range_min, range_max, expr],
 		"answer": float(ans), "unit": "度",
 		"hint1": "30°・45°・60°(と 90°・120°・135°・150°)の sin・cos・tan の値を思い出そう。単位円をかくと確実だよ。",
 		"hint2": "%s になるのは θ = %d° のとき。" % [expr, ans],
@@ -708,9 +777,10 @@ static func _s12(rng: RandomNumberGenerator, tier: int) -> Dictionary:
 	]
 	const OTHERS := [
 		[3, 1, 2, -1, 45], [1, 3, 2, 1, 45], [2, 1, 3, -1, 45], [1, 2, 3, 1, 45],
-		[0, 2, 2, 2, 45], [2, 0, 2, 2, 45],
+		[0, 2, 2, 2, 45], [2, 0, 2, 2, 45], [1, 1, 2, 0, 45], [1, 1, 0, 2, 45], [4, 2, 3, -1, 45],
 		[1, 2, -3, -1, 135], [3, 1, -2, 1, 135], [1, 3, -2, -1, 135],
-		[2, 0, -2, 2, 135], [0, 2, 2, -2, 135],
+		[2, 0, -2, 2, 135], [0, 2, 2, -2, 135], [1, 1, -2, 0, 135], [4, 2, -3, 1, 135],
+		[4, 2, -2, 4, 90], [2, 4, -4, 2, 90], [6, 2, -1, 3, 90],
 	]
 	var pool: Array = RIGHT if tier == 0 else OTHERS
 	if rng.randf() < 0.3:

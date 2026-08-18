@@ -41,6 +41,19 @@ const RANKS := [
 const QUESTIONS_PER_STAGE := 3
 ## ステージ開始時のハート(まちがえると 1 つ減る。残った数がそのまま★になる)
 const START_HEARTS := 3
+## 挑戦モード(ステージクリア後に解放)の問数。高難度バリエーション中心
+const GAUNTLET_QUESTIONS := 10
+## stage_id -> 挑戦モードの最高正解数(GAUNTLET_QUESTIONS でクリア=王冠)
+var gauntlet_best: Dictionary = {}
+
+
+## 挑戦モードの記録を更新できたら true
+func record_gauntlet(stage_id: String, count: int) -> bool:
+	if count <= int(gauntlet_best.get(stage_id, 0)):
+		return false
+	gauntlet_best[stage_id] = count
+	save_game()
+	return true
 
 
 func total_score() -> int:
@@ -372,6 +385,7 @@ func save_game() -> void:
 		"best_combo": best_combo,
 		"stats": stats,
 		"challenge_best": challenge_best,
+		"gauntlet_best": gauntlet_best,
 		"debug_unlock_all": debug_unlock_all,
 	}
 	var f := FileAccess.open(SAVE_PATH, FileAccess.WRITE)
@@ -393,4 +407,5 @@ func load_game() -> void:
 	best_combo = int(data.get("best_combo", 0))
 	stats = data.get("stats", {})
 	challenge_best = data.get("challenge_best", {})
+	gauntlet_best = data.get("gauntlet_best", {})
 	debug_unlock_all = bool(data.get("debug_unlock_all", false))

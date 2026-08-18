@@ -81,6 +81,9 @@ func _stage_card(index: int, stage: Dictionary, col: Color) -> Control:
 	var star_count := int(GameState.stars.get(id, 0))
 	var best := int(GameState.scores.get(id, 0))
 
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 10)
+
 	var btn := Button.new()
 	btn.custom_minimum_size = Vector2(0, 108)
 	btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -149,4 +152,22 @@ func _stage_card(index: int, stage: Dictionary, col: Color) -> Control:
 		b.add_theme_font_size_override("font_size", 20)
 		b.add_theme_color_override("font_color", Color(0.85, 0.9, 1.0, 0.8))
 		right.add_child(b)
-	return btn
+	row.add_child(btn)
+
+	# クリア済みなら「挑戦」(高難度 10 問連続)。10 問クリアで王冠
+	if star_count > 0:
+		var g_best := int(GameState.gauntlet_best.get(id, 0))
+		var crowned := g_best >= GameState.GAUNTLET_QUESTIONS
+		var gbtn := Button.new()
+		gbtn.custom_minimum_size = Vector2(120, 108)
+		gbtn.text = "👑" if crowned else ("挑戦\n%d/%d" % [g_best, GameState.GAUNTLET_QUESTIONS] if g_best > 0 else "挑戦\n10問")
+		gbtn.add_theme_font_size_override("font_size", 30 if crowned else 22)
+		GameState.style_button(gbtn,
+			Color(0.72, 0.56, 0.14) if crowned else Color(0.5, 0.36, 0.5))
+		gbtn.pressed.connect(func() -> void:
+			GameState.play_sfx("tap")
+			GameState.current_stage = index
+			GameState.mode = "gauntlet"
+			GameState.change_scene("res://scenes/problem.tscn"))
+		row.add_child(gbtn)
+	return row
