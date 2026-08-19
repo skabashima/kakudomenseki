@@ -15,10 +15,120 @@ const COL_LINE := Color(0.92, 0.95, 1.0)
 const COL_ANGLE := Color(0.75, 0.85, 1.0)
 const COL_UNKNOWN := Color(1.0, 0.85, 0.3)
 
+# ---------------------------------------------------------
+# 補助線: ペンモード中は図の上をなぞって直線が引ける。
+# 端点は頂点・中点・円の中心などにスナップする
+# ---------------------------------------------------------
+const COL_AUX := Color(0.45, 1.0, 0.6, 0.95)
+const COL_SNAP := Color(0.6, 0.9, 1.0, 0.4)
+const SNAP_PX := 36.0
+
+var aux_enabled := false:
+	set(v):
+		aux_enabled = v
+		queue_redraw()
+## 引いた補助線([始点, 終点] の論理座標)
+var aux_lines: Array = []
+## スナップ候補(論理座標)。set_spec で図形から集める
+var _snap_pts: Array = []
+var _aux_start = null      # Vector2 or null
+var _aux_preview = null
+
 
 func set_spec(s: Dictionary) -> void:
 	spec = s
+	aux_lines.clear()
+	_aux_start = null
+	_aux_preview = null
+	_collect_snap_points()
 	queue_redraw()
+
+
+func aux_undo() -> void:
+	if not aux_lines.is_empty():
+		aux_lines.pop_back()
+		queue_redraw()
+
+
+## 図形から補助線の吸着先(頂点・中点・中心)を集める
+func _collect_snap_points() -> void:
+	_snap_pts.clear()
+	var add := func(p: Vector2) -> void:
+		for q in _snap_pts:
+			if p.distance_to(q) < 0.05:
+				return
+		_snap_pts.append(p)
+	for sh in spec.get("shapes", []):
+		match String(sh["t"]):
+			"poly":
+				var pts: Array = sh["p"]
+				for i in pts.size():
+					add.call(pts[i])
+					add.call((pts[i] + pts[(i + 1) % pts.size()]) * 0.5)
+			"seg", "arrow":
+				add.call(sh["a"])
+				add.call(sh["b"])
+				add.call((sh["a"] + sh["b"]) * 0.5)
+			"circle", "sector", "arc":
+				add.call(sh["c"])
+			"angle":
+				add.call(sh["at"])
+
+
+func _to_logical(px: Vector2) -> Vector2:
+	if _scale == 0.0:
+		return Vector2.ZERO
+	return Vector2((px.x - _offset.x) / _scale, -(px.y - _offset.y) / _scale)
+
+
+func _snap(logical: Vector2) -> Vector2:
+	var best := logical
+	var best_d := SNAP_PX / _scale
+	for p in _snap_pts:
+		var d: float = logical.distance_to(p)
+		if d < best_d:
+			best_d = d
+			best = p
+	return best
+
+
+func _gui_input(event: InputEvent) -> void:
+	if not aux_enabled:
+		return
+	var pos: Vector2
+	var pressed_change := false
+	var pressed := false
+	if event is InputEventScreenTouch:
+		pos = event.position
+		pressed_change = true
+		pressed = event.pressed
+	elif event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
+		pos = event.position
+		pressed_change = true
+		pressed = event.pressed
+	elif event is InputEventScreenDrag:
+		pos = event.position
+	elif event is InputEventMouseMotion:
+		if not (event.button_mask & MOUSE_BUTTON_MASK_LEFT):
+			return
+		pos = event.position
+	else:
+		return
+	accept_event()
+	if pressed_change:
+		if pressed:
+			_aux_start = _snap(_to_logical(pos))
+			_aux_preview = _aux_start
+		else:
+			if _aux_start != null and _aux_preview != null \
+					and (_aux_start as Vector2).distance_to(_aux_preview) * _scale > 14.0:
+				aux_lines.append([_aux_start, _aux_preview])
+			_aux_start = null
+			_aux_preview = null
+		queue_redraw()
+	elif _aux_start != null:
+		_aux_preview = _snap(_to_logical(pos))
+		queue_redraw()
 
 
 func _px(p: Vector2) -> Vector2:
@@ -123,6 +233,23 @@ func _draw() -> void:
 				_draw_leaf(sh)
 			"lune":
 				_draw_lune(sh)
+
+	# --- 補助線(ペンモード)---
+	if aux_enabled:
+		for p in _snap_pts:
+			draw_circle(_px(p), 5.0, COL_SNAP)
+	for ln in aux_lines:
+		_draw_aux_line(ln[0], ln[1], 1.0)
+	if _aux_start != null and _aux_preview != null:
+		_draw_aux_line(_aux_start, _aux_preview, 0.55)
+
+
+func _draw_aux_line(a: Vector2, b: Vector2, alpha: float) -> void:
+	var col := COL_AUX
+	col.a *= alpha
+	draw_dashed_line(_px(a), _px(b), col, 3.5, 14.0)
+	draw_circle(_px(a), 4.5, col)
+	draw_circle(_px(b), 4.5, col)
 
 
 func _pts_px(arr: Array) -> PackedVector2Array:

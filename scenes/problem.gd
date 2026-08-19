@@ -157,6 +157,37 @@ func _build_ui() -> void:
 	figure.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	fig_panel.add_child(figure)
 
+	# --- 補助線ツール(図の右上)---
+	# ✏ を押すと図の上をなぞって補助線が引ける(頂点や中点にスナップ)。
+	# ↩ で 1 本もどす。問題が変わると補助線は消える
+	var undo_btn := Button.new()
+	undo_btn.text = "↩"
+	undo_btn.add_theme_font_size_override("font_size", 24)
+	undo_btn.set_anchors_preset(Control.PRESET_TOP_RIGHT)
+	undo_btn.offset_left = -64.0
+	undo_btn.offset_top = 6.0
+	undo_btn.offset_right = -6.0
+	undo_btn.offset_bottom = 60.0
+	GameState.style_button(undo_btn, Color(0.28, 0.32, 0.44))
+	undo_btn.pressed.connect(func() -> void:
+		GameState.play_sfx("type")
+		figure.aux_undo())
+	figure.add_child(undo_btn)
+	var pen_btn := Button.new()
+	pen_btn.toggle_mode = true
+	pen_btn.text = "✏ 補助線"
+	pen_btn.add_theme_font_size_override("font_size", 22)
+	pen_btn.set_anchors_preset(Control.PRESET_TOP_RIGHT)
+	pen_btn.offset_left = -216.0
+	pen_btn.offset_top = 6.0
+	pen_btn.offset_right = -72.0
+	pen_btn.offset_bottom = 60.0
+	GameState.style_button(pen_btn, Color(0.24, 0.5, 0.35))
+	pen_btn.toggled.connect(func(on: bool) -> void:
+		GameState.play_sfx("tap")
+		figure.aux_enabled = on)
+	figure.add_child(pen_btn)
+
 	# --- 問題文 ---
 	question_lbl = Label.new()
 	question_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -306,8 +337,8 @@ func _next_question(first := false) -> void:
 	problem = ProblemGen.generate(sid, rng, tier)
 	figure.set_spec(problem["fig"])
 	question_lbl.text = String(problem["q"])
-	# 電卓の存在をそっと知らせる(ヒントを出すと上書きされる)
-	hint_lbl.text = "そのまま式で答えてOK(例: 12×8÷2)。＝計算 で途中計算もできるよ"
+	# 電卓と補助線の存在をそっと知らせる(ヒントを出すと上書きされる)
+	hint_lbl.text = "式のまま答えてOK(例: 12×8÷2)。✏で図に補助線も引けるよ"
 	hint_lbl.add_theme_color_override("font_color", Color(0.55, 0.62, 0.75, 0.8))
 	unit_lbl.text = String(problem["unit"])
 	if not _stage_based():
