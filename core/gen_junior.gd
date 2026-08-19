@@ -169,11 +169,20 @@ static func _j2(rng: RandomNumberGenerator, kind: int) -> Dictionary:
 		ProblemGen.ang(pc, pa, pb, "%d°" % b),
 		ProblemGen.ang(pa, pb, pc, "x"),
 	]}
+	var steps := [
+		{"say": "%d° の角は、平行線の錯角(Z の形)! 三角形の左下の角へそのまま移せる。" % a,
+			"add": [ProblemGen.seg(Vector2(-2, 5), pa, Color(0.45, 1.0, 0.6, 0.9), 3.0, true),
+				ProblemGen.seg(pa, pb, Color(0.45, 1.0, 0.6, 0.9), 3.0, true),
+				ProblemGen.ang(pb, pa, pc, "%d°" % a)]},
+		{"say": "これで三角形の 2 つの角(%d° と %d°)がわかった。内角の和は 180°。" % [a, b]},
+		{"say": "x = 180 − %d − %d = %d°。入力してみよう!" % [a, b, x]},
+	]
 	return {
 		"q": "直線 l と m は平行です。三角形の角 x は何度ですか。",
 		"answer": float(x), "unit": "度",
 		"hint1": "%d° の角は、錯角で三角形の左下の角にそのまま移せるよ。" % a,
 		"hint2": "x = 180 − %d − %d(三角形の内角の和)" % [a, b],
+		"steps": steps,
 		"expl": "錯角より左下の内角は %d°。内角の和から x = 180 − %d − %d = %d° です。" % [a, a, b, x],
 		"fig": fig,
 	}
@@ -671,11 +680,26 @@ static func _j10(rng: RandomNumberGenerator, tier: int) -> Dictionary:
 		ProblemGen.side_label(v[1], v[2], str(b), 1.0),
 		ProblemGen.side_label(v[0], v[1], str(a), -1.0),
 	]}
+	var hyp := sqrt(float(a * a + b * b))
+	var mid := Vector2(b * 0.5, a * 0.5)
+	var th1 := rad_to_deg(atan2(-float(a), float(b)))
+	var th2 := rad_to_deg(atan2(float(a), -float(b)))
+	var steps := [
+		{"say": "まず、小さい半円 2 つと三角形を、ぜんぶ色でぬってみる。",
+			"add": [ProblemGen.sector(Vector2(0, a * 0.5), a * 0.5, 90.0, 270.0, Color(1.0, 0.85, 0.3, 0.3)),
+				ProblemGen.sector(Vector2(b * 0.5, 0), b * 0.5, 180.0, 360.0, Color(1.0, 0.85, 0.3, 0.3)),
+				ProblemGen.poly(v, Color(0.35, 0.75, 1.0, 0.3))]},
+		{"say": "ここから、斜辺を直径とする大きい半円(緑の弧)を引くと、三日月 2 つだけが残る!",
+			"add": [ProblemGen.arc(mid, hyp * 0.5, th1, th2, Color(0.45, 1.0, 0.6, 0.9), 4.0)]},
+		{"say": "式は 半円(%d) + 半円(%d) + 三角形 − 半円(斜辺)。三平方の定理 %d² + %d² = 斜辺² で、π の項がぜんぶ消える!" % [a, b, a, b]},
+		{"say": "残るのは三角形の面積だけ。%d × %d ÷ 2 = %s。入力してみよう!" % [b, a, ProblemGen.fmt(ans2)]},
+	]
 	return {
 		"q": "直角三角形の各辺を直径とする半円をかきました(斜辺の半円は外側の大きい半円)。色のついた 2 つの三日月の面積の和を求めなさい。",
 		"answer": ans2, "unit": "",
 		"hint1": "小さい半円 2 つ + 三角形 − 大きい半円 で求まる。三平方の定理で π の項が消えるよ!",
 		"hint2": "実は 三日月の和 = 三角形の面積。%d × %d ÷ 2" % [b, a],
+		"steps": steps,
 		"expl": "半円(%d)+半円(%d)+三角形−半円(斜辺) を計算すると、三平方の定理で π が消えて三角形の面積だけ残ります。答えは %d × %d ÷ 2 = %s(ヒポクラテスの月)。" % [a, b, b, a, ProblemGen.fmt(ans2)],
 		"fig": fig2,
 	}

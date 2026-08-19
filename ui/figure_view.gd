@@ -27,6 +27,38 @@ var aux_enabled := false:
 	set(v):
 		aux_enabled = v
 		queue_redraw()
+
+# ---------------------------------------------------------
+# 解き方アニメ: ステップごとに図形をフェードインで重ねる
+# ---------------------------------------------------------
+## {"sh": 図形スペック, "born": 追加時刻 msec} の配列
+var overlay_shapes: Array = []
+## 描画中の透明度係数(オーバーレイのフェードインに使う)
+var _omul := 1.0
+
+
+func add_overlay(shapes: Array) -> void:
+	var now := Time.get_ticks_msec()
+	for sh in shapes:
+		overlay_shapes.append({"sh": sh, "born": now})
+	set_process(true)
+	queue_redraw()
+
+
+func clear_overlay() -> void:
+	overlay_shapes.clear()
+	queue_redraw()
+
+
+func _process(_delta: float) -> void:
+	# フェードイン中だけ毎フレーム描き直す(_draw 側で完了を検知して止める)
+	queue_redraw()
+
+
+## 色にオーバーレイの透明度を適用する
+func _c(col: Color) -> Color:
+	col.a *= _omul
+	return col
 ## 引いた補助線([始点, 終点] の論理座標)
 var aux_lines: Array = []
 ## スナップ候補(論理座標)。set_spec で図形から集める
@@ -38,6 +70,7 @@ var _aux_preview = null
 func set_spec(s: Dictionary) -> void:
 	spec = s
 	aux_lines.clear()
+	overlay_shapes.clear()
 	_aux_start = null
 	_aux_preview = null
 	_collect_snap_points()
@@ -202,37 +235,20 @@ func _draw() -> void:
 	_offset = size * 0.5 - Vector2(center_logical.x * _scale, -center_logical.y * _scale)
 
 	for sh in spec.get("shapes", []):
-		match String(sh["t"]):
-			"grid":
-				_draw_grid(sh)
-			"axes":
-				_draw_axes(sh)
-			"poly":
-				_draw_poly(sh)
-			"curve":
-				_draw_curve(sh)
-			"seg":
-				_draw_seg(sh)
-			"circle":
-				_draw_circle_sh(sh)
-			"sector":
-				_draw_sector(sh)
-			"arc":
-				_draw_arc_sh(sh)
-			"angle":
-				_draw_angle(sh)
-			"right":
-				_draw_right(sh)
-			"tick":
-				_draw_tick(sh)
-			"text":
-				_draw_label(sh)
-			"arrow":
-				_draw_arrow(sh)
-			"leaf":
-				_draw_leaf(sh)
-			"lune":
-				_draw_lune(sh)
+		_draw_one(sh)
+
+	# --- 解き方アニメのオーバーレイ(フェードインしながら重なる)---
+	var now := Time.get_ticks_msec()
+	var animating := false
+	for e in overlay_shapes:
+		var al := clampf((now - int(e["born"])) / 450.0, 0.06, 1.0)
+		if al < 1.0:
+			animating = true
+		_omul = al
+		_draw_one(e["sh"])
+	_omul = 1.0
+	if not animating:
+		set_process(false)
 
 	# --- 補助線(ペンモード)---
 	if aux_enabled:
@@ -252,6 +268,40 @@ func _draw_aux_line(a: Vector2, b: Vector2, alpha: float) -> void:
 	draw_circle(_px(b), 4.5, col)
 
 
+func _draw_one(sh: Dictionary) -> void:
+	match String(sh["t"]):
+		"grid":
+			_draw_grid(sh)
+		"axes":
+			_draw_axes(sh)
+		"poly":
+			_draw_poly(sh)
+		"curve":
+			_draw_curve(sh)
+		"seg":
+			_draw_seg(sh)
+		"circle":
+			_draw_circle_sh(sh)
+		"sector":
+			_draw_sector(sh)
+		"arc":
+			_draw_arc_sh(sh)
+		"angle":
+			_draw_angle(sh)
+		"right":
+			_draw_right(sh)
+		"tick":
+			_draw_tick(sh)
+		"text":
+			_draw_label(sh)
+		"arrow":
+			_draw_arrow(sh)
+		"leaf":
+			_draw_leaf(sh)
+		"lune":
+			_draw_lune(sh)
+
+
 func _pts_px(arr: Array) -> PackedVector2Array:
 	var out := PackedVector2Array()
 	for p in arr:
@@ -265,22 +315,27 @@ func _draw_poly(sh: Dictionary) -> void:
 		# 凹多角形(ブーメラン形など)も正しく塗れるよう三角形に分割して描く
 		var indices := Geometry2D.triangulate_polygon(pts)
 		if indices.is_empty():
-			draw_colored_polygon(pts, sh["fill"])
+			draw_colored_polygon(pts, _c(sh["fill"]))
 		else:
 			for i in range(0, indices.size(), 3):
-				draw_colored_polygon(PackedVector2Array(
-					[pts[indices[i]], pts[indices[i + 1]], pts[indices[i + 2]]]), sh["fill"])
+				var q1 := pts[indices[i]]
+				var q2 := pts[indices[i + 1]]
+				var q3 := pts[indices[i + 2]]
+				# ほぼ面積 0 の三角形は描画エラーになる(見た目にも影響しない)ので飛ばす
+				if absf((q2 - q1).cross(q3 - q1)) < 0.01:
+					continue
+				draw_colored_polygon(PackedVector2Array([q1, q2, q3]), _c(sh["fill"]))
 	var w: float = sh.get("w", 4.0)
 	if w > 0.0:
 		var stroke: Color = sh.get("stroke", COL_LINE) if sh.get("stroke") != null else COL_LINE
 		var closed := pts.duplicate()
 		closed.append(pts[0])
-		draw_polyline(closed, stroke, w, true)
+		draw_polyline(closed, _c(stroke), w, true)
 
 
 func _draw_curve(sh: Dictionary) -> void:
 	var pts := _pts_px(sh["p"])
-	draw_polyline(pts, sh.get("color", COL_LINE), sh.get("w", 4.0), true)
+	draw_polyline(pts, _c(sh.get("color", COL_LINE)), sh.get("w", 4.0), true)
 
 
 func _draw_seg(sh: Dictionary) -> void:
@@ -288,19 +343,19 @@ func _draw_seg(sh: Dictionary) -> void:
 	var b := _px(sh["b"])
 	var col: Color = sh.get("color", COL_LINE)
 	if sh.get("dash", false):
-		draw_dashed_line(a, b, col, sh.get("w", 4.0), 12.0)
+		draw_dashed_line(a, b, _c(col), sh.get("w", 4.0), 12.0)
 	else:
-		draw_line(a, b, col, sh.get("w", 4.0), true)
+		draw_line(a, b, _c(col), sh.get("w", 4.0), true)
 
 
 func _draw_circle_sh(sh: Dictionary) -> void:
 	var c := _px(sh["c"])
 	var r: float = sh["r"] * _scale
 	if sh.has("fill"):
-		draw_circle(c, r, sh["fill"])
+		draw_circle(c, r, _c(sh["fill"]))
 	if sh.get("w", 4.0) > 0.0 and (sh.has("stroke") or not sh.has("fill")):
 		var stroke: Color = sh.get("stroke", COL_LINE) if sh.get("stroke") != null else COL_LINE
-		draw_arc(c, r, 0.0, TAU, 64, stroke, sh.get("w", 4.0), true)
+		draw_arc(c, r, 0.0, TAU, 64, _c(stroke), sh.get("w", 4.0), true)
 
 
 func _draw_sector(sh: Dictionary) -> void:
@@ -314,11 +369,11 @@ func _draw_sector(sh: Dictionary) -> void:
 		var t: float = a0 + (a1 - a0) * i / n
 		pts.append(c + Vector2(cos(t), -sin(t)) * r)
 	if sh.has("fill"):
-		draw_colored_polygon(pts, sh["fill"])
+		draw_colored_polygon(pts, _c(sh["fill"]))
 	var stroke: Color = sh.get("stroke", COL_LINE) if sh.get("stroke") != null else COL_LINE
 	var closed := pts.duplicate()
 	closed.append(c)
-	draw_polyline(closed, stroke, 4.0, true)
+	draw_polyline(closed, _c(stroke), 4.0, true)
 
 
 func _draw_arc_sh(sh: Dictionary) -> void:
@@ -326,7 +381,7 @@ func _draw_arc_sh(sh: Dictionary) -> void:
 	var r: float = sh["r"] * _scale
 	# y 反転のため角度は符号を変えて描く
 	draw_arc(c, r, -deg_to_rad(sh["a0"]), -deg_to_rad(sh["a1"]),
-		48, sh.get("color", COL_LINE), sh.get("w", 4.0), true)
+		48, _c(sh.get("color", COL_LINE)), sh.get("w", 4.0), true)
 
 
 func _draw_angle(sh: Dictionary) -> void:
@@ -352,7 +407,7 @@ func _draw_angle(sh: Dictionary) -> void:
 	if sweep < deg_to_rad(35.0):
 		r_px *= 1.35
 	var c := _px(at)
-	draw_arc(c, r_px, -a1, -(a1 + sweep), 32, col, 3.5, true)
+	draw_arc(c, r_px, -a1, -(a1 + sweep), 32, _c(col), 3.5, true)
 	# ラベルは二等分線方向の少し外側
 	var bis := a1 + sweep * 0.5
 	var pos := c + Vector2(cos(bis), -sin(bis)) * (r_px + 30.0)
@@ -367,7 +422,7 @@ func _draw_right(sh: Dictionary) -> void:
 	var c := _px(at)
 	var e1 := Vector2(d1.x, -d1.y) * s
 	var e2 := Vector2(d2.x, -d2.y) * s
-	draw_polyline(PackedVector2Array([c + e1, c + e1 + e2, c + e2]), COL_ANGLE, 3.0, true)
+	draw_polyline(PackedVector2Array([c + e1, c + e1 + e2, c + e2]), _c(COL_ANGLE), 3.0, true)
 
 
 func _draw_tick(sh: Dictionary) -> void:
@@ -379,7 +434,7 @@ func _draw_tick(sh: Dictionary) -> void:
 	var count: int = sh.get("n", 1)
 	for i in count:
 		var off := dir * (float(i) - (count - 1) * 0.5) * 8.0
-		draw_line(mid + off - n * 9.0, mid + off + n * 9.0, COL_LINE, 3.0, true)
+		draw_line(mid + off - n * 9.0, mid + off + n * 9.0, _c(COL_LINE), 3.0, true)
 
 
 func _draw_label(sh: Dictionary) -> void:
@@ -392,11 +447,11 @@ func _draw_arrow(sh: Dictionary) -> void:
 	var b := _px(sh["b"])
 	var col: Color = sh.get("color", COL_LINE)
 	var w: float = sh.get("w", 5.0)
-	draw_line(a, b, col, w, true)
+	draw_line(a, b, _c(col), w, true)
 	var dir := (b - a).normalized()
 	var n := dir.orthogonal()
 	draw_colored_polygon(PackedVector2Array([
-		b, b - dir * 18.0 + n * 8.0, b - dir * 18.0 - n * 8.0]), col)
+		b, b - dir * 18.0 + n * 8.0, b - dir * 18.0 - n * 8.0]), _c(col))
 
 
 func _draw_grid(sh: Dictionary) -> void:
@@ -504,6 +559,6 @@ func _draw_text_at(pos: Vector2, text: String, col: Color, font_size: int) -> vo
 	var sz := font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size)
 	# 縁取り(読みやすさのため背景色で細く)
 	draw_string_outline(font, pos + Vector2(-sz.x * 0.5, sz.y * 0.3), text,
-		HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, 6, Color(0.05, 0.08, 0.14, 0.9))
+		HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, 6, _c(Color(0.05, 0.08, 0.14, 0.9)))
 	draw_string(font, pos + Vector2(-sz.x * 0.5, sz.y * 0.3), text,
-		HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, col)
+		HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, _c(col))

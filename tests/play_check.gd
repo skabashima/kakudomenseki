@@ -25,6 +25,7 @@ func _ready() -> void:
 	await _test_fail_out()
 	await _test_clear_with_miss()
 	await _test_gauntlet()
+	await _test_walkthrough()
 
 	GameState.stars = keep_stars
 	GameState.scores = keep_scores
@@ -148,5 +149,31 @@ func _test_gauntlet() -> void:
 		failures.append("gauntlet: 挑戦スコアが記録されていない")
 	scene.queue_free()
 	await get_tree().process_frame
+
+
+func _test_walkthrough() -> void:
+	# 解き方アニメ: e13(折り返し)はリッチな steps 持ち(角度編 index 7)。
+	# 最後まで見る → 図にアニメ図形が重なる → 正解しても得点 0 → 次の問題でリセット
+	var scene: Node = await _open_stage("kaku", 7)
+	scene._on_walkthrough()
+	if not scene.wt_used:
+		failures.append("wt: wt_used が立っていない")
+	if GameState.combo != 0:
+		failures.append("wt: コンボがリセットされていない")
+	if scene.wt_steps.size() < 3:
+		failures.append("wt: e13 の steps が少ない (%d)" % scene.wt_steps.size())
+	var guard := 0
+	while not scene.wt_btn.disabled and guard < 20:
+		scene._on_walkthrough()
+		guard += 1
+	if not scene.wt_btn.disabled:
+		failures.append("wt: 最後のステップでボタンが終わらない")
+	if scene.figure.overlay_shapes.is_empty():
+		failures.append("wt: アニメの図形が図に重なっていない")
+	await _type_answer(scene, _answer_str(scene))
+	if scene.stage_score != 0:
+		failures.append("wt: 解き方を見たのに得点が入った (%d)" % scene.stage_score)
+	if scene.overlay == null and (scene.wt_used or scene.wt_idx != -1 or scene.wt_btn.disabled):
+		failures.append("wt: 次の問題で解き方がリセットされていない")
 	scene.queue_free()
 	await get_tree().process_frame

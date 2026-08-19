@@ -23,6 +23,12 @@ var q_start_msec := 0
 var input_text := ""
 var locked := false           # 演出中は入力を受け付けない
 
+# 解き方アニメ(わからないとき用)。見ると得点は 0 になる
+var wt_used := false
+var wt_steps: Array = []
+var wt_idx := -1
+var wt_btn: Button
+
 # チャレンジ用
 var challenge_count := 0      # 正解数
 var lives := SURVIVAL_LIVES
@@ -265,6 +271,16 @@ func _build_ui() -> void:
 	GameState.style_button(hint_btn, Color(0.35, 0.4, 0.2))
 	hint_btn.pressed.connect(_on_key.bind("ヒント"))
 	bottom.add_child(hint_btn)
+	if _stage_based():
+		wt_btn = Button.new()
+		wt_btn.text = "解き方"
+		wt_btn.custom_minimum_size = Vector2(0, 84)
+		wt_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		wt_btn.size_flags_stretch_ratio = 1.0
+		wt_btn.add_theme_font_size_override("font_size", 24)
+		GameState.style_button(wt_btn, Color(0.55, 0.35, 0.2))
+		wt_btn.pressed.connect(_on_walkthrough)
+		bottom.add_child(wt_btn)
 	var eq_btn := Button.new()
 	eq_btn.text = "＝ 計算"
 	eq_btn.custom_minimum_size = Vector2(0, 84)
@@ -345,6 +361,12 @@ func _next_question(first := false) -> void:
 		title_lbl.text = ("タイムアタック  " if GameState.mode == "time" else "サバイバル  ") \
 			+ ProblemGen.stage_title(sid)
 	hint_btn.disabled = false
+	wt_used = false
+	wt_steps = []
+	wt_idx = -1
+	if wt_btn != null:
+		wt_btn.disabled = false
+		wt_btn.text = "解き方"
 	q_start_msec = Time.get_ticks_msec()
 	_update_answer()
 	_update_status()
@@ -444,6 +466,43 @@ func _show_hint() -> void:
 		hint_btn.disabled = true
 
 
+## 「解き方」ボタン: ステップ再生式のアニメ解説。
+## 1 回目で開始(得点は 0 に)。以降は押すたびに次のステップへ進み、
+## 補助線や色分けがフェードインで図に重なっていく
+func _on_walkthrough() -> void:
+	if locked or wt_btn == null:
+		return
+	if wt_idx < 0:
+		GameState.play_sfx("hint")
+		wt_used = true
+		GameState.combo = 0
+		GameState.bump_stat("walkthrough")
+		_update_status()
+		wt_steps = problem.get("steps", [])
+		if wt_steps.is_empty():
+			# 解説ステップが未定義の問題は、ヒントと解説を順に見せる
+			wt_steps = [
+				{"say": String(problem["hint1"])},
+				{"say": String(problem["hint2"])},
+				{"say": String(problem["expl"]) + " 最後の計算を自分で入力してみよう!"},
+			]
+	else:
+		GameState.play_sfx("type")
+	wt_idx += 1
+	if wt_idx >= wt_steps.size():
+		return
+	var step: Dictionary = wt_steps[wt_idx]
+	hint_lbl.text = "解き方 %d/%d: %s" % [wt_idx + 1, wt_steps.size(), String(step.get("say", ""))]
+	hint_lbl.add_theme_color_override("font_color", Color(1.0, 0.85, 0.5))
+	if step.has("add"):
+		figure.add_overlay(step["add"])
+	if wt_idx + 1 >= wt_steps.size():
+		wt_btn.text = "解き方おわり"
+		wt_btn.disabled = true
+	else:
+		wt_btn.text = "つぎへ ▶"
+
+
 func _submit() -> void:
 	if input_text == "" or input_text == "−" or input_text == ".":
 		return
@@ -472,12 +531,13 @@ func _on_correct() -> void:
 	locked = true
 	GameState.play_sfx("correct")
 	var seconds := (Time.get_ticks_msec() - q_start_msec) / 1000.0
-	var pts := GameState.question_score(tries, hints_used, seconds, GameState.combo)
+	# 解き方アニメを見た問題は学習扱いで 0 点(正解の練習にはなる)
+	var pts := 0 if wt_used else GameState.question_score(tries, hints_used, seconds, GameState.combo)
 	GameState.combo += 1
 	if GameState.combo > GameState.best_combo:
 		GameState.best_combo = GameState.combo
 	GameState.bump_stat("correct")
-	if tries == 1 and hints_used == 0:
+	if tries == 1 and hints_used == 0 and not wt_used:
 		GameState.bump_stat("perfect")
 	if _stage_based():
 		stage_score += pts

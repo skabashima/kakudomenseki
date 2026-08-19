@@ -6,6 +6,7 @@ extends Node
 ##   ・問題文・ヒント・解説が空でない
 ##   ・図形スペックの座標がすべて有限
 ##   ・同じステージでも数値バリエーションが複数あること(丸暗記防止)
+##   ・解き方アニメ(steps)の補助線・色ぬり・角の印も本編の図と同じ基準で検証
 
 const SEEDS_PER_STAGE := 120
 
@@ -57,6 +58,17 @@ func _check_problem(sid: String, seed_i: int, p: Dictionary) -> void:
 	if absf(rounded - ans) > float(p["tol"]):
 		failures.append(where + ": answer %f not enterable with 2 decimals (tol %f)" % [ans, float(p["tol"])])
 	_check_fig(where, p["fig"])
+	# 解き方アニメの steps: say が空でなく、add の図形(補助線・色ぬり・角の印)も
+	# 本編の図と同じ基準で検証する(角ラベルの数値と描画角の一致も含む)
+	var steps: Array = p.get("steps", [])
+	for si in steps.size():
+		var st = steps[si]
+		if typeof(st) != TYPE_DICTIONARY or String(st.get("say", "")).strip_edges() == "":
+			failures.append("%s: step %d has no say" % [where, si])
+			continue
+		var adds: Array = st.get("add", [])
+		if not adds.is_empty():
+			_check_fig("%s(step%d)" % [where, si], {"shapes": adds})
 
 
 ## 「40°」のような数値ラベルの角の印について、描画される角

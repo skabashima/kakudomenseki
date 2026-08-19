@@ -312,12 +312,22 @@ static func _e4_fold(rng: RandomNumberGenerator, step: int) -> Dictionary:
 		ProblemGen.ang(q_m, p, Vector2(w, 0), "%d°" % b2),
 		ProblemGen.ang(p, q_l, q_m, "x"),
 	]}
+	var steps := [
+		{"say": "折れ点を通って、l と m に平行な補助線を引く!",
+			"add": [ProblemGen.seg(p + Vector2(-4.5, 0), p + Vector2(4.5, 0), Color(0.45, 1.0, 0.6, 0.9), 3.0, true)]},
+		{"say": "上半分を見ると… l との錯角(Z の形)だから %d°!" % a2,
+			"add": [ProblemGen.ang(p, q_l, p + Vector2(-4.5, 0), "%d°" % a2)]},
+		{"say": "下半分も m との錯角だから %d°!" % b2,
+			"add": [ProblemGen.ang(p, p + Vector2(-4.5, 0), q_m, "%d°" % b2)]},
+		{"say": "x は 2 つをあわせた角。x = %d + %d = %d°。答えを入力してみよう!" % [a2, b2, a2 + b2]},
+	]
 	return {
 		"q": "直線 l と m は平行です。折れ線の角 x は何度ですか。",
 		"answer": float(a2 + b2), "unit": "度",
 		"hint1": "折れ曲がった点を通る、l と m に平行な線を引いてみよう。角が 2 つに分かれるよ。",
 		"hint2": "x = %d + %d(錯角で上下に分けられる)" % [a2, b2],
 		"expl": "折れ点を通る平行線を引くと、錯角により x は %d° と %d° に分かれます。x = %d + %d = %d° です。" % [a2, b2, a2, b2, a2 + b2],
+		"steps": steps,
 		"fig": fig2,
 	}
 
@@ -658,11 +668,21 @@ static func _e10(rng: RandomNumberGenerator, tier: int) -> Dictionary:
 		{"t": "leaf", "a": float(a)},
 		ProblemGen.side_label(Vector2(0, 0), Vector2(a, 0), "%dcm" % a, 1.0),
 	]}
+	var steps := [
+		{"say": "左下を中心とする四分円に色をぬる。面積は %d×%d×3.14÷4。" % [a, a],
+			"add": [ProblemGen.sector(Vector2(0, 0), float(a), 0.0, 90.0, Color(1.0, 0.85, 0.3, 0.3))]},
+		{"say": "右上を中心とする四分円も同じ大きさ。重ねると、葉っぱの部分だけ 2 回ぬられる!",
+			"add": [ProblemGen.sector(Vector2(a, a), float(a), 180.0, 270.0, Color(0.35, 0.75, 1.0, 0.3))]},
+		{"say": "四分円 2 つの和から正方形 1 つ分を引くと、2 回ぬった分 = 葉っぱだけが残る。",
+			"add": [ProblemGen.poly([Vector2(0, 0), Vector2(a, 0), Vector2(a, a), Vector2(0, a)], null, Color(0.45, 1.0, 0.6, 0.9), 3.0)]},
+		{"say": "葉っぱ = %s − %d = %s cm²。入力してみよう!" % [ProblemGen.fmt(a * a * 3.14 / 2.0), a * a, ProblemGen.fmt(leaf)]},
+	]
 	return {
 		"q": "1 辺 %dcm の正方形の中に、2 つの四分円をかいてできる葉っぱ形(色のついた部分)の面積は何 cm² ですか。円周率は 3.14 とします。" % a,
 		"answer": leaf, "unit": "cm²", "tol": 0.02,
 		"hint1": "四分円 2 つをたすと、葉っぱが 2 重に、残りが 1 重に数えられる。そこから正方形を引くと葉っぱだけ残るよ。",
 		"hint2": "%d×%d×3.14÷4 × 2 − %d×%d = %d×%d×0.57" % [a, a, a, a, a, a],
+		"steps": steps,
 		"expl": "葉っぱ = 四分円×2 − 正方形 = %s − %d = %s cm²。「1辺×1辺×0.57」と覚えてもOK。" % [ProblemGen.fmt(a * a * 3.14 / 2.0), a * a, ProblemGen.fmt(leaf)],
 		"fig": fig2,
 	}
@@ -699,6 +719,30 @@ static func _e11_hands(rng: RandomNumberGenerator, step_m: int) -> Dictionary:
 		ProblemGen.ang(Vector2.ZERO, hour_tip, min_tip, "x", 1.2),
 		ProblemGen.circle(Vector2.ZERO, 0.15, Color.WHITE),
 	]
+	var ha := fmod(30.0 * h + 0.5 * m, 360.0)
+	var ma := 6.0 * m
+	var dd := absf(ha - ma)
+	var up := Vector2(0, 1)
+	var steps: Array = [
+		{"say": "12 時の方向に補助線を引く。針の角度は、ここから時計回りに何度進んだかで考える!",
+			"add": [ProblemGen.seg(Vector2.ZERO, Vector2(0, r), Color(0.45, 1.0, 0.6, 0.9), 3.0, true)]},
+	]
+	var h_mark: Dictionary
+	if ha > 180.0:
+		h_mark = ProblemGen.ang(Vector2.ZERO, hour_tip, up, "%s°" % ProblemGen.fmt(ha), 1.7, true)
+	else:
+		h_mark = ProblemGen.ang(Vector2.ZERO, up, hour_tip, "%s°" % ProblemGen.fmt(ha), 1.7)
+	steps.append({"say": "短針は 1 時間で 30°(1 分で 0.5°)。12 時から 30×%d + 0.5×%d で %s° 進んでいる。" % [h, m, ProblemGen.fmt(ha)],
+		"add": [h_mark]})
+	if m == 0:
+		steps.append({"say": "長針は 1 分で 6°。0 分だから 12 時ちょうどの方向(0°)をさしたまま。"})
+	elif ma > 180.0:
+		steps.append({"say": "長針は 1 分で 6°。12 時から 6×%d = %s° 進んでいる。" % [m, ProblemGen.fmt(ma)],
+			"add": [ProblemGen.ang(Vector2.ZERO, min_tip, up, "%s°" % ProblemGen.fmt(ma), 3.4, true)]})
+	else:
+		steps.append({"say": "長針は 1 分で 6°。12 時から 6×%d = %s° 進んでいる。" % [m, ProblemGen.fmt(ma)],
+			"add": [ProblemGen.ang(Vector2.ZERO, up, min_tip, "%s°" % ProblemGen.fmt(ma), 3.4)]})
+	steps.append({"say": "2 つの差は %s°。180° より大きいときは 360° から引いて、小さい方の角 x = %s°。入力してみよう!" % [ProblemGen.fmt(dd), ProblemGen.fmt(x)]})
 	return {
 		"q": "時計が %d 時 %d 分をさしています。長針と短針のつくる角のうち、小さい方の角 x は何度ですか。" % [h, m],
 		"answer": x, "unit": "度",
@@ -707,6 +751,7 @@ static func _e11_hands(rng: RandomNumberGenerator, step_m: int) -> Dictionary:
 		"expl": "短針 = 30×%d + 0.5×%d = %s°、長針 = 6×%d = %s°。差は %s° で、小さい方の角は %s° です。" % [
 			h, m, ProblemGen.fmt(30.0 * h + 0.5 * m), m, ProblemGen.fmt(6.0 * m),
 			ProblemGen.fmt(diff), ProblemGen.fmt(x)],
+		"steps": steps,
 		"fig": {"shapes": shapes},
 	}
 
@@ -737,11 +782,22 @@ static func _e12(rng: RandomNumberGenerator, tier: int) -> Dictionary:
 		ProblemGen.ang(pc, pd, pb, "%d°" % c),
 		ProblemGen.ang(pd, pa, pc, "x"),
 	]}
+	var pe := pd + (pd - pb).normalized() * 2.5
+	var steps := [
+		{"say": "とがった頂点 B と、へこみの頂点(x の角)を結んで、その先までのばす補助線を引く!",
+			"add": [ProblemGen.seg(pb, pe, Color(0.45, 1.0, 0.6, 0.9), 3.0, true)]},
+		{"say": "左の三角形に注目。外角の定理で、左側の角 = %d° + (%d° の左半分)。" % [a, b],
+			"add": [ProblemGen.poly([pa, pb, pd], Color(1.0, 0.85, 0.3, 0.3)), ProblemGen.ang(pd, pa, pe, "", 1.0)]},
+		{"say": "右の三角形も同じ。右側の角 = %d° + (%d° の右半分)。" % [c, b],
+			"add": [ProblemGen.poly([pc, pb, pd], Color(0.35, 0.75, 1.0, 0.3)), ProblemGen.ang(pd, pe, pc, "", 1.3)]},
+		{"say": "2 つをあわせると、x = %d + %d + %d = %d°(3 つの角の和)。入力してみよう!" % [a, b, c, x]},
+	]
 	return {
 		"q": "図のようなブーメラン形(へこみのある四角形)で、角 x は何度ですか。",
 		"answer": float(x), "unit": "度",
 		"hint1": "へこみの頂点ととがった頂点を線で結ぶと、外角の定理が 2 回使えるよ。",
 		"hint2": "x = %d + %d + %d(3 つの角をぜんぶたす)" % [a, b, c],
+		"steps": steps,
 		"expl": "ブーメラン形のへこみの角は、残り 3 つの角の和。x = %d + %d + %d = %d° です。" % [a, b, c, x],
 		"fig": fig,
 	}
@@ -769,12 +825,20 @@ static func _e13(rng: RandomNumberGenerator, tier: int) -> Dictionary:
 		ProblemGen.ang(p, Vector2(12, 0), q, "%d°" % a),
 		ProblemGen.ang(p, r1, Vector2(0, 0), "x"),
 	]}
+	var steps := [
+		{"say": "折り返した角は、もとの角と同じ! 折り目の右にも %d° がある。" % a,
+			"add": [ProblemGen.ang(p, q, r1, "%d°" % a)]},
+		{"say": "P のまわり(下の直線の上側)は、一直線で 180°。",
+			"add": [ProblemGen.seg(Vector2(0, 0), Vector2(12, 0), Color(0.45, 1.0, 0.6, 0.9), 3.0)]},
+		{"say": "だから x = 180 − %d − %d = %d°。入力してみよう!" % [a, a, x]},
+	]
 	return {
 		"q": "長方形の紙テープを、図のように直線 PQ で折り返しました。角 x は何度ですか。",
 		"answer": float(x), "unit": "度",
 		"hint1": "折り返した角はもとの角と等しい。P のまわりに %d° の角が 2 つできるよ。" % a,
 		"hint2": "x = 180 − %d × 2(P のまわりは一直線で 180°)" % a,
 		"expl": "折り返しで %d° の角が 2 つ。一直線 180° から x = 180 − 2×%d = %d° です。" % [a, a, x],
+		"steps": steps,
 		"fig": fig,
 	}
 
@@ -864,11 +928,22 @@ static func _e15(rng: RandomNumberGenerator, _tier: int) -> Dictionary:
 		ProblemGen.label(Vector2(aw * 0.5, ah - (ah - py) * 0.4), "%d" % s_top),
 		ProblemGen.label(Vector2(px * 0.4, py + (ah * 0.5 - py) * 0.5), "x", ProblemGen.COL_YELLOW, 34),
 	]}
+	var steps := [
+		{"say": "下の三角形と上の三角形に色をぬる。底辺はどちらも「よこ」、高さの和はちょうど「たて」。",
+			"add": [ProblemGen.poly([Vector2(0, 0), Vector2(aw, 0), p], Color(1.0, 0.85, 0.3, 0.3)),
+				ProblemGen.poly([Vector2(0, ah), Vector2(aw, ah), p], Color(1.0, 0.85, 0.3, 0.3))]},
+		{"say": "だから 下 + 上 = 長方形のちょうど半分! %d + %d = %d。" % [s_bottom, s_top, s_bottom + s_top]},
+		{"say": "左と右の三角形も同じ理由で半分になる。だから 左 + 右 も %d のはず。" % [s_bottom + s_top],
+			"add": [ProblemGen.poly([Vector2(0, 0), Vector2(0, ah), p], Color(0.35, 0.75, 1.0, 0.3)),
+				ProblemGen.poly([Vector2(aw, 0), Vector2(aw, ah), p], Color(0.35, 0.75, 1.0, 0.3))]},
+		{"say": "x = %d − %d = %d cm²。入力してみよう!" % [s_bottom + s_top, s_right, x]},
+	]
 	return {
 		"q": "長方形の中の 1 つの点と 4 つの頂点を結んで、4 つの三角形に分けました。3 つの三角形の面積が図の通り(cm²)のとき、x の面積は何 cm² ですか。",
 		"answer": float(x), "unit": "cm²",
 		"hint1": "上の三角形と下の三角形の面積の和は、長方形のちょうど半分。左と右の和も半分で、たがいに等しいよ。",
 		"hint2": "x = %d + %d − %d(上下の和 = 左右の和)" % [s_top, s_bottom, s_right],
+		"steps": steps,
 		"expl": "上下の和 %d+%d = %d は長方形の半分。左右の和も %d なので x = %d − %d = %d cm² です。" % [
 			s_top, s_bottom, s_top + s_bottom, s_top + s_bottom, s_top + s_bottom, s_right, x],
 		"fig": fig,
@@ -980,18 +1055,33 @@ static func _e4_zigzag(rng: RandomNumberGenerator, step: int, ask_mid: bool) -> 
 		ProblemGen.seg(p2, p3, ProblemGen.COL_DIM),
 		ProblemGen.ang(p0, Vector2(w, 6), p1, "%d°" % t1),
 	]
+	var steps := [
+		{"say": "2 つの折れ点それぞれに、l・m と平行な補助線を引く!",
+			"add": [ProblemGen.seg(p1 + Vector2(-4.5, 0), p1 + Vector2(4.5, 0), Color(0.45, 1.0, 0.6, 0.9), 3.0, true),
+				ProblemGen.seg(p2 + Vector2(-4.5, 0), p2 + Vector2(4.5, 0), Color(0.45, 1.0, 0.6, 0.9), 3.0, true)]},
+		{"say": "1 本目の線の傾きは、l との錯角でそのまま %d°。" % t1,
+			"add": [ProblemGen.ang(p1, p0, p1 + Vector2(-4.5, 0), "%d°" % t1)]},
+		{"say": "折れ点の角から、まん中の線の傾きは 180 − %d − %d = %d°。" % [t1, b, t2],
+			"add": [ProblemGen.ang(p1, p2, p1 + Vector2(4.5, 0), "%d°" % t2)]},
+		{"say": "この傾き %d° は、下の折れ点でも錯角で同じ!" % t2,
+			"add": [ProblemGen.ang(p2, p1, p2 + Vector2(-4.5, 0), "%d°" % t2)]},
+		{"say": "最後の線の傾きは 180 − %d − %d = %d°。" % [t2, c, t3],
+			"add": [ProblemGen.ang(p2, p3, p2 + Vector2(4.5, 0), "%d°" % t3)]},
+	]
 	if ask_mid:
 		shapes += [
 			ProblemGen.ang(p1, p0, p2, "x"),
 			ProblemGen.ang(p2, p1, p3, "%d°" % c),
 			ProblemGen.ang(p3, p2, Vector2(0, 0), "%d°" % t3),
 		]
+		steps[4] = {"say": "x は折れ点の角。180 − %d − %d = %d°。入力してみよう!" % [t1, t2, b]}
 		return {
 			"q": "直線 l と m は平行です。ジグザグの折れ線の角 x は何度ですか。",
 			"answer": float(b), "unit": "度",
 			"hint1": "いちばん下の %d° から順に、平行線の錯角で角を上へ運んでいこう。" % t3,
 			"hint2": "x = %d + %d − %d" % [c, t3, t1],
 			"expl": "下から順に錯角で分けると x = %d + %d − %d = %d° になります。" % [c, t3, t1, b],
+			"steps": steps,
 			"fig": {"shapes": shapes},
 		}
 	shapes += [
@@ -999,12 +1089,14 @@ static func _e4_zigzag(rng: RandomNumberGenerator, step: int, ask_mid: bool) -> 
 		ProblemGen.ang(p2, p1, p3, "%d°" % c),
 		ProblemGen.ang(p3, p2, Vector2(0, 0), "x"),
 	]
+	steps.append({"say": "m との錯角で、x = %d°。入力してみよう!" % t3})
 	return {
 		"q": "直線 l と m は平行です。ジグザグの折れ線の角 x は何度ですか。",
 		"answer": float(t3), "unit": "度",
 		"hint1": "それぞれの折れ点を通る、l・m に平行な線を引いて、角を上下に分けよう。",
 		"hint2": "x = %d + %d − %d" % [t1, b, c],
 		"expl": "平行線を 2 本補助して錯角で移すと、x = %d + %d − %d = %d° になります。" % [t1, b, c, t3],
+		"steps": steps,
 		"fig": {"shapes": shapes},
 	}
 
