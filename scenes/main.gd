@@ -41,14 +41,14 @@ func _ready() -> void:
 	vbox.add_child(_spacer(26 if portrait else 50))
 
 	var title := Label.new()
-	title.text = "角度と面積"
+	title.text = "図形ハンター"
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	title.add_theme_font_size_override("font_size", 78 if portrait else 96)
 	title.add_theme_color_override("font_color", Color(1.0, 0.9, 0.5))
 	vbox.add_child(title)
 
 	var subtitle := Label.new()
-	subtitle.text = "図形の問題を、数字で撃ち落とせ。"
+	subtitle.text = "角度と面積を、数字で撃ち落とせ。\n中学受験 〜 大学受験"
 	subtitle.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	subtitle.add_theme_font_size_override("font_size", 26 if portrait else 30)
 	subtitle.add_theme_color_override("font_color", Color(0.8, 0.85, 0.95))

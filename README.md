@@ -1,6 +1,6 @@
-# 角度と面積
+# 図形ハンター
 
-**図形の問題を、数字で撃ち落とせ。**
+**角度と面積を、数字で撃ち落とせ。中学受験 〜 大学受験。**
 
 図形の「角度」と「面積」の問題を、中学受験・高校受験・大学受験の 3 コースで解く学習ゲーム。
 問題は図形つきで出題され、答えの数値をキーパッドで入力して解く。
@@ -100,6 +100,12 @@ godot --path "<このフォルダ>"
 1. App Store Connect integration に API キー `historygamekey`(アカウント単位・登録済みを使い回す)
 2. 環境変数グループ `appstore_credentials` に `CERTIFICATE_PRIVATE_KEY`(Secret)
 3. App Store Connect に Bundle ID `jp.snaplace.kakudomenseki` を登録
+
+App Store の掲載名は次の組み合わせ(タイトル・サブタイトルとも 30 文字まで。
+両方が検索対象なので、キーワードはサブタイトルに寄せている):
+
+- タイトル: **図形ハンター**
+- サブタイトル: **角度と面積を撃ち落とせ｜中学受験〜大学受験**
 
 App Store 用の 1024×1024 アイコンは `store/icon/icon_1024.png`(透過なし)。
 元 SVG から作り直すときは:

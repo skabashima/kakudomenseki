@@ -1,4 +1,4 @@
-# Codemagic CI/CD ― Godot 4.7 製「角度と面積」のビルド定義。
+# Codemagic CI/CD ― Godot 4.7 製「図形ハンター」のビルド定義。
 # (さわる物理と同じパイプライン。IAP がないぶんシンプル)
 # Codemagic は Godot を自動検出できないため、Godot 本体と export テンプレートの
 # 取得からこの YAML で明示する。
@@ -31,7 +31,7 @@ workflows:
 
   # ════════════════════════════════════════════════════════════
   ios-kakudomenseki:
-    name: 角度と面積 iOS (TestFlight)
+    name: 図形ハンター iOS (TestFlight)
     instance_type: mac_mini_m2        # iOS ビルドは Mac 必須
     max_build_duration: 90
     integrations:
