@@ -48,7 +48,7 @@ func _ready() -> void:
 	vbox.add_child(title)
 
 	var subtitle := Label.new()
-	subtitle.text = "角度と面積を、数字で撃ち落とせ。\n中学受験 〜 大学受験"
+	subtitle.text = "角度と面積を、数字で撃ち落とせ。\n中学・高校・大学受験"
 	subtitle.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	subtitle.add_theme_font_size_override("font_size", 26 if portrait else 30)
 	subtitle.add_theme_color_override("font_color", Color(0.8, 0.85, 0.95))
