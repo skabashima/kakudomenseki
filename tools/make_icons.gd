@@ -11,8 +11,8 @@ func _init() -> void:
 		quit(1)
 		return
 	var img := Image.new()
-	# SVG は 128px 基準 → 8 倍で 1024px
-	var err := img.load_svg_from_string(svg, 8.0)
+	# SVG は 1024px 基準なので等倍で読む
+	var err := img.load_svg_from_string(svg, 1.0)
 	if err != OK or img.get_width() != 1024:
 		push_error("SVG のラスタライズに失敗: err=%d size=%d" % [err, img.get_width()])
 		quit(1)

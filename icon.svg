@@ -1,7 +1,21 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
-  <rect width="128" height="128" rx="24" fill="#14203a"/>
-  <path d="M24 100 L104 100 L104 34 Z" fill="#2f5aa8" stroke="#8fb8ff" stroke-width="4" stroke-linejoin="round"/>
-  <path d="M84 100 A20 20 0 0 1 90 86" fill="none" stroke="#ffd447" stroke-width="5" stroke-linecap="round"/>
-  <circle cx="104" cy="34" r="6" fill="#ffd447"/>
-  <text x="46" y="92" font-family="sans-serif" font-size="20" font-weight="bold" fill="#ffd447">x°</text>
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 1024 1024">
+  <!-- アプリ内/エディタ用(角丸つき)。絵柄は store/icon/icon_full.svg と共通 -->
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="32%" r="80%">
+      <stop offset="0%" stop-color="#1e3358"/>
+      <stop offset="100%" stop-color="#0b1424"/>
+    </radialGradient>
+  </defs>
+  <rect width="1024" height="1024" rx="192" ry="192" fill="url(#bg)"/>
+<g fill="none" stroke="#7ea6e0" stroke-width="26" stroke-linecap="round" stroke-linejoin="round" opacity="0.85">
+    <path d="M140 268 L140 140 L268 140"/>
+    <path d="M756 140 L884 140 L884 268"/>
+    <path d="M884 756 L884 884 L756 884"/>
+    <path d="M268 884 L140 884 L140 756"/>
+  </g>
+  <path d="M242 720 L506 720 L782 304 Z" fill="#2f5aa8"/>
+  <path d="M506 720 L782 720 L782 304 Z" fill="#ffd94d"/>
+  <path d="M242 720 L782 720 L782 304 Z" fill="none" stroke="#ebf2ff" stroke-width="28" stroke-linejoin="round"/>
+  <path d="M506 720 L782 304" fill="none" stroke="#ebf2ff" stroke-width="22"/>
+  <path d="M381.7 710.2 A 140 140 0 0 0 358.6 642.5" fill="none" stroke="#ffd94d" stroke-width="30" stroke-linecap="round"/>
 </svg>

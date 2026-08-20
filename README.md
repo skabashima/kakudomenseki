@@ -107,11 +107,26 @@ App Store の掲載名は次の組み合わせ(タイトル・サブタイトル
 - タイトル: **図形ハンター**
 - サブタイトル: **角度と面積を撃ち落とせ｜中学・高校・大学受験**
 
-App Store 用の 1024×1024 アイコンは `store/icon/icon_1024.png`(透過なし)。
-元 SVG から作り直すときは:
+## アイコン
+
+絵柄は「狙いを定める枠(ハンター)+ 角度の弧と面積の塗り分け(図形)」。
+金色は角度と面積だけに使い、枠は淡い青にして主役を邪魔しないようにしている。
+小さい表示(ホーム画面の 60px)でも二色の塗り分けと角の弧が残るようにサイズを決めた。
+
+- `icon.svg` … アプリ/エディタ用(角丸つき)
+- `store/icon/icon_full.svg` … App Store 用のフルブリード版(角丸・透過なし)
+- `store/icon/icon_1024.png` … 上を書き出した 1024×1024(透過なし。iOS 書き出しはこれを参照)
+
+SVG を直したら PNG を作り直す:
 
 ```
 godot --headless --path . -s tools/make_icons.gd
+```
+
+候補を並べて見くらべたいときは(iOS の角丸を模して 256/120/60 を並べたシートを作る):
+
+```
+godot --headless --path . -s tools/icon_preview.gd -- --dir=<svgのフォルダ> --out=<出力png>
 ```
 
 ## デバッグ
@@ -137,6 +152,9 @@ scenes/
 ui/
   figure_view.gd   図形スペックを描く自前レンダラ
   drag_scroll.gd   指でなぞってスクロールできるようにする補助
+tools/
+  make_icons.gd    アイコン SVG → ストア用 PNG の書き出し
+  icon_preview.gd  アイコン候補の比較シート作成
 tests/
   gen_check.tscn         全ステージ × 多数シードの生成検証 (--headless 可)
   play_check.tscn        実際に解答してクリア/失敗/★の検証 (--headless 可)
