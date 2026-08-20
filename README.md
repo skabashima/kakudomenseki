@@ -84,6 +84,24 @@ godot --path "<このフォルダ>"
   日本語フォント(Noto Sans JP)同梱
 - **効果音はプログラム生成**(外部アセットなし)
 
+## 課金(買い切り 1 商品)
+
+**無料でも十分に遊べて、続きは ¥500 の買い切りで全部開く**構成。広告もサブスクも入れない。
+
+- **無料**: 角度編・面積編それぞれの**最初の 4 ステージ**(計 8)と、
+  タイムアタック(角度編)。電卓・「解き方」アニメ・補助線・ヒント・★・段位・記録は
+  無料のまま制限しない(学習の役に立つ機能は絞らず、絞るのは量だけ)
+- **購入で解放**: 残り 33 ステージ / 全ステージの「挑戦 10問」(王冠) /
+  タイムアタック(面積編・全コースミックス)/ サバイバル
+- **商品**: 非消費型 `kakudomenseki_unlock_all` ¥500(iOS / Android 共通)。
+  解放画面に「購入を復元する」を常設(iOS 審査で必須)
+- 有料ステージは隠さずタイトルを見せて、タップすると解放画面へ飛ぶ(見せて売る)。
+  未購入のチャレンジは無料ステージからしか出題しない
+
+無料範囲は `core/game_state.gd` の `FREE_STAGES_PER_COURSE` だけで決まる。
+実装は さわる物理 で実機検証ずみのものを移植(`core/iap.gd` / `addons/`)。
+ストア側の登録手順・審査メモ・プライバシー申告は **`store/課金登録情報.md`** にまとめてある。
+
 ## iOS ビルド(Codemagic)
 
 さわる物理と同じパイプライン。`codemagic.yaml` の `ios-kakudomenseki` ワークフローを
@@ -110,6 +128,45 @@ App Store の掲載名は次の組み合わせ(タイトル・サブタイトル
 App Store Connect に入力する内容(掲載文・キーワード・プライバシー回答・
 必要な画像サイズ・未確定事項)は `store/APPSTORE.md` にまとめてある。
 
+## Android ビルド(AAB)
+
+Google Play にあげる AAB は**手元で作る**(Codemagic は iOS だけ。Mac の分単価が高いので)。
+
+```
+powershell -ExecutionPolicy Bypass -File tools/build_aab.ps1              # 署名済みリリース版
+powershell -ExecutionPolicy Bypass -File tools/build_aab.ps1 -DebugSign   # デバッグ鍵(手元の確認用)
+```
+
+書き出したあと `store/check_aab.py` が中身を検める(16KB ページ・targetSdk・
+BILLING 権限・versionCode・日本語フォントの同梱)。詳細は `tools/README_BUILD.md`。
+
+初回だけ必要な準備:
+
+1. Godot エディタ設定に Android SDK / JDK のパスを登録
+2. Android ビルドテンプレートを導入(`--install-android-build-template` は単独では効かず、
+   export と併用する: `godot --headless --path . --install-android-build-template
+   --export-debug "Android" build/android/kakudomenseki-debug.aab`)
+3. 署名鍵(keystore)を作る → `store/署名鍵の作り方.md`。
+   鍵はリポジトリの外(`../keys kakudomenseki/`)に置く
+
+## ストア素材(スクリーンショット)
+
+掲載用の画像は `store/入稿セット/` に**そのままアップロードできる形**で入っている
+(Google Play スマホ 1080×1920 / App Store iPhone 6.9インチ 1320×2868・6.5インチ 1284×2778 /
+iPad 13インチ 2048×2732 の各 8 枚 + フィーチャーグラフィック 1024×500 + Play 用アイコン 512×512)。
+App内課金の審査用スクショ(1242×2208)も同じフォルダに入っている。
+
+作り直す手順:
+
+```
+godot --path "<このフォルダ>" res://tests/shot_store.tscn   # 実画面を 1320×2868 で撮る
+python store/make_store_images.py                          # 見出しと背景を合成して入稿セットまで作る
+python store/check_store_images.py                         # 寸法・枚数・容量・引き伸ばしの検品
+```
+
+撮影は App Store の必須枠と同じ最大サイズ(1320×2868)で行い、ほかのサイズは縮小だけで作る
+(引き伸ばしを起こさない)。詳細は `store/入稿セット/README.md`。
+
 ## アイコン
 
 絵柄は「狙いを定める枠(ハンター)+ 角度の弧と面積の塗り分け(図形)」。
@@ -134,7 +191,8 @@ godot --headless --path . -s tools/icon_preview.gd -- --dir=<svgのフォルダ>
 
 ## デバッグ
 
-タイトル画面左下の「デバッグ: 全ステージ解放」トグルで、進捗に関係なく全ステージを遊べる(設定はセーブされる)。
+タイトル画面左下の「デバッグ: 全ステージ解放」トグルで、進捗にも購入にも関係なく全ステージを遊べる(設定はセーブされる)。
+課金の壁を素通りできてしまうため、**このトグルはデバッグビルドでしか表示されない**(`OS.is_debug_build()`)。
 
 ## 構成
 
@@ -146,26 +204,42 @@ core/
   gen_junior.gd       高校受験レベルの問題生成 (j1-j12)
   gen_senior.gd       大学受験レベルの問題生成 (s1-s12)
   expr_eval.gd        解答欄の電卓(式の評価)
+  iap.gd              課金マネージャ (Autoload)。Android/iOS/スタブの 3 層
 scenes/
   main.gd/.tscn             タイトル(コース選択・段位・進捗)
   stage_select.gd/.tscn     ステージ一覧(★・自己ベスト・ロック)
   problem.gd/.tscn          問題シーン(ステージ攻略 / チャレンジ 共用)
   challenge_select.gd/.tscn チャレンジ選択
   records.gd/.tscn          記録(段位・コース別・チャレンジ自己ベスト)
+  store.gd/.tscn            解放画面(買い切り 1 商品・購入の復元)
+addons/
+  godot-iap                 iOS StoreKit2 (OpenIAP)
+  GodotGooglePlayBilling    Android Play Billing
+store/
+  make_store_images.py   撮った素材に見出しを合成してストア規定サイズで書き出す
+  check_store_images.py  入稿画像の寸法・枚数・容量の検品
+  check_aab.py           AAB の中身の検品(16KBページ・targetSdk・BILLING 権限)
+  ストア掲載情報.md       両ストアの掲載文・キーワード・レーティング
+  課金登録情報.md         両ストアの商品登録・審査メモ・プライバシー申告
+  署名鍵の作り方.md       Android のアップロード鍵(keystore)の作成手順
+  プレスリリース案.md     配信告知の原稿(.docx も同梱)
 ui/
   figure_view.gd   図形スペックを描く自前レンダラ
   drag_scroll.gd   指でなぞってスクロールできるようにする補助
 tools/
   make_icons.gd    アイコン SVG → ストア用 PNG の書き出し
   icon_preview.gd  アイコン候補の比較シート作成
+  build_aab.ps1    Android の AAB を書き出して検品する(署名まで)
 tests/
   gen_check.tscn         全ステージ × 多数シードの生成検証 (--headless 可)
   play_check.tscn        実際に解答してクリア/失敗/★の検証 (--headless 可)
   smoke.tscn             全シーンのロード確認 (--headless 可)
+  iap_gate.tscn          課金ゲート(無料/有料の線引き)の検証 (--headless 可)
   variation_report.tscn  ステージごとの問題バリエーション数を実測 (--headless 可)
   shots.tscn             全画面のスクリーンショット撮影(要描画環境)
   shot_one.tscn          1 ステージ・1 tier の図形だけ撮影するデバッグ用
   shot_wt.tscn           「解き方」アニメを途中まで進めて撮影するデバッグ用
+  shot_store.tscn        ストア掲載用の素材を 1320×2868 で撮影(要描画環境)
 ```
 
 テスト実行例:
@@ -174,4 +248,5 @@ tests/
 godot --headless --path "<このフォルダ>" res://tests/gen_check.tscn
 godot --headless --path "<このフォルダ>" res://tests/play_check.tscn
 godot --headless --path "<このフォルダ>" res://tests/smoke.tscn
+godot --headless --path "<このフォルダ>" res://tests/iap_gate.tscn
 ```
