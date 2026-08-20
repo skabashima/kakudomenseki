@@ -36,9 +36,7 @@ def main(path):
     # versionCode は毎回 +1 しないと Play が受け付けないので必ず目視する
     for key in (b"package", b"targetSdkVersion", b"minSdkVersion",
                 b"versionCode", b"versionName"):
-        i = d.find(key)
-        around = repr(d[i:i + 30]) if i >= 0 else "(見つからず)"
-        print("  %-18s %s" % (key.decode(), around))
+        print("  %-18s %s" % (key.decode(), _value_of(d, key)))
 
     # --- 課金の権限 ---
     # これが無いと Play Console で「1回限りのアイテム」を作れない
@@ -90,6 +88,25 @@ def main(path):
 
     print("\n判定:", "アップロードして良い" if ok else "★ 修正が必要 ★")
     return 0 if ok else 1
+
+
+def _value_of(d, key):
+    """protobuf の中から key に続く文字列値を取り出す。
+
+    aapt2 が無くても versionCode を目で確かめられるようにするため。
+    形は <key><0x1a><長さ><値> なので、そこだけ読む。読めなければ生バイトを返す。
+    """
+    i = d.find(key)
+    if i < 0:
+        return "(見つからず)"
+    j = i + len(key)
+    if j < len(d) and d[j] == 0x1a:
+        n = d[j + 1]
+        try:
+            return d[j + 2:j + 2 + n].decode("utf-8")
+        except UnicodeDecodeError:
+            pass
+    return repr(d[i:i + 30])
 
 
 if __name__ == "__main__":

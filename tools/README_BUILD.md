@@ -43,11 +43,14 @@ powershell -ExecutionPolicy Bypass -File "tools\build_aab.ps1"
 
 ## アップロード前に
 
-- `project.godot` の `application/config/version` と、export プリセットの
-  **versionCode を毎回 +1** する(同じ code は Play に弾かれる)。
-- 確認済みの値(2026-08-20 / **リリース鍵で署名した AAB**):
+- **versionCode を毎回 +1** する(同じ code は Play に弾かれる。実際に
+  「バージョンコード 1 はすでに使用されています」で弾かれた)。
+  `tools/build_aab.ps1 -Bump` を付けると `export_presets.cfg` の
+  `version/code` を +1 してから書き出す。付けないときは現在値を表示するだけ。
+  書き出した AAB の実際の値は `python store/check_aab.py <aab>` が出す。
+- 確認済みの値(2026-08-20 / **リリース鍵で署名した AAB**・versionCode 2):
   `build/android/kakudomenseki.aab` 59.9 MB /
-  パッケージ `jp.snaplace.kakudomenseki` / targetSdk 36 / minSdk 24 / versionCode 1 /
+  パッケージ `jp.snaplace.kakudomenseki` / targetSdk 36 / minSdk 24 / versionCode 2 /
   16KB ページ OK(arm64・armeabi-v7a とも align=16384) / **BILLING 権限あり** /
   **リリース鍵で署名済み**(AAB の証明書 SHA256 が keystore と一致) /
   日本語フォント同梱 / ストア用画像・テスト・iOS のフレームワークは同梱なし。

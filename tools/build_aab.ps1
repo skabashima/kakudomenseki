@@ -2,6 +2,7 @@
 #
 #   powershell -ExecutionPolicy Bypass -File tools/build_aab.ps1              ← 署名済みリリース版
 #   powershell -ExecutionPolicy Bypass -File tools/build_aab.ps1 -DebugSign   ← デバッグ鍵(手元の確認用)
+#   powershell -ExecutionPolicy Bypass -File tools/build_aab.ps1 -Bump        ← versionCode を +1 してから書き出す
 #
 # 署名鍵はリポジトリの外に置いてある。ここには置かないこと。
 #   ..\keys kakudomenseki\kakudomenseki-release.keystore
@@ -11,7 +12,7 @@
 # 注意(PowerShell 5.1): このファイルは UTF-8 BOM 付きで保存すること。
 
 # -VerifyOnly … 書き出しを飛ばして、すでにある AAB の検めだけを行う
-param([switch]$DebugSign, [switch]$VerifyOnly)
+param([switch]$DebugSign, [switch]$VerifyOnly, [switch]$Bump)
 
 $proj  = Split-Path -Parent $PSScriptRoot
 $games = Split-Path -Parent $proj
@@ -74,6 +75,27 @@ if (Test-Path $settings) {
         [IO.File]::WriteAllLines($settings, [string[]]$new, $utf8)
         Write-Host "   o エディタ設定の SDK パスを直しました(元は .bak)"
     }
+}
+
+# -- versionCode --
+# Play は同じ versionCode を受け付けない
+# (「バージョンコード 1 はすでに使用されています」で弾かれる)。
+Write-Host "-- versionCode --"
+$presets = Join-Path $proj "export_presets.cfg"
+$u8 = New-Object Text.UTF8Encoding $false
+$plines = @([IO.File]::ReadAllLines($presets, $u8))
+$cur = ($plines | Where-Object { $_ -like "version/code=*" } | Select-Object -First 1)
+$code = 0
+if ($cur) { $code = [int]($cur -replace "version/code=", "") }
+if ($Bump -and -not $VerifyOnly) {
+    $code = $code + 1
+    $new = foreach ($l in $plines) {
+        if ($l -like "version/code=*") { "version/code=$code" } else { $l }
+    }
+    [IO.File]::WriteAllLines($presets, [string[]]$new, $u8)
+    Write-Host "   o versionCode を $code に上げた(export_presets.cfg を書き換え)"
+} else {
+    Write-Host "   o versionCode = $code  ※上げるには -Bump を付ける"
 }
 
 # -- 署名鍵 --
