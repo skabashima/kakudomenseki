@@ -62,7 +62,7 @@ const COURSES := [
 			{"id": "s3", "title": "三角比の面積公式", "desc": "S = ½ ab sinC"},
 			{"id": "s4", "title": "ヘロンの公式", "desc": "3 辺から面積"},
 			{"id": "s5", "title": "内接円と外接円", "desc": "S = rs と R = abc/4S"},
-			{"id": "s6", "title": "ベクトルと面積", "desc": "½|x₁y₂ − x₂y₁|"},
+			{"id": "s6", "title": "ベクトルと面積", "desc": "½|x1 y2 − x2 y1|"},
 			{"id": "s7", "title": "弧度法", "desc": "l = rθ,S = ½r²θ"},
 			{"id": "s8", "title": "放物線と直線", "desc": "6分の1公式"},
 			{"id": "s9", "title": "2つの放物線", "desc": "囲まれた面積"},

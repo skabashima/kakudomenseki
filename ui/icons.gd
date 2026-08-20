@@ -45,6 +45,39 @@ static func lock(sz: float, col: Color) -> Control:
 	return c
 
 
+## けす(バックスペース)。⌫(U+232B)は同梱フォントに無いので図形で描く
+static func backspace(sz: float, col: Color) -> Control:
+	var c := _base(sz)
+	c.draw.connect(func() -> void:
+		var pts := PackedVector2Array([
+			Vector2(0.08, 0.50), Vector2(0.34, 0.20), Vector2(0.92, 0.20),
+			Vector2(0.92, 0.80), Vector2(0.34, 0.80),
+		])
+		for i in pts.size():
+			pts[i] = pts[i] * sz
+		c.draw_colored_polygon(pts, col)
+		var ink := Color(0.12, 0.14, 0.2)
+		var w := sz * 0.075
+		c.draw_line(Vector2(sz * 0.50, sz * 0.38), Vector2(sz * 0.76, sz * 0.64), ink, w)
+		c.draw_line(Vector2(sz * 0.76, sz * 0.38), Vector2(sz * 0.50, sz * 0.64), ink, w))
+	return c
+
+
+## もどす(1 手前へ)。↩(U+21A9)は同梱フォントに無いので図形で描く
+static func undo(sz: float, col: Color) -> Control:
+	var c := _base(sz)
+	c.draw.connect(func() -> void:
+		# 上半分の弧(右まわりに戻る形)
+		c.draw_arc(Vector2(sz * 0.52, sz * 0.60), sz * 0.28, PI, TAU, 24, col, sz * 0.12)
+		# 左端の矢じり
+		var head := PackedVector2Array([
+			Vector2(0.24, 0.44), Vector2(0.24, 0.80), Vector2(0.02, 0.62),
+		])
+		for i in head.size():
+			head[i] = head[i] * sz
+		c.draw_colored_polygon(head, col))
+	return c
+
 static func _base(sz: float) -> Control:
 	var c := Control.new()
 	c.custom_minimum_size = Vector2(sz, sz)

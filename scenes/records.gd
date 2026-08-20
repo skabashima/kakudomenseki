@@ -84,7 +84,7 @@ func _ready() -> void:
 			course_score += int(GameState.scores.get(id, 0)) + int(GameState.scores.get("g:" + id, 0))
 		var col: Color = c["color"]
 		_lbl(cv, String(c["name"]), 28, col.lightened(0.45))
-		_lbl(cv, "クリア %d/%d   ★ %d/%d   👑 %d/%d   %d点" % [
+		_lbl(cv, "クリア %d/%d   ★ %d/%d   王冠 %d/%d   %d点" % [
 			cleared, stages.size(), got, stages.size() * 3,
 			crowns, stages.size(), course_score], 24, Color.WHITE)
 

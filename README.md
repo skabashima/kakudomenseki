@@ -241,6 +241,7 @@ tests/
   play_check.tscn        実際に解答してクリア/失敗/★の検証 (--headless 可)
   smoke.tscn             全シーンのロード確認 (--headless 可)
   iap_gate.tscn          課金ゲート(無料/有料の線引き)の検証 (--headless 可)
+  font_check.gd          画面に出る文字が同梱フォントにあるか検証 (--headless 可)
   variation_report.tscn  ステージごとの問題バリエーション数を実測 (--headless 可)
   shots.tscn             全画面のスクリーンショット撮影(要描画環境)
   shot_one.tscn          1 ステージ・1 tier の図形だけ撮影するデバッグ用
@@ -255,4 +256,5 @@ godot --headless --path "<このフォルダ>" res://tests/gen_check.tscn
 godot --headless --path "<このフォルダ>" res://tests/play_check.tscn
 godot --headless --path "<このフォルダ>" res://tests/smoke.tscn
 godot --headless --path "<このフォルダ>" res://tests/iap_gate.tscn
+godot --headless --path "<このフォルダ>" -s tests/font_check.gd
 ```

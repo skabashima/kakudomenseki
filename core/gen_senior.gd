@@ -440,7 +440,7 @@ static func _s6(rng: RandomNumberGenerator, tier: int) -> Dictionary:
 		return {
 			"q": "3 点 A(%d, %d)、B(%d, %d)、C(%d, %d) を頂点とする三角形の面積 S を求めなさい。" % [pax, pay, pbx, pby, pcx, pcy],
 			"answer": ansh, "unit": "",
-			"hint1": "A が原点に来るように平行移動してから S = ½|x₁y₂ − x₂y₁| を使おう。",
+			"hint1": "A が原点に来るように平行移動してから S = ½|x1 y2 − x2 y1| を使おう。",
 			"hint2": "S = ½ |(%d)×(%d) − (%d)×(%d)|" % [pbx - pax, pcy - pay, pcx - pax, pby - pay],
 			"expl": "平行移動後のベクトルは (%d, %d) と (%d, %d)。S = ½×%d = %s です。" % [
 				pbx - pax, pby - pay, pcx - pax, pcy - pay, absi(det2), ProblemGen.fmt(ansh)],
@@ -470,7 +470,7 @@ static func _s6(rng: RandomNumberGenerator, tier: int) -> Dictionary:
 		return {
 			"q": "a→ = (%d, %d)、b→ = (%d, %d) のとき、a→ と b→ が作る三角形 OAB の面積 S を求めなさい。" % [x1, y1, x2, y2],
 			"answer": ans, "unit": "",
-			"hint1": "S = ½ |x₁y₂ − x₂y₁| に成分を入れるだけだよ。",
+			"hint1": "S = ½ |x1 y2 − x2 y1| に成分を入れるだけだよ。",
 			"hint2": "S = ½ |%d×%d − (%d)×(%d)|" % [x1, y2, x2, y1],
 			"expl": "S = ½|%d − %d| = ½ × %d = %s です。" % [x1 * y2, x2 * y1, absi(det), ProblemGen.fmt(ans)],
 			"fig": fig,
@@ -478,7 +478,7 @@ static func _s6(rng: RandomNumberGenerator, tier: int) -> Dictionary:
 	return {
 		"q": "O(0,0)、A(%d, %d)、B(%d, %d) を頂点とする三角形の面積 S を求めなさい。" % [x1, y1, x2, y2],
 		"answer": ans, "unit": "",
-		"hint1": "公式 S = ½ |x₁y₂ − x₂y₁|(原点を頂点とする三角形)。",
+		"hint1": "公式 S = ½ |x1 y2 − x2 y1|(原点を頂点とする三角形)。",
 		"hint2": "S = ½ |%d×%d − (%d)×(%d)|" % [x1, y2, x2, y1],
 		"expl": "S = ½|%d×%d − (%d)×(%d)| = ½×%d = %s です。" % [x1, y2, x2, y1, absi(det), ProblemGen.fmt(ans)],
 		"fig": fig,
@@ -718,8 +718,8 @@ static func _s10(rng: RandomNumberGenerator, tier: int) -> Dictionary:
 			"q": "曲線 y = %ssin x (0 ≤ x ≤ π) と x 軸で囲まれた部分の面積 S を求めなさい。" % ("" if a == 1 else str(a)),
 			"answer": 2.0 * a, "unit": "",
 			"hint1": "∫sin x dx = −cos x。0 から π まで積分しよう。",
-			"hint2": "S = %s[−cos x]₀^π = %s × (1 + 1)" % [str(a), str(a)],
-			"expl": "S = %d∫₀^π sin x dx = %d[−cos x]₀^π = %d × 2 = %d です。" % [a, a, a, 2 * a],
+			"hint2": "S = %s[−cos x] を 0 から π まで = %s × (1 + 1)" % [str(a), str(a)],
+			"expl": "S = %d∫ sin x dx (0 から π) = %d[−cos x] を 0 から π まで = %d × 2 = %d です。" % [a, a, a, 2 * a],
 			"fig": fig,
 		}
 	elif kind == 1:
