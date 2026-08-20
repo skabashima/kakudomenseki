@@ -48,14 +48,27 @@ func _ready() -> void:
 	_section(list, "タイムアタック ― 3分で何問とける?")
 	for c in ProblemGen.COURSES:
 		var cid := String(c["id"])
-		_challenge_card(list, String(c["name"]), "time:" + cid, c["color"], func() -> void:
-			_start("time", cid))
-	_challenge_card(list, "全コースミックス", "time:all", Color(0.65, 0.5, 0.2), func() -> void:
-		_start("time", "all"))
+		_challenge_card(list, String(c["name"]), "time:" + cid, c["color"],
+			GameState.challenge_needs_purchase("time", cid), func() -> void:
+				_start("time", cid))
+	_challenge_card(list, "全コースミックス", "time:all", Color(0.65, 0.5, 0.2),
+		GameState.challenge_needs_purchase("time", "all"), func() -> void:
+			_start("time", "all"))
 
 	_section(list, "サバイバル ― ミス3回でおわり。どこまでいける?")
-	_challenge_card(list, "サバイバル(全コース)", "survival", Color(0.6, 0.3, 0.35), func() -> void:
-		_start("survival", "all"))
+	_challenge_card(list, "サバイバル(全コース)", "survival", Color(0.6, 0.3, 0.35),
+		GameState.challenge_needs_purchase("survival", "all"), func() -> void:
+			_start("survival", "all"))
+
+	# 未購入のときは、無料で遊べる範囲をはっきり書いておく
+	if not GameState.premium and not GameState.debug_unlock_all:
+		var note := Label.new()
+		note.text = "無料で遊べるのは タイムアタック(角度編)だけです。出題は各編の最初の %d ステージから。" \
+			% GameState.FREE_STAGES_PER_COURSE
+		note.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		note.add_theme_font_size_override("font_size", 20)
+		note.add_theme_color_override("font_color", Color(0.7, 0.77, 0.9))
+		list.add_child(note)
 
 
 func _start(mode: String, course_id: String) -> void:
@@ -72,15 +85,21 @@ func _section(parent: Control, text: String) -> void:
 	parent.add_child(lbl)
 
 
-func _challenge_card(parent: Control, text: String, best_key: String, color: Color, cb: Callable) -> void:
+## paid = 未購入で遊べないチャレンジ。押すと解放画面へ飛ばす(隠さずに見せて売る)
+func _challenge_card(parent: Control, text: String, best_key: String, color: Color,
+		paid: bool, cb: Callable) -> void:
 	var btn := Button.new()
 	var best := int(GameState.challenge_best.get(best_key, 0))
-	btn.text = text + ("   自己ベスト %d 問" % best if best > 0 else "")
+	btn.text = text + ("\n全ステージ解放で遊べます" if paid \
+		else ("   自己ベスト %d 問" % best if best > 0 else ""))
 	btn.custom_minimum_size = Vector2(0, 96)
 	btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	btn.add_theme_font_size_override("font_size", 28)
-	GameState.style_button(btn, color)
+	btn.add_theme_font_size_override("font_size", 24 if paid else 28)
+	GameState.style_button(btn, Color(0.42, 0.33, 0.14) if paid else color)
 	btn.pressed.connect(func() -> void:
 		GameState.play_sfx("tap")
-		cb.call())
+		if paid:
+			GameState.change_scene("res://scenes/store.tscn")
+		else:
+			cb.call())
 	parent.add_child(btn)

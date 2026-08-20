@@ -101,19 +101,28 @@ func _ready() -> void:
 		GameState.change_scene("res://scenes/challenge_select.tscn"), true))
 	vbox.add_child(_menu_button("記録", "段位・★・自己ベスト", SECONDARY, func() -> void:
 		GameState.change_scene("res://scenes/records.tscn"), true))
+	# 未購入のときだけ解放の入口を出す(買い切り 1 商品・広告なし)
+	if not GameState.premium:
+		vbox.add_child(_spacer(10))
+		vbox.add_child(_menu_button(
+			"全ステージを解放", "残り %d ステージ・挑戦・チャレンジ" % GameState.paid_stage_count(),
+			Color(0.78, 0.55, 0.15), func() -> void:
+				GameState.change_scene("res://scenes/store.tscn"), true))
 
-	# デバッグ: 全ステージ解放トグル(左下に小さく)
-	debug_btn = Button.new()
-	debug_btn.set_anchors_preset(Control.PRESET_BOTTOM_LEFT)
-	var bot_ins: float = ins["bottom"]
-	debug_btn.offset_left = 20.0
-	debug_btn.offset_top = -80.0 - bot_ins
-	debug_btn.offset_right = 480.0
-	debug_btn.offset_bottom = -16.0 - bot_ins
-	debug_btn.add_theme_font_size_override("font_size", 22)
-	debug_btn.pressed.connect(_toggle_debug)
-	add_child(debug_btn)
-	_update_debug_btn()
+	# デバッグ: 全ステージ解放トグル(左下に小さく)。
+	# 購入しなくても全ステージが開いてしまうので、リリースビルドでは出さない
+	if OS.is_debug_build():
+		debug_btn = Button.new()
+		debug_btn.set_anchors_preset(Control.PRESET_BOTTOM_LEFT)
+		var bot_ins: float = ins["bottom"]
+		debug_btn.offset_left = 20.0
+		debug_btn.offset_top = -80.0 - bot_ins
+		debug_btn.offset_right = 480.0
+		debug_btn.offset_bottom = -16.0 - bot_ins
+		debug_btn.add_theme_font_size_override("font_size", 22)
+		debug_btn.pressed.connect(_toggle_debug)
+		add_child(debug_btn)
+		_update_debug_btn()
 
 
 func _toggle_debug() -> void:
@@ -123,6 +132,8 @@ func _toggle_debug() -> void:
 
 
 func _update_debug_btn() -> void:
+	if debug_btn == null:
+		return
 	if GameState.debug_unlock_all:
 		debug_btn.text = "デバッグ: 全ステージ解放 ON"
 		GameState.style_button(debug_btn, SECONDARY.lightened(0.12))

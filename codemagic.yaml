@@ -1,5 +1,5 @@
 # Codemagic CI/CD ― Godot 4.7 製「図形ハンター」のビルド定義。
-# (さわる物理と同じパイプライン。IAP がないぶんシンプル)
+# (さわる物理と同じパイプライン。IAP のフレームワーク埋め込みまで同じ)
 # Codemagic は Godot を自動検出できないため、Godot 本体と export テンプレートの
 # 取得からこの YAML で明示する。
 #
@@ -12,6 +12,7 @@
 #     godot --headless --path <proj> res://tests/calc_check.tscn
 #     godot --headless --path <proj> res://tests/play_check.tscn
 #     godot --headless --path <proj> res://tests/smoke.tscn
+#     godot --headless --path <proj> res://tests/iap_gate.tscn
 #
 # ■ 事前に Codemagic 側で用意するもの(コードだけでは設定できないもの)
 #
@@ -125,6 +126,18 @@ workflows:
           # (pbxproj のリストは 1 行に並んでいてもよい)
           sed -i '' 's|knownRegions = (|knownRegions = (ja, |' "$PBX"
           grep -A2 "knownRegions" "$PBX"
+
+      - name: OpenIAP フレームワークを Xcode プロジェクトに埋め込み
+        script: |
+          set -euo pipefail
+          # GDExtension(GodotIap / SwiftGodotRuntime)を .app に framework として
+          # 埋め込む。埋め込まないと実機起動時に dylib 未検出でクラッシュするため必須。
+          # (さわる物理と同じスクリプトをそのまま使う)
+          chmod +x addons/godot-iap/scripts/fix_ios_embed.sh
+          IOS_EXPORT_DIR="$CM_BUILD_DIR/build/ios" \
+          GODOT_IAP_ADDON_DIR="$CM_BUILD_DIR/addons/godot-iap" \
+          XCODEPROJ="$CM_BUILD_DIR/${XCODE_PROJECT}" \
+          bash addons/godot-iap/scripts/fix_ios_embed.sh
 
       - name: 署名して IPA をビルド
         script: |

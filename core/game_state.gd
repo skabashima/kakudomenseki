@@ -90,6 +90,56 @@ func question_score(tries: int, hints: int, seconds: float, combo_at: int) -> in
 	return int(round(100.0 * try_mult * hint_mult * speed_mult * combo_mult))
 
 
+# ---------------------------------------------------------
+# 課金(買い切り 1 商品・非消費型。実処理は core/iap.gd)
+# ---------------------------------------------------------
+## 各編の最初の何ステージまでを無料で遊べるか
+const FREE_STAGES_PER_COURSE := 4
+## 購入(または復元)済みなら true。全ステージとチャレンジが解放される
+var premium: bool = false
+
+
+func set_premium(v: bool) -> void:
+	if premium == v:
+		return
+	premium = v
+	save_game()
+
+
+## そのステージが無料範囲か(各編の先頭 FREE_STAGES_PER_COURSE ステージ)
+func is_stage_free(index: int) -> bool:
+	return index < FREE_STAGES_PER_COURSE
+
+
+## そのステージを遊ぶのに購入が必要か
+func needs_purchase(index: int) -> bool:
+	if premium or debug_unlock_all:
+		return false
+	return not is_stage_free(index)
+
+
+## 有料ステージの数(解放画面や訴求ボタンの文言に使う)
+func paid_stage_count() -> int:
+	var n := 0
+	for c in ProblemGen.COURSES:
+		n += maxi(0, (c["stages"] as Array).size() - FREE_STAGES_PER_COURSE)
+	return n
+
+
+## チャレンジ(タイムアタック/サバイバル)に購入が必要か。
+## 無料で遊べるのは「タイムアタック・角度編」だけ
+func challenge_needs_purchase(mode_id: String, course_id: String) -> bool:
+	if premium or debug_unlock_all:
+		return false
+	return not (mode_id == "time" and course_id == "kaku")
+
+
+## チャレンジの出題を無料ステージだけに絞るときの上限(0 なら制限なし)。
+## 未購入のままでも有料ステージの問題が出てしまわないようにする
+func free_stage_limit() -> int:
+	return 0 if (premium or debug_unlock_all) else FREE_STAGES_PER_COURSE
+
+
 ## そのステージを遊べるか。コース内で前のステージをクリアしていれば次へ進める。
 ## (学年によるロックはしない。実力で進む)
 func is_stage_unlocked(course_id: String, index: int) -> bool:
@@ -387,6 +437,7 @@ func save_game() -> void:
 		"challenge_best": challenge_best,
 		"gauntlet_best": gauntlet_best,
 		"debug_unlock_all": debug_unlock_all,
+		"premium": premium,
 	}
 	var f := FileAccess.open(SAVE_PATH, FileAccess.WRITE)
 	if f:
@@ -409,3 +460,4 @@ func load_game() -> void:
 	challenge_best = data.get("challenge_best", {})
 	gauntlet_best = data.get("gauntlet_best", {})
 	debug_unlock_all = bool(data.get("debug_unlock_all", false))
+	premium = bool(data.get("premium", false))

@@ -78,6 +78,8 @@ func _ready() -> void:
 func _stage_card(index: int, stage: Dictionary, col: Color) -> Control:
 	var id := String(stage["id"])
 	var unlocked: bool = GameState.is_stage_unlocked(String(course["id"]), index)
+	# 有料ステージ(未購入)は「見せて売る」: タイトルは見せたまま、タップで解放画面へ
+	var paid := GameState.needs_purchase(index)
 	var star_count := int(GameState.stars.get(id, 0))
 	var best := int(GameState.scores.get(id, 0))
 
@@ -87,8 +89,13 @@ func _stage_card(index: int, stage: Dictionary, col: Color) -> Control:
 	var btn := Button.new()
 	btn.custom_minimum_size = Vector2(0, 108)
 	btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	btn.disabled = not unlocked
-	if unlocked:
+	btn.disabled = not unlocked and not paid
+	if paid:
+		GameState.style_button(btn, Color(0.42, 0.33, 0.14))
+		btn.pressed.connect(func() -> void:
+			GameState.play_sfx("tap")
+			GameState.change_scene("res://scenes/store.tscn"))
+	elif unlocked:
 		GameState.style_button(btn, col if star_count == 0 else col.darkened(0.15))
 		btn.pressed.connect(func() -> void:
 			GameState.play_sfx("tap")
@@ -109,7 +116,7 @@ func _stage_card(index: int, stage: Dictionary, col: Color) -> Control:
 	num.text = "%02d" % (index + 1)
 	num.add_theme_font_size_override("font_size", 40)
 	num.add_theme_color_override("font_color",
-		Color(1, 1, 1, 0.9) if unlocked else Color(0.7, 0.72, 0.8, 0.5))
+		Color(1, 1, 1, 0.9) if (unlocked or paid) else Color(0.7, 0.72, 0.8, 0.5))
 	num.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	hbox.add_child(num)
 
@@ -120,13 +127,14 @@ func _stage_card(index: int, stage: Dictionary, col: Color) -> Control:
 	mid.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	hbox.add_child(mid)
 	var t := Label.new()
-	t.text = String(stage["title"]) if unlocked else "???"
+	t.text = String(stage["title"]) if (unlocked or paid) else "???"
 	t.add_theme_font_size_override("font_size", 30)
 	t.add_theme_color_override("font_color",
-		Color.WHITE if unlocked else Color(0.7, 0.72, 0.8, 0.7))
+		Color.WHITE if (unlocked or paid) else Color(0.7, 0.72, 0.8, 0.7))
 	mid.add_child(t)
 	var d := Label.new()
-	d.text = String(stage["desc"]) if unlocked else "前のステージをクリアしよう"
+	d.text = "全ステージ解放で遊べます" if paid \
+		else (String(stage["desc"]) if unlocked else "前のステージをクリアしよう")
 	d.add_theme_font_size_override("font_size", 20)
 	d.add_theme_color_override("font_color", Color(0.85, 0.9, 1.0, 0.75))
 	mid.add_child(d)
@@ -140,10 +148,10 @@ func _stage_card(index: int, stage: Dictionary, col: Color) -> Control:
 	var s := ""
 	for i in 3:
 		s += "★" if i < star_count else "☆"
-	stars_lbl.text = s if unlocked else "🔒"
-	stars_lbl.add_theme_font_size_override("font_size", 30)
+	stars_lbl.text = "解放" if paid else (s if unlocked else "🔒")
+	stars_lbl.add_theme_font_size_override("font_size", 26 if paid else 30)
 	stars_lbl.add_theme_color_override("font_color",
-		Color(1.0, 0.84, 0.3) if star_count > 0 else Color(0.75, 0.8, 0.9, 0.6))
+		Color(1.0, 0.84, 0.3) if (paid or star_count > 0) else Color(0.75, 0.8, 0.9, 0.6))
 	right.add_child(stars_lbl)
 	if best > 0:
 		var b := Label.new()
@@ -155,7 +163,7 @@ func _stage_card(index: int, stage: Dictionary, col: Color) -> Control:
 	row.add_child(btn)
 
 	# クリア済みなら「挑戦」(高難度 10 問連続)。10 問クリアで王冠
-	if star_count > 0:
+	if star_count > 0 and not paid:
 		var g_best := int(GameState.gauntlet_best.get(id, 0))
 		var crowned := g_best >= GameState.GAUNTLET_QUESTIONS
 		var gbtn := Button.new()

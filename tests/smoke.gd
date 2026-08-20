@@ -14,10 +14,15 @@ func _ready() -> void:
 func _run() -> void:
 	# root がシーンツリーを組み立て中に add_child しないよう 1 フレーム待つ
 	await get_tree().process_frame
+	# 全ステージを開いた状態で確認する。未購入のまま有料ステージを開くと
+	# problem シーンが解放画面へ遷移し、テストシーンごと差し替わって止まる
+	var saved_premium: bool = GameState.premium
+	GameState.premium = true
 	# 通常画面
 	await _open("res://scenes/main.tscn")
 	await _open("res://scenes/challenge_select.tscn")
 	await _open("res://scenes/records.tscn")
+	await _open("res://scenes/store.tscn")
 	# コースごとのステージ一覧と問題シーン(各コースの最初と最後のステージ)
 	for course in ProblemGen.COURSES:
 		var cid := String(course["id"])
@@ -33,6 +38,8 @@ func _run() -> void:
 	await _open("res://scenes/problem.tscn")
 	GameState.mode = "survival"
 	await _open("res://scenes/problem.tscn")
+
+	GameState.premium = saved_premium
 
 	var bad := 0
 	for c in checks:

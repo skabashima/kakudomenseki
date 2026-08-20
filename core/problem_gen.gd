@@ -112,20 +112,30 @@ static func generate(stage_id: String, rng: RandomNumberGenerator, tier: int = 0
 
 
 ## チャレンジ用: コース("all" なら全部)からランダムにステージを 1 つ選ぶ。
-## ramp (0.0-1.0) が大きいほど後半の難しいステージが出やすい
-static func random_stage(course_id: String, rng: RandomNumberGenerator, ramp := 0.0) -> String:
+## ramp (0.0-1.0) が大きいほど後半の難しいステージが出やすい。
+## free_limit > 0 なら各編の先頭 free_limit ステージだけを出題対象にする
+## (未購入のまま有料ステージの問題が出てしまわないようにするため)
+static func random_stage(course_id: String, rng: RandomNumberGenerator, ramp := 0.0,
+		free_limit := 0) -> String:
 	var pool: Array = []
 	if course_id == "all":
 		for c in COURSES:
-			pool += c["stages"]
+			pool += _limit_stages(c["stages"], free_limit)
 	else:
-		pool = stages_of(course_id)
+		pool = _limit_stages(stages_of(course_id), free_limit)
 	# ramp に応じて出題範囲の重心を後ろへずらす
 	var n := pool.size()
 	var lo := int(floor(ramp * n * 0.6))
 	var idx := rng.randi_range(mini(lo, n - 1), n - 1) if rng.randf() < 0.5 \
 		else rng.randi_range(0, n - 1)
 	return String(pool[idx]["id"])
+
+
+## 先頭 limit ステージだけに絞る(limit <= 0 なら絞らない)
+static func _limit_stages(stages: Array, limit: int) -> Array:
+	if limit <= 0 or stages.size() <= limit:
+		return stages.duplicate()
+	return stages.slice(0, limit)
 
 
 static func stage_title(stage_id: String) -> String:

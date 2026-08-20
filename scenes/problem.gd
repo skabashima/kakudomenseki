@@ -66,6 +66,10 @@ func _ready() -> void:
 	rng.randomize()
 	course = ProblemGen.course_by_id(GameState.current_course)
 	if _stage_based():
+		# 未購入の有料ステージには入れない(直接遷移してきたときの保険)
+		if GameState.needs_purchase(GameState.current_stage):
+			GameState.change_scene("res://scenes/store.tscn")
+			return
 		stage = ProblemGen.stages_of(String(course["id"]))[GameState.current_stage]
 		stage_id = String(stage["id"])
 	_build_ui()
@@ -348,7 +352,9 @@ func _next_question(first := false) -> void:
 	else:
 		# チャレンジ: 正解数が増えるほど難しいステージ・難しいバリエーションが出る
 		var ramp := clampf(challenge_count / 15.0, 0.0, 1.0)
-		sid = ProblemGen.random_stage(GameState.challenge_course, rng, ramp)
+		# 未購入なら無料ステージだけから出題する(有料ステージの中身は見せない)
+		sid = ProblemGen.random_stage(GameState.challenge_course, rng, ramp,
+			GameState.free_stage_limit())
 		tier = rng.randi_range(0, mini(2 + int(ramp * 7.0), 9))
 	problem = ProblemGen.generate(sid, rng, tier)
 	figure.set_spec(problem["fig"])
@@ -644,7 +650,13 @@ func _finish_stage() -> void:
 		_add_label(v, "コンボ継続中 ×%d" % GameState.combo, 24, Color(0.6, 0.95, 1.0))
 	var stages: Array = course["stages"]
 	var has_next: bool = GameState.current_stage + 1 < stages.size()
-	if has_next:
+	if has_next and GameState.needs_purchase(GameState.current_stage + 1):
+		# 無料範囲の最後をクリアした直後。ここが一番の購入どころなので、
+		# つぎへ進むボタンをそのまま解放画面への入口にする
+		_add_button(v, "つづきの %d ステージをひらく" % GameState.paid_stage_count(),
+			Color(0.78, 0.55, 0.15), func() -> void:
+				GameState.change_scene("res://scenes/store.tscn"))
+	elif has_next:
 		_add_button(v, "つぎのステージへ", Color(0.2, 0.55, 0.35), func() -> void:
 			GameState.current_stage += 1
 			GameState.change_scene("res://scenes/problem.tscn"))

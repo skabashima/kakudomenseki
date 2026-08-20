@@ -16,6 +16,11 @@ func _ready() -> void:
 	var keep_best_combo := GameState.best_combo
 	var keep_stats: Dictionary = GameState.stats.duplicate(true)
 	var keep_gauntlet: Dictionary = GameState.gauntlet_best.duplicate(true)
+	# 有料ステージも検証対象にする。未購入のまま開くと problem シーンが
+	# 解放画面へ遷移してしまい、テストシーンごと差し替わって止まる。
+	# (debug_unlock_all ではなく premium。進捗のロックはそのまま検証したい)
+	var keep_premium := GameState.premium
+	GameState.premium = true
 	GameState.stars.clear()
 	GameState.scores.clear()
 	GameState.gauntlet_best.clear()
@@ -33,6 +38,7 @@ func _ready() -> void:
 	GameState.stats = keep_stats
 	GameState.gauntlet_best = keep_gauntlet
 	GameState.combo = 0
+	GameState.premium = keep_premium
 	GameState.save_game()
 
 	if failures.is_empty():
