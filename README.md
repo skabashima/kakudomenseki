@@ -176,6 +176,12 @@ python store/check_store_images.py                         # 寸法・枚数・�
 - `icon.svg` … アプリ/エディタ用(角丸つき)
 - `store/icon/icon_full.svg` … App Store 用のフルブリード版(角丸・透過なし)
 - `store/icon/icon_1024.png` … 上を書き出した 1024×1024(透過なし。iOS 書き出しはこれを参照)
+- `store/icon/launcher_192.png` … Android の旧来のランチャーアイコン
+- `store/icon/adaptive_fg_432.png` / `adaptive_bg_432.png` … Android のアダプティブアイコン。
+  端末ごとに円・角丸などでくり抜かれ、**中央 66%(288px)しか必ず見える保証がない**ため、
+  前景は絵柄を 276px に収めて中央に置いている(円マスクでは枠の角は外れ、三角形が残る)
+- `store/icon/adaptive_mono_432.png` … Android 13 以降のテーマ付きアイコン用の単色版。
+  **指定しないと Godot 既定のロボットのロゴが入る**ので必ず設定する
 
 SVG を直したら PNG を作り直す:
 
