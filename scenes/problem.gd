@@ -167,8 +167,9 @@ func _build_ui() -> void:
 	figure.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	fig_panel.add_child(figure)
 
-	# --- 補助線ツール(図の右上)---
-	# 「補助線」を押すと図の上をなぞって線が引ける(頂点や中点にスナップ)。
+	# --- 図に書き込むツール(図の右上)---
+	# ふだんは図を指でなぞると手書きできる(計算のメモや印つけ)。
+	# 「補助線」を押している間は、まっすぐな線になり端点が頂点や中点にスナップする。
 	# ↩ で 1 本もどす。問題が変わると補助線は消える
 	var undo_btn := Button.new()
 	undo_btn.text = ""
@@ -370,7 +371,7 @@ func _next_question(first := false) -> void:
 	figure.set_spec(problem["fig"])
 	question_lbl.text = String(problem["q"])
 	# 電卓と補助線の存在をそっと知らせる(ヒントを出すと上書きされる)
-	hint_lbl.text = "式のまま答えてOK(例: 12×8÷2)。「補助線」で図に線も引けるよ"
+	hint_lbl.text = "式のまま答えてOK(例: 12×8÷2)。図は指でなぞって書ける(「補助線」でまっすぐな線)"
 	hint_lbl.add_theme_color_override("font_color", Color(0.55, 0.62, 0.75, 0.8))
 	unit_lbl.text = String(problem["unit"])
 	if not _stage_based():

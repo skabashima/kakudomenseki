@@ -20,6 +20,8 @@ const COL_UNKNOWN := Color(1.0, 0.85, 0.3)
 # 端点は頂点・中点・円の中心などにスナップする
 # ---------------------------------------------------------
 const COL_AUX := Color(0.45, 1.0, 0.6, 0.95)
+## 手書き(補助線モードでないときの書き込み)の色。補助線と見分けがつく色にする
+const COL_FREE := Color(1.0, 0.92, 0.55, 0.95)
 const COL_SNAP := Color(0.6, 0.9, 1.0, 0.4)
 const SNAP_PX := 36.0
 
@@ -61,6 +63,11 @@ func _c(col: Color) -> Color:
 	return col
 ## 引いた補助線([始点, 終点] の論理座標)
 var aux_lines: Array = []
+## 手書きの線(論理座標の点列)。補助線モードでないときに指でなぞると増える
+var free_strokes: Array = []
+var _free_cur := PackedVector2Array()
+## 「もどす」で最後に描いたものを消すための順番("aux" / "free")
+var _undo_order: Array = []
 ## スナップ候補(論理座標)。set_spec で図形から集める
 var _snap_pts: Array = []
 var _aux_start = null      # Vector2 or null
@@ -70,6 +77,9 @@ var _aux_preview = null
 func set_spec(s: Dictionary) -> void:
 	spec = s
 	aux_lines.clear()
+	free_strokes.clear()
+	_free_cur = PackedVector2Array()
+	_undo_order.clear()
 	overlay_shapes.clear()
 	_aux_start = null
 	_aux_preview = null
@@ -77,10 +87,16 @@ func set_spec(s: Dictionary) -> void:
 	queue_redraw()
 
 
+## 「もどす」: 最後に描いたものを 1 つ消す(補助線と手書きのどちらでも)
 func aux_undo() -> void:
-	if not aux_lines.is_empty():
+	if _undo_order.is_empty():
+		return
+	var kind := String(_undo_order.pop_back())
+	if kind == "aux" and not aux_lines.is_empty():
 		aux_lines.pop_back()
-		queue_redraw()
+	elif kind == "free" and not free_strokes.is_empty():
+		free_strokes.pop_back()
+	queue_redraw()
 
 
 ## 図形から補助線の吸着先(頂点・中点・中心)を集める
@@ -125,9 +141,10 @@ func _snap(logical: Vector2) -> Vector2:
 	return best
 
 
+## 図の上の入力。
+##   補助線モード(aux_enabled): 2 点を結ぶまっすぐな線。端点は頂点・中点・中心に吸着する
+##   ふつうのとき: 指でなぞったとおりに書ける(図への書き込み・メモ用)
 func _gui_input(event: InputEvent) -> void:
-	if not aux_enabled:
-		return
 	var pos: Vector2
 	var pressed_change := false
 	var pressed := false
@@ -148,20 +165,47 @@ func _gui_input(event: InputEvent) -> void:
 	else:
 		return
 	accept_event()
+	if aux_enabled:
+		_input_aux(pos, pressed_change, pressed)
+	else:
+		_input_free(pos, pressed_change, pressed)
+
+
+## 補助線モード: 押した点から離した点までを直線で結ぶ(端点は吸着)
+func _input_aux(pos: Vector2, pressed_change: bool, pressed: bool) -> void:
 	if pressed_change:
 		if pressed:
 			_aux_start = _snap(_to_logical(pos))
 			_aux_preview = _aux_start
 		else:
-			if _aux_start != null and _aux_preview != null \
-					and (_aux_start as Vector2).distance_to(_aux_preview) * _scale > 14.0:
+			var far_enough := _aux_start != null and _aux_preview != null
+			if far_enough and (_aux_start as Vector2).distance_to(_aux_preview) * _scale > 14.0:
 				aux_lines.append([_aux_start, _aux_preview])
+				_undo_order.append("aux")
 			_aux_start = null
 			_aux_preview = null
 		queue_redraw()
 	elif _aux_start != null:
 		_aux_preview = _snap(_to_logical(pos))
 		queue_redraw()
+
+
+## 手書き: なぞった点をそのまま線にする。点が増えすぎないよう間引く
+func _input_free(pos: Vector2, pressed_change: bool, pressed: bool) -> void:
+	var lp := _to_logical(pos)
+	if pressed_change:
+		if pressed:
+			_free_cur = PackedVector2Array([lp])
+		else:
+			if _free_cur.size() >= 2:
+				free_strokes.append(_free_cur)
+				_undo_order.append("free")
+			_free_cur = PackedVector2Array()
+		queue_redraw()
+	elif not _free_cur.is_empty():
+		if _free_cur[_free_cur.size() - 1].distance_to(lp) * _scale > 3.0:
+			_free_cur.append(lp)
+			queue_redraw()
 
 
 func _px(p: Vector2) -> Vector2:
@@ -258,6 +302,21 @@ func _draw() -> void:
 		_draw_aux_line(ln[0], ln[1], 1.0)
 	if _aux_start != null and _aux_preview != null:
 		_draw_aux_line(_aux_start, _aux_preview, 0.55)
+
+	# --- 手書き(補助線モードでないときの書き込み)---
+	for st in free_strokes:
+		_draw_free(st)
+	_draw_free(_free_cur)
+
+
+## なぞった点列を線でつなぐ
+func _draw_free(pts: PackedVector2Array) -> void:
+	if pts.size() < 2:
+		return
+	var px := PackedVector2Array()
+	for p in pts:
+		px.append(_px(p))
+	draw_polyline(px, COL_FREE, 3.5, true)
 
 
 func _draw_aux_line(a: Vector2, b: Vector2, alpha: float) -> void:
