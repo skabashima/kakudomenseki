@@ -7,3 +7,19 @@
 *.ipa
 export/
 build/
+
+# Godot が gradle ビルド用に生成する Android プロジェクト
+/android/
+
+# 署名鍵。絶対にコミットしない(紛失も流出もアプリの寿命に直結する)
+*.keystore
+*.jks
+*.p12
+*.mobileprovision
+
+# ストア画像の中間出力(store/入稿セット/ に必要なものが揃う。作り直しは
+# godot res://tests/shot_store.tscn → python store/make_store_images.py)
+/store/screenshots/
+
+# Office が開いている間に作る一時ファイル
+~$*
