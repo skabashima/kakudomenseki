@@ -144,15 +144,19 @@ func _stage_card(index: int, stage: Dictionary, col: Color) -> Control:
 	right.add_theme_constant_override("separation", 0)
 	right.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	hbox.add_child(right)
-	var stars_lbl := Label.new()
-	var s := ""
-	for i in 3:
-		s += "★" if i < star_count else "☆"
-	stars_lbl.text = "解放" if paid else (s if unlocked else "🔒")
-	stars_lbl.add_theme_font_size_override("font_size", 26 if paid else 30)
-	stars_lbl.add_theme_color_override("font_color",
-		Color(1.0, 0.84, 0.3) if (paid or star_count > 0) else Color(0.75, 0.8, 0.9, 0.6))
-	right.add_child(stars_lbl)
+	if not unlocked and not paid:
+		# 錠前は絵文字だと Android で豆腐になるので図形で描く
+		right.add_child(Icons.lock(34.0, Color(0.75, 0.8, 0.9, 0.6)))
+	else:
+		var stars_lbl := Label.new()
+		var s := ""
+		for i in 3:
+			s += "★" if i < star_count else "☆"
+		stars_lbl.text = "解放" if paid else s
+		stars_lbl.add_theme_font_size_override("font_size", 26 if paid else 30)
+		stars_lbl.add_theme_color_override("font_color",
+			Color(1.0, 0.84, 0.3) if (paid or star_count > 0) else Color(0.75, 0.8, 0.9, 0.6))
+		right.add_child(stars_lbl)
 	if best > 0:
 		var b := Label.new()
 		b.text = "%d点" % best
@@ -168,8 +172,8 @@ func _stage_card(index: int, stage: Dictionary, col: Color) -> Control:
 		var crowned := g_best >= GameState.GAUNTLET_QUESTIONS
 		var gbtn := Button.new()
 		gbtn.custom_minimum_size = Vector2(120, 108)
-		gbtn.text = "👑" if crowned else ("挑戦\n%d/%d" % [g_best, GameState.GAUNTLET_QUESTIONS] if g_best > 0 else "挑戦\n10問")
-		gbtn.add_theme_font_size_override("font_size", 30 if crowned else 22)
+		gbtn.text = "" if crowned else ("挑戦\n%d/%d" % [g_best, GameState.GAUNTLET_QUESTIONS] if g_best > 0 else "挑戦\n10問")
+		gbtn.add_theme_font_size_override("font_size", 22)
 		GameState.style_button(gbtn,
 			Color(0.72, 0.56, 0.14) if crowned else Color(0.5, 0.36, 0.5))
 		gbtn.pressed.connect(func() -> void:
@@ -177,5 +181,10 @@ func _stage_card(index: int, stage: Dictionary, col: Color) -> Control:
 			GameState.current_stage = index
 			GameState.mode = "gauntlet"
 			GameState.change_scene("res://scenes/problem.tscn"))
+		if crowned:
+			# 王冠も絵文字を使わず図形で描く(ボタンの中央に置く)
+			var mark := Icons.crown(52.0, Color(1.0, 0.92, 0.6))
+			mark.position = Vector2(34.0, 28.0)
+			gbtn.add_child(mark)
 		row.add_child(gbtn)
 	return row

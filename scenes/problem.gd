@@ -168,7 +168,7 @@ func _build_ui() -> void:
 	fig_panel.add_child(figure)
 
 	# --- 補助線ツール(図の右上)---
-	# ✏ を押すと図の上をなぞって補助線が引ける(頂点や中点にスナップ)。
+	# 「補助線」を押すと図の上をなぞって線が引ける(頂点や中点にスナップ)。
 	# ↩ で 1 本もどす。問題が変わると補助線は消える
 	var undo_btn := Button.new()
 	undo_btn.text = "↩"
@@ -185,7 +185,7 @@ func _build_ui() -> void:
 	figure.add_child(undo_btn)
 	var pen_btn := Button.new()
 	pen_btn.toggle_mode = true
-	pen_btn.text = "✏ 補助線"
+	pen_btn.text = "補助線"
 	pen_btn.add_theme_font_size_override("font_size", 22)
 	pen_btn.set_anchors_preset(Control.PRESET_TOP_RIGHT)
 	pen_btn.offset_left = -216.0
@@ -360,7 +360,7 @@ func _next_question(first := false) -> void:
 	figure.set_spec(problem["fig"])
 	question_lbl.text = String(problem["q"])
 	# 電卓と補助線の存在をそっと知らせる(ヒントを出すと上書きされる)
-	hint_lbl.text = "式のまま答えてOK(例: 12×8÷2)。✏で図に補助線も引けるよ"
+	hint_lbl.text = "式のまま答えてOK(例: 12×8÷2)。「補助線」で図に線も引けるよ"
 	hint_lbl.add_theme_color_override("font_color", Color(0.55, 0.62, 0.75, 0.8))
 	unit_lbl.text = String(problem["unit"])
 	if not _stage_based():
@@ -486,12 +486,7 @@ func _on_walkthrough() -> void:
 		_update_status()
 		wt_steps = problem.get("steps", [])
 		if wt_steps.is_empty():
-			# 解説ステップが未定義の問題は、ヒントと解説を順に見せる
-			wt_steps = [
-				{"say": String(problem["hint1"])},
-				{"say": String(problem["hint2"])},
-				{"say": String(problem["expl"]) + " 最後の計算を自分で入力してみよう!"},
-			]
+			wt_steps = _generic_steps()
 	else:
 		GameState.play_sfx("type")
 	wt_idx += 1
@@ -507,6 +502,67 @@ func _on_walkthrough() -> void:
 		wt_btn.disabled = true
 	else:
 		wt_btn.text = "つぎへ ▶"
+
+
+
+## 専用の台本が無い問題向けの「解き方」ステップ。
+## ヒントと同じ文をなぞるだけだと**ヒントを押したときと同じ**になってしまうので、
+##   ・図の主役の形を色でなぞって「どこを見るか」を示す
+##   ・解説を文の切れ目で分け、一段ずつ出す
+##   ・すでにヒントで読んだ文は繰り返さない
+## ようにしている。看板問題(平行線・時計の針・折り返し・葉っぱ形・ヒポクラテスの月など)は
+## 生成器が専用の steps を持っていて、そちらは補助線が引かれるアニメになる。
+func _generic_steps() -> Array:
+	var steps: Array = []
+	var mark := _outline_shapes()
+	var head := "図の光っているところに注目。" if not mark.is_empty() else "図をよく見てみよう。"
+	if hints_used < 1:
+		head += String(problem["hint1"])
+	var first := {"say": head}
+	if not mark.is_empty():
+		first["add"] = mark
+	steps.append(first)
+	if hints_used < 2:
+		steps.append({"say": String(problem["hint2"])})
+	for part in _split_expl(String(problem["expl"])):
+		steps.append({"say": part})
+	steps.append({"say": "解き方はここまで。答えを入力してつぎへ進もう(この問題は0点)"})
+	return steps
+
+
+## 図の主役の形を色つきの太線でなぞる重ね描き(汎用のハイライト)
+func _outline_shapes() -> Array:
+	var out: Array = []
+	var fig: Dictionary = problem.get("fig", {})
+	var shapes: Array = fig.get("shapes", [])
+	for sh in shapes:
+		var d: Dictionary = sh
+		if not d.has("fill"):
+			continue   # 塗ってある形 = その問題の主役
+		match String(d.get("t", "")):
+			"poly":
+				out.append({"t": "poly", "p": d["p"],
+					"stroke": ProblemGen.COL_YELLOW, "w": 6.0})
+			"circle":
+				out.append({"t": "circle", "c": d["c"], "r": d["r"],
+					"stroke": ProblemGen.COL_YELLOW, "w": 6.0})
+		if out.size() >= 2:
+			break
+	return out
+
+
+## 解説を文の切れ目で分ける(短すぎる断片は前の文にくっつける)
+func _split_expl(text: String) -> Array:
+	var parts: Array = []
+	var buf := ""
+	for ch in text:
+		buf += ch
+		if ch == "。" and buf.strip_edges().length() >= 8:
+			parts.append(buf.strip_edges())
+			buf = ""
+	if buf.strip_edges() != "":
+		parts.append(buf.strip_edges())
+	return parts
 
 
 func _submit() -> void:
@@ -718,7 +774,11 @@ func _finish_gauntlet() -> void:
 		GameState.save_game()
 	var panel := _overlay_panel()
 	var v := panel.get_node("v") as VBoxContainer
-	_add_label(v, "👑 挑戦クリア!", 52, Color(1.0, 0.84, 0.3))
+	# 王冠は絵文字だと Android で豆腐になるので図形で描く
+	var crown := Icons.crown(72.0, Color(1.0, 0.84, 0.3))
+	crown.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	v.add_child(crown)
+	_add_label(v, "挑戦クリア!", 52, Color(1.0, 0.84, 0.3))
 	_add_label(v, "%d 問連続クリア" % _q_total(), 34, Color.WHITE)
 	_add_label(v, "スコア %d点(自己ベスト %d点)" % [stage_score, int(GameState.scores.get("g:" + stage_id, 0))],
 		26, Color.WHITE)
