@@ -127,14 +127,15 @@ func _stage_card(index: int, stage: Dictionary, col: Color) -> Control:
 	mid.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	hbox.add_child(mid)
 	var t := Label.new()
-	t.text = String(stage["title"]) if (unlocked or paid) else "???"
+	# 名前は未開放でも見せる(何が待っているか分かるほうが進めたくなる)。
+	# 開いていないことは右の錠前とボタンの色で示す
+	t.text = String(stage["title"])
 	t.add_theme_font_size_override("font_size", 30)
 	t.add_theme_color_override("font_color",
-		Color.WHITE if (unlocked or paid) else Color(0.7, 0.72, 0.8, 0.7))
+		Color.WHITE if (unlocked or paid) else Color(0.78, 0.82, 0.9))
 	mid.add_child(t)
 	var d := Label.new()
-	d.text = "全ステージ解放で遊べます" if paid \
-		else (String(stage["desc"]) if unlocked else "前のステージをクリアしよう")
+	d.text = "全ステージ解放で遊べます" if paid else String(stage["desc"])
 	d.add_theme_font_size_override("font_size", 20)
 	d.add_theme_color_override("font_color", Color(0.85, 0.9, 1.0, 0.75))
 	mid.add_child(d)
