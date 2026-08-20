@@ -63,6 +63,19 @@ func total_score() -> int:
 	return t
 
 
+## 1000 の位ごとにコンマを打つ(13371 -> 13,371)。得点は桁が増えるので読みやすくする
+static func comma(n: int) -> String:
+	var src := str(absi(n))
+	var out := ""
+	var c := 0
+	for i in range(src.length() - 1, -1, -1):
+		out = src[i] + out
+		c += 1
+		if c % 3 == 0 and i > 0:
+			out = "," + out
+	return ("-" if n < 0 else "") + out
+
+
 func rank_name() -> String:
 	var t := total_score()
 	var rname := String(RANKS[0]["name"])

@@ -53,7 +53,7 @@ func _ready() -> void:
 	panel.add_child(pv)
 	_lbl(pv, "段位", 24, Color(0.8, 0.87, 1.0))
 	_lbl(pv, GameState.rank_name(), 48, Color(1.0, 0.84, 0.3))
-	_lbl(pv, "総得点 %d 点" % GameState.total_score(), 30, Color.WHITE)
+	_lbl(pv, "総得点 %s 点" % GameState.comma(GameState.total_score()), 30, Color.WHITE)
 	var gap: Array = GameState.next_rank_gap()
 	if String(gap[0]) != "":
 		_lbl(pv, "「%s」まで あと %d 点" % [gap[0], gap[1]], 22, Color(0.75, 0.83, 0.95))

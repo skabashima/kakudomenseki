@@ -54,13 +54,21 @@ func _ready() -> void:
 	subtitle.add_theme_color_override("font_color", Color(0.8, 0.85, 0.95))
 	vbox.add_child(subtitle)
 
-	# 段位と総得点(遊ぶほど積み上がる指標)
+	# 段位と総得点(遊ぶほど積み上がる指標)。
+	# 段位名に「角度ハンター」「面積マイスター」があってコース名(角度編/面積編)と
+	# 紛らわしいので、「段位」「総得点」と書いて別物だと分かるようにする
 	var rank := Label.new()
-	rank.text = "%s   %d 点" % [GameState.rank_name(), GameState.total_score()]
+	rank.text = "段位 %s" % GameState.rank_name()
 	rank.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	rank.add_theme_font_size_override("font_size", 30 if portrait else 34)
 	rank.add_theme_color_override("font_color", Color(1.0, 0.82, 0.35))
 	vbox.add_child(rank)
+	var total_lbl := Label.new()
+	total_lbl.text = "総得点 %s 点(角度編 + 面積編)" % GameState.comma(GameState.total_score())
+	total_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	total_lbl.add_theme_font_size_override("font_size", 24 if portrait else 28)
+	total_lbl.add_theme_color_override("font_color", Color(0.95, 0.97, 1.0))
+	vbox.add_child(total_lbl)
 
 	# 進捗のサマリー
 	var done := 0
