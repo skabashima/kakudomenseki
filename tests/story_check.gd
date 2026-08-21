@@ -1,28 +1,47 @@
 extends SceneTree
-## 発見モードのデータ検証(--headless 可)。
+## ストーリーのデータ検証(--headless 可)。
 ##   godot --headless --path . -s tests/story_check.gd
+##
 ## 見るところ:
-##   ・章のシーンが type ごとに必要な項目を持っているか
-##   ・measure の正解の選択肢が、実際に測って出る答えと合っているか
-##   ・角を整数に丸めても和が 180 になるか(表示の足し算が合うか)
-##   ・solve で使う生成器のステージが実在するか
+##   1. 章のシーンが type ごとに必要な項目を持っているか
+##   2. **measure で「一定」と言っている量が、本当に動かしても一定か**
+##      (図の点をランダムに動かして readout の値を見る。ここがずれていると
+##       プレイヤーは表を見ながら正解を選べない)
+##   3. solve で使う生成器のステージが実在するか
+##   4. 図のスペックが全種類ちゃんと作れて、座標が有限か
+##   5. 章タイトル・見つけたことが空でないか
 
 var bad: Array = []
 
 
 func _init() -> void:
 	for ch in StoryDefs.CHAPTERS:
-		for i in (ch["scenes"] as Array).size():
-			_check_scene(String(ch["id"]), i, ch["scenes"][i])
-	_check_angles()
+		_check_chapter(ch)
 	if bad.is_empty():
-		print("STORY CHECK OK: %d 章" % StoryDefs.CHAPTERS.size())
+		print("STORY CHECK OK: %d 章 / %d シーン" % [
+			StoryDefs.CHAPTERS.size(), _scene_count()])
 		quit(0)
 	else:
 		for b in bad:
 			print("FAIL: " + String(b))
 		print("STORY CHECK FAILED: %d 件" % bad.size())
 		quit(1)
+
+
+func _scene_count() -> int:
+	var n := 0
+	for ch in StoryDefs.CHAPTERS:
+		n += (ch["scenes"] as Array).size()
+	return n
+
+
+func _check_chapter(ch: Dictionary) -> void:
+	var cid := String(ch.get("id", "?"))
+	for key in ["title", "level", "place", "found", "scenes"]:
+		if not ch.has(key) or String(ch[key]) == "":
+			bad.append("%s: %s が無い" % [cid, key])
+	for i in (ch.get("scenes", []) as Array).size():
+		_check_scene(cid, i, ch["scenes"][i])
 
 
 func _check_scene(cid: String, i: int, sc: Dictionary) -> void:
@@ -33,13 +52,17 @@ func _check_scene(cid: String, i: int, sc: Dictionary) -> void:
 		"talk":
 			if (sc.get("lines", []) as Array).is_empty():
 				bad.append(where + ": lines が空")
+			if sc.has("fig"):
+				_check_fig(where, String(sc["fig"]), Vector2.ZERO)
 		"measure":
-			for key in ["lead", "question", "choices", "answer", "trials", "fig"]:
+			for key in ["lead", "question", "choices", "answer", "trials", "fig", "invariant"]:
 				if not sc.has(key):
 					bad.append(where + ": %s が無い" % key)
-			var n: int = (sc.get("choices", []) as Array).size()
-			if int(sc.get("answer", -1)) < 0 or int(sc.get("answer", -1)) >= n:
+					return
+			var n: int = (sc["choices"] as Array).size()
+			if int(sc["answer"]) < 0 or int(sc["answer"]) >= n:
 				bad.append(where + ": answer が選択肢の範囲外")
+			_check_invariant(where, sc)
 		"solve":
 			var sid := String(sc.get("stage", ""))
 			var found := false
@@ -53,16 +76,55 @@ func _check_scene(cid: String, i: int, sc: Dictionary) -> void:
 			bad.append(where + ": 知らない type")
 
 
-## 頂点をあちこちに動かしても、表示する整数の和が必ず 180 になること
-func _check_angles() -> void:
+## 動かしても「一定」と言っている量が本当に一定か
+func _check_invariant(where: String, sc: Dictionary) -> void:
+	var kind := String(sc["fig"])
+	var want: float = float(sc["invariant"]["value"])
+	var tol: float = float(sc["invariant"]["tol"])
 	var rng := RandomNumberGenerator.new()
-	rng.seed = 7
-	for i in 300:
-		var a := Vector2(rng.randf_range(-4.0, 14.0), rng.randf_range(2.0, 9.0))
-		var deg: Array = StoryDefs.rounded_angles(
-			StoryDefs.angles_of(a, StoryDefs.TRI_B, StoryDefs.TRI_C))
-		var sum: int = int(deg[0]) + int(deg[1]) + int(deg[2])
-		if sum != 180:
-			bad.append("A=(%.1f, %.1f) の表示が %d + %d + %d = %d" % [
-				a.x, a.y, int(deg[0]), int(deg[1]), int(deg[2]), sum])
+	rng.seed = 20260821
+	var worst := 0.0
+	for t in 300:
+		var raw := Vector2(rng.randf_range(-20.0, 20.0), rng.randf_range(-20.0, 20.0))
+		var p: Vector2 = StoryDefs.clamp_of(kind, raw)
+		var out: Dictionary = StoryDefs.readout_of(kind, p)
+		var v := float(out["value"])
+		if not is_finite(v):
+			bad.append("%s(%s): 値が数でない" % [where, kind])
 			return
+		if String(out["row"]) == "":
+			bad.append("%s(%s): 表示する行が空" % [where, kind])
+			return
+		worst = maxf(worst, absf(v - want))
+		if worst > tol:
+			bad.append("%s(%s): 一定のはずが %.4f(ねらい %.4f ± %.4f)。点 (%.2f, %.2f)" % [
+				where, kind, v, want, tol, p.x, p.y])
+			return
+		_check_fig(where, kind, p)
+		if not bad.is_empty():
+			return
+
+
+## 図が作れて、座標がすべて有限か
+func _check_fig(where: String, kind: String, p: Vector2) -> void:
+	var fig: Dictionary = StoryFigs.spec(kind, p)
+	var shapes: Array = fig.get("shapes", [])
+	if shapes.is_empty():
+		bad.append("%s: 図 %s が空" % [where, kind])
+		return
+	for sh in shapes:
+		for key in ["a", "b", "c", "at", "p1", "p2"]:
+			if sh.has(key) and not _finite_v(sh[key]):
+				bad.append("%s: 図 %s の %s が数でない" % [where, kind, key])
+				return
+		if sh.has("p"):
+			for q in sh["p"]:
+				if not _finite_v(q):
+					bad.append("%s: 図 %s の頂点が数でない" % [where, kind])
+					return
+
+
+func _finite_v(v) -> bool:
+	if typeof(v) != TYPE_VECTOR2:
+		return true
+	return is_finite((v as Vector2).x) and is_finite((v as Vector2).y)

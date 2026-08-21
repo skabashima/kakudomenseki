@@ -23,6 +23,7 @@ func _run() -> void:
 	await _open("res://scenes/challenge_select.tscn")
 	await _open("res://scenes/records.tscn")
 	await _open("res://scenes/store.tscn")
+	await _open("res://scenes/story_select.tscn")
 	await _open("res://scenes/story.tscn")
 	# コースごとのステージ一覧と問題シーン(各コースの最初と最後のステージ)
 	for course in ProblemGen.COURSES:

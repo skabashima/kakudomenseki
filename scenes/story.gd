@@ -66,10 +66,11 @@ func _build_frame() -> void:
 		GameState.play_sfx("tap")
 		GameState.story_scene = idx
 		GameState.save_game()
-		GameState.change_scene("res://scenes/main.tscn"))
+		GameState.change_scene("res://scenes/story_select.tscn"))
 	head.add_child(back)
 	var title := Label.new()
-	title.text = String(chapter["title"])
+	title.text = "第%d章 %s" % [
+		StoryDefs.chapter_index(String(chapter["id"])) + 1, String(chapter["title"])]
 	title.add_theme_font_size_override("font_size", 32)
 	title.add_theme_color_override("font_color", HEAD)
 	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -80,7 +81,7 @@ func _build_frame() -> void:
 	head.add_child(status_lbl)
 
 	var place := Label.new()
-	place.text = String(chapter["place"])
+	place.text = "%s ・ %s" % [String(chapter["place"]), String(chapter["level"])]
 	place.add_theme_font_size_override("font_size", 20)
 	place.add_theme_color_override("font_color", Color(0.7, 0.78, 0.92))
 	root.add_child(place)
@@ -137,7 +138,7 @@ func _show_scene() -> void:
 func _build_talk() -> void:
 	if scene_data.has("fig"):
 		fig_panel.visible = true
-		figure.set_spec(StoryDefs.spec_of(String(scene_data["fig"]), apex))
+		figure.set_spec(StoryFigs.spec(String(scene_data["fig"]), apex))
 	elif scene_data.has("art"):
 		# 文字だけの画面にしない。挿絵はその場で図形として描く(画像は持たない)
 		var art := StoryArt.make(String(scene_data["art"]), 240.0)
@@ -154,9 +155,8 @@ func _build_talk() -> void:
 
 func _build_measure() -> void:
 	fig_panel.visible = true
-	apex = Vector2(4.0, 6.0)
+	apex = StoryDefs.start_of(_fig_kind())
 	_refresh_figure()
-	figure.drag_points = [apex]
 	_add_label(String(scene_data["lead"]), 23, BODY)
 	var rec := Button.new()
 	rec.text = "この形を記録する"
@@ -200,16 +200,19 @@ func _build_solve() -> void:
 # measure の操作
 # =========================================================
 
+func _fig_kind() -> String:
+	return String(scene_data.get("fig", "triangle"))
+
+
 func _on_dragged(_index: int, to: Vector2) -> void:
 	if String(scene_data.get("type", "")) != "measure" or answered:
 		return
-	apex = StoryDefs.clamp_apex(to)
-	figure.drag_points = [apex]
+	apex = StoryDefs.clamp_of(_fig_kind(), to)
 	_refresh_figure()
 
 
 func _refresh_figure() -> void:
-	figure.set_spec(StoryDefs.triangle_spec(apex))
+	figure.set_spec(StoryFigs.spec(_fig_kind(), apex))
 	figure.drag_points = [apex]
 
 
@@ -217,10 +220,8 @@ func _record() -> void:
 	if answered:
 		return
 	GameState.play_sfx("type")
-	# 図に出ている数字と表の数字を必ず一致させる(丸めは 1 か所で行う)
-	var deg: Array = StoryDefs.rounded_angles(
-		StoryDefs.angles_of(apex, StoryDefs.TRI_B, StoryDefs.TRI_C))
-	trials.append(deg)
+	# 図に出ている数字と表の数字を必ず一致させる(計算は StoryDefs 側の 1 か所)
+	trials.append(String(StoryDefs.readout_of(_fig_kind(), apex)["row"]))
 	_refresh_table()
 
 
@@ -230,12 +231,7 @@ func _refresh_table() -> void:
 		if trials.is_empty():
 			lbl.text = "まだ記録していない"
 		else:
-			var rows: Array = []
-			for t in trials:
-				rows.append("∠A %d°  ∠B %d°  ∠C %d°  → 合計 %d°" % [
-					int(t[0]), int(t[1]), int(t[2]),
-					int(t[0]) + int(t[1]) + int(t[2])])
-			lbl.text = NEWLINE_CH.join(rows)
+			lbl.text = NEWLINE_CH.join(trials)
 		lbl.add_theme_color_override("font_color", Color(0.65, 1.0, 0.8))
 	# 規定回数ためるまで選択肢は出さない(当てずっぽうで進ませない)
 	if trials.size() < int(scene_data.get("trials", 3)):
@@ -336,13 +332,27 @@ func _finish() -> void:
 		c.queue_free()
 	fig_panel.visible = false
 	_add_label("%s ― 章クリア!" % String(chapter["title"]), 34, HEAD)
-	_add_label("見つけたこと: 三角形の内角の和は、形を変えても 180°。", 24, BODY)
+	_add_label("見つけたこと: " + String(chapter.get("found", "")), 24, Color(0.7, 1.0, 0.8))
+	var next_i := StoryDefs.chapter_index(String(chapter["id"])) + 1
+	if next_i < StoryDefs.CHAPTERS.size():
+		var nb := Button.new()
+		nb.text = "第%d章 %s へ" % [next_i + 1, String(StoryDefs.CHAPTERS[next_i]["title"])]
+		nb.custom_minimum_size = Vector2(0, 84)
+		nb.add_theme_font_size_override("font_size", 26)
+		GameState.style_button(nb, Color(0.2, 0.55, 0.35))
+		nb.pressed.connect(func() -> void:
+			GameState.play_sfx("tap")
+			GameState.story_chapter = String(StoryDefs.CHAPTERS[next_i]["id"])
+			GameState.story_scene = 0
+			GameState.save_game()
+			GameState.change_scene("res://scenes/story.tscn"))
+		body.add_child(nb)
 	var b := Button.new()
-	b.text = "タイトルへもどる"
+	b.text = "章えらびへもどる"
 	b.custom_minimum_size = Vector2(0, 84)
 	b.add_theme_font_size_override("font_size", 28)
 	GameState.style_button(b, Color(0.24, 0.42, 0.72))
 	b.pressed.connect(func() -> void:
 		GameState.play_sfx("tap")
-		GameState.change_scene("res://scenes/main.tscn"))
+		GameState.change_scene("res://scenes/story_select.tscn"))
 	body.add_child(b)

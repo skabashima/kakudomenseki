@@ -91,14 +91,15 @@ func _ready() -> void:
 
 	vbox.add_child(_spacer(8))
 	# ストーリー(この作品の入口。図を動かして「変わらないもの」を見つける)
-	var ch1_done: bool = GameState.story_clear.has("ch1")
+	var story_done := 0
+	for ch in StoryDefs.CHAPTERS:
+		if GameState.story_clear.has(String(ch["id"])):
+			story_done += 1
 	vbox.add_child(_menu_button("ストーリー",
-		"第1章 三角形の秘密" + ("  クリア済み" if ch1_done else "  ここから始めよう"),
+		"全%d章  %s" % [StoryDefs.CHAPTERS.size(),
+			("%d章クリア" % story_done) if story_done > 0 else "ここから始めよう"],
 		Color(0.45, 0.35, 0.62), func() -> void:
-			GameState.story_chapter = "ch1"
-			if ch1_done:
-				GameState.story_scene = 0
-			GameState.change_scene("res://scenes/story.tscn")))
+			GameState.change_scene("res://scenes/story_select.tscn")))
 
 	# 2 編(それぞれのテーマ色)
 	for c in ProblemGen.COURSES:
