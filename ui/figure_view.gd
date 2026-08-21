@@ -69,6 +69,9 @@ signal point_dragged(index: int, to: Vector2)
 var drag_points: Array = []
 var _drag_idx := -1
 
+## 手書きを受け付けるか。本編では true、ストーリーでは false
+var free_draw_enabled := true
+
 ## 手書きの線(論理座標の点列)。補助線モードでないときに指でなぞると増える
 var free_strokes: Array = []
 var _free_cur := PackedVector2Array()
@@ -176,7 +179,7 @@ func _gui_input(event: InputEvent) -> void:
 		return
 	if aux_enabled:
 		_input_aux(pos, pressed_change, pressed)
-	else:
+	elif free_draw_enabled:
 		_input_free(pos, pressed_change, pressed)
 
 

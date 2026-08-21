@@ -96,6 +96,8 @@ func _build_frame() -> void:
 	root.add_child(fig_panel)
 	figure = FigureView.new()
 	figure.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	# ストーリーでは図に手書きさせない(本編の機能。ここでは線が残るだけで邪魔)
+	figure.free_draw_enabled = false
 	figure.point_dragged.connect(_on_dragged)
 	fig_panel.add_child(figure)
 
@@ -118,6 +120,7 @@ func _build_frame() -> void:
 func _show_scene() -> void:
 	answered = false
 	trials.clear()
+	next_btn = null      # 前の場面のボタンを「まだある」と誤認しないように
 	if String((chapter["scenes"] as Array)[idx].get("type", "")) != "measure":
 		guess = -1
 	for c in body.get_children():
@@ -328,11 +331,17 @@ func _pick_answer(v: float, ans: float) -> void:
 		return
 	if absf(v - ans) > float(problem.get("tol", 0.01)):
 		GameState.play_sfx("fail")
-		_add_label("ちがう。3 つの角の和は 180° だったね。", 23, Color(1.0, 0.7, 0.6))
+		# 章ごとに見つけたことを言い直す(ここを決め打ちにすると別の章で嘘になる)
+		_add_label("ちがう。%s ― もう一度。" % String(chapter.get("found", "")),
+			23, Color(1.0, 0.7, 0.6))
 		return
 	answered = true
 	GameState.play_sfx("correct")
-	_add_label(String(problem["expl"]), 23, Color(0.85, 0.92, 1.0))
+	# 依頼(story_tasks)は本編の problem とちがって解説を持たない。
+	# ここで問題の辞書に無い鍵を読むと関数がそこで止まり、
+	# 「つぎへ」が出ないまま進めなくなる(実際にそうなっていた)
+	_add_label("答え %s%s ― %s" % [ProblemGen.fmt(ans), String(problem.get("unit", "")),
+		String(chapter.get("found", ""))], 23, Color(0.85, 0.92, 1.0))
 	_add_label(String(scene_data.get("after", "")), 24, Color(0.7, 1.0, 0.8))
 	for b in choice_box.get_children():
 		if b is Button:

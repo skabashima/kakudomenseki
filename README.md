@@ -137,6 +137,11 @@ godot --path "<このフォルダ>"
   動かしても一定か**(1 章あたり 300 通り)、そして**依頼が毎回ちゃんと
   作れるか**(文・答え・図がそろい、本編と同じ教科書調の語尾で終わっていないか)を
   検証する
+- `tests/story_play.tscn` が**全10章を実際に最後まで通してプレイする**。各場面で
+  「つぎへ」が出ることを確かめる ― 依頼(`core/story_tasks.gd`)は本編の問題と
+  持っている項目が違うので、無い項目をうっかり読むとそこで関数が止まり、
+  ボタンが出ないまま**進めなくなる**(実際に起きた)。データ検証だけでは
+  見つからないので、通しプレイを常に回す
 - **表には「変わる数」を必ず出す**。定数だけを並べると出来レースに見えて、
   発見の手応えが消える(例: 等積変形の章は辺の長さを、円周角の章は席の位置を出す)
 
@@ -304,6 +309,7 @@ tests/
   smoke.tscn             全シーンのロード確認 (--headless 可)
   iap_gate.tscn          課金ゲート(無料/有料の線引き)の検証 (--headless 可)
   story_check.gd         ストーリーの章データと角度の丸めの検証 (--headless 可)
+  story_play.tscn        ストーリー全10章を実際に最後まで通す (--headless 可)
   font_check.gd          画面に出る文字が同梱フォントにあるか検証 (--headless 可)
   variation_report.tscn  ステージごとの問題バリエーション数を実測 (--headless 可)
   shots.tscn             全画面のスクリーンショット撮影(要描画環境)
@@ -319,5 +325,7 @@ godot --headless --path "<このフォルダ>" res://tests/gen_check.tscn
 godot --headless --path "<このフォルダ>" res://tests/play_check.tscn
 godot --headless --path "<このフォルダ>" res://tests/smoke.tscn
 godot --headless --path "<このフォルダ>" res://tests/iap_gate.tscn
+godot --headless --path "<このフォルダ>" res://tests/story_play.tscn
+godot --headless --path "<このフォルダ>" -s tests/story_check.gd
 godot --headless --path "<このフォルダ>" -s tests/font_check.gd
 ```
