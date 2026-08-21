@@ -104,6 +104,26 @@ func question_score(tries: int, hints: int, seconds: float, combo_at: int) -> in
 
 
 # ---------------------------------------------------------
+# 発見モード(物語)
+# ---------------------------------------------------------
+## クリアした章の id
+var story_clear: Dictionary = {}
+## いま読んでいる章と、その中の何番目のシーンか(途中でやめても続きから)
+var story_chapter: String = "ch1"
+var story_scene: int = 0
+
+
+## 章をクリアした。はじめてなら true
+func record_story_clear(id: String) -> bool:
+	if story_clear.has(id):
+		return false
+	story_clear[id] = true
+	bump_stat("story_chapter")
+	save_game()
+	return true
+
+
+# ---------------------------------------------------------
 # 課金(買い切り 1 商品・非消費型。実処理は core/iap.gd)
 # ---------------------------------------------------------
 ## 各編の最初の何ステージまでを無料で遊べるか
@@ -451,6 +471,9 @@ func save_game() -> void:
 		"gauntlet_best": gauntlet_best,
 		"debug_unlock_all": debug_unlock_all,
 		"premium": premium,
+		"story_clear": story_clear,
+		"story_chapter": story_chapter,
+		"story_scene": story_scene,
 	}
 	var f := FileAccess.open(SAVE_PATH, FileAccess.WRITE)
 	if f:
@@ -474,3 +497,6 @@ func load_game() -> void:
 	gauntlet_best = data.get("gauntlet_best", {})
 	debug_unlock_all = bool(data.get("debug_unlock_all", false))
 	premium = bool(data.get("premium", false))
+	story_clear = data.get("story_clear", {})
+	story_chapter = String(data.get("story_chapter", "ch1"))
+	story_scene = int(data.get("story_scene", 0))

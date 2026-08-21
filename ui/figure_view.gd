@@ -63,6 +63,12 @@ func _c(col: Color) -> Color:
 	return col
 ## 引いた補助線([始点, 終点] の論理座標)
 var aux_lines: Array = []
+## 物語モード: つまんで動かせる点(論理座標)。空のときは従来どおり描くだけ。
+## 動かすと point_dragged が飛ぶので、受け手が図のスペックを作り直す
+signal point_dragged(index: int, to: Vector2)
+var drag_points: Array = []
+var _drag_idx := -1
+
 ## 手書きの線(論理座標の点列)。補助線モードでないときに指でなぞると増える
 var free_strokes: Array = []
 var _free_cur := PackedVector2Array()
@@ -165,10 +171,32 @@ func _gui_input(event: InputEvent) -> void:
 	else:
 		return
 	accept_event()
+	if not drag_points.is_empty():
+		_input_drag(pos, pressed_change, pressed)
+		return
 	if aux_enabled:
 		_input_aux(pos, pressed_change, pressed)
 	else:
 		_input_free(pos, pressed_change, pressed)
+
+
+## 物語モード: 近くの点をつまんで動かす(離すまで追従する)
+func _input_drag(pos: Vector2, pressed_change: bool, pressed: bool) -> void:
+	if pressed_change and not pressed:
+		_drag_idx = -1
+		return
+	var lp := _to_logical(pos)
+	if pressed_change and pressed:
+		var best := -1
+		var best_d := 70.0 / maxf(_scale, 0.001)
+		for i in drag_points.size():
+			var d: float = lp.distance_to(drag_points[i])
+			if d < best_d:
+				best_d = d
+				best = i
+		_drag_idx = best
+	if _drag_idx >= 0:
+		point_dragged.emit(_drag_idx, lp)
 
 
 ## 補助線モード: 押した点から離した点までを直線で結ぶ(端点は吸着)
@@ -302,6 +330,11 @@ func _draw() -> void:
 		_draw_aux_line(ln[0], ln[1], 1.0)
 	if _aux_start != null and _aux_preview != null:
 		_draw_aux_line(_aux_start, _aux_preview, 0.55)
+
+	# --- つまんで動かせる点(物語モード)---
+	for p in drag_points:
+		draw_circle(_px(p), 15.0, Color(1.0, 0.85, 0.35, 0.25))
+		draw_circle(_px(p), 9.0, Color(1.0, 0.85, 0.35, 0.95))
 
 	# --- 手書き(補助線モードでないときの書き込み)---
 	for st in free_strokes:
