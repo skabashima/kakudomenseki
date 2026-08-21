@@ -90,7 +90,17 @@ func _ready() -> void:
 	vbox.add_child(progress)
 
 	vbox.add_child(_spacer(8))
-	# 3 コース(それぞれのテーマ色)
+	# ストーリー(この作品の入口。図を動かして「変わらないもの」を見つける)
+	var ch1_done: bool = GameState.story_clear.has("ch1")
+	vbox.add_child(_menu_button("ストーリー",
+		"第1章 三角形の秘密" + ("  クリア済み" if ch1_done else "  ここから始めよう"),
+		Color(0.45, 0.35, 0.62), func() -> void:
+			GameState.story_chapter = "ch1"
+			if ch1_done:
+				GameState.story_scene = 0
+			GameState.change_scene("res://scenes/story.tscn")))
+
+	# 2 編(それぞれのテーマ色)
 	for c in ProblemGen.COURSES:
 		var cid := String(c["id"])
 		var stages: Array = c["stages"]
@@ -104,16 +114,6 @@ func _ready() -> void:
 			GameState.mode = "normal"
 			GameState.change_scene("res://scenes/stage_select.tscn")))
 
-	vbox.add_child(_spacer(10))
-	# 発見モード(物語)。図を動かして「変わらないもの」を見つける
-	var ch1_done: bool = GameState.story_clear.has("ch1")
-	vbox.add_child(_menu_button("発見モード",
-		"第1章 三角形の秘密" + ("(クリア済み)" if ch1_done else ""),
-		Color(0.45, 0.35, 0.62), func() -> void:
-			GameState.story_chapter = "ch1"
-			if ch1_done:
-				GameState.story_scene = 0
-			GameState.change_scene("res://scenes/story.tscn"), true))
 	vbox.add_child(_menu_button("チャレンジ", "タイムアタック / サバイバル", SECONDARY, func() -> void:
 		GameState.change_scene("res://scenes/challenge_select.tscn"), true))
 	vbox.add_child(_menu_button("記録", "段位・★・自己ベスト", SECONDARY, func() -> void:

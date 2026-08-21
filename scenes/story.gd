@@ -88,8 +88,9 @@ func _build_frame() -> void:
 	fig_panel = PanelContainer.new()
 	fig_panel.add_theme_stylebox_override("panel",
 		GameState.flat_style(Color(0.06, 0.09, 0.16, 1.0), 16))
-	fig_panel.custom_minimum_size = Vector2(0, 520)
+	fig_panel.custom_minimum_size = Vector2(0, 480)
 	fig_panel.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	fig_panel.size_flags_stretch_ratio = 1.4
 	root.add_child(fig_panel)
 	figure = FigureView.new()
 	figure.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -97,7 +98,8 @@ func _build_frame() -> void:
 	fig_panel.add_child(figure)
 
 	var scroll := ScrollContainer.new()
-	scroll.custom_minimum_size = Vector2(0, 460)
+	scroll.custom_minimum_size = Vector2(0, 420)
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	root.add_child(scroll)
 	DragScroll.attach(scroll)
@@ -136,6 +138,15 @@ func _build_talk() -> void:
 	if scene_data.has("fig"):
 		fig_panel.visible = true
 		figure.set_spec(StoryDefs.spec_of(String(scene_data["fig"]), apex))
+	elif scene_data.has("art"):
+		# 文字だけの画面にしない。挿絵はその場で図形として描く(画像は持たない)
+		var art := StoryArt.make(String(scene_data["art"]), 240.0)
+		art.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		var frame := PanelContainer.new()
+		frame.add_theme_stylebox_override("panel",
+			GameState.flat_style(Color(0.06, 0.09, 0.16, 1.0), 16))
+		frame.add_child(art)
+		body.add_child(frame)
 	for line in scene_data["lines"]:
 		_add_label(String(line), 24, BODY)
 	_add_next("つぎへ ▶")
