@@ -37,6 +37,10 @@ static func _render(c: Control, kind: String, w: float, h: float) -> void:
 			_master(c, w, h)
 		"dusk":
 			_dusk(c, w, h)
+		"theater":
+			_theater(c, w, h)
+		"fountain":
+			_fountain(c, w, h)
 		_:
 			c.draw_rect(Rect2(0, 0, w, h), SKY_DAY)
 
@@ -97,6 +101,47 @@ static func _dusk(c: Control, w: float, h: float) -> void:
 		c.draw_line(p[i], p[(i + 1) % 4], Color(1.0, 0.95, 0.85, 0.85), 5.0)
 	c.draw_line(p[0], p[2], Color(1.0, 0.9, 0.5, 0.9), 4.0)
 	_person(c, Vector2(w * 0.10, h * 0.97), h * 0.34, Color(0.35, 0.30, 0.34))
+
+
+## 円形の劇場。客席の弧と、下手の舞台
+static func _theater(c: Control, w: float, h: float) -> void:
+	_sky(c, w, h, SKY_DAY, Color(0.80, 0.86, 0.94))
+	c.draw_rect(Rect2(0, h * 0.52, w, h * 0.48), SAND)
+	var cx := w * 0.5
+	var cy := h * 0.92
+	# 客席(同心の弧)
+	for i in 5:
+		var r := h * (0.30 + 0.09 * float(i))
+		c.draw_arc(Vector2(cx, cy), r, PI, TAU, 48, SAND_DARK, h * 0.035)
+	# 舞台
+	_poly(c, [Vector2(cx - w * 0.16, cy - h * 0.02), Vector2(cx + w * 0.16, cy - h * 0.02),
+		Vector2(cx + w * 0.12, cy - h * 0.16), Vector2(cx - w * 0.12, cy - h * 0.16)],
+		Color(0.55, 0.44, 0.30))
+	# 観客(点)
+	for i in 12:
+		var a := PI + PI * (0.12 + 0.76 * fmod(0.191 * float(i * 3 + 1), 1.0))
+		var rr := h * (0.34 + 0.28 * fmod(0.137 * float(i * 5 + 2), 1.0))
+		c.draw_circle(Vector2(cx + cos(a) * rr, cy + sin(a) * rr), h * 0.018, INK)
+	_person(c, Vector2(cx, cy - h * 0.04), h * 0.16, CLOTH)
+
+
+## 噴水。放物線を描いて落ちる水
+static func _fountain(c: Control, w: float, h: float) -> void:
+	_sky(c, w, h, Color(0.20, 0.28, 0.48), Color(0.55, 0.60, 0.78))
+	c.draw_rect(Rect2(0, h * 0.70, w, h * 0.30), Color(0.28, 0.34, 0.44))
+	# 水盤
+	c.draw_rect(Rect2(w * 0.20, h * 0.68, w * 0.60, h * 0.10), Color(0.42, 0.62, 0.75))
+	# 水の放物線(左右対称に 2 本)
+	for sgn_v in [-1.0, 1.0]:
+		var sgn := float(sgn_v)
+		var pts := PackedVector2Array()
+		for i in 21:
+			var t := float(i) / 20.0
+			var x: float = w * 0.5 + sgn * w * 0.26 * t
+			var y: float = h * (0.68 - 0.34 * (1.0 - (2.0 * t - 1.0) * (2.0 * t - 1.0)))
+			pts.append(Vector2(x, y))
+		c.draw_polyline(pts, Color(0.75, 0.90, 1.0, 0.9), 4.0)
+	_person(c, Vector2(w * 0.12, h * 0.95), h * 0.30, CLOTH)
 
 
 # =========================================================

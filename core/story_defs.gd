@@ -59,38 +59,38 @@ const CHAPTERS := [
 		],
 	},
 	{
-		"id": "ch2", "title": "平行線のいたずら", "level": "中学受験",
-		"place": "エジプト、ナイルの岸辺",
-		"found": "平行線に 1 本の線が交わるとき、錯角はいつも等しい",
+		"id": "ch2", "title": "壁ぎわの曲がり角", "level": "中学受験",
+		"place": "エジプト、二本の壁のあいだ",
+		"found": "平行な壁の間で折れた角は、上の角と下の角の和になる",
 		"scenes": [
-			{"type": "talk", "title": "二本の道", "art": "field", "lines": [
-				"ナイルの岸に、まっすぐな道が二本、どこまでも平行に走っている。",
-				"その二本を斜めに横切る細い道が一本。旅人がその道を行く。",
-				"親方が言う。「斜めの道の傾きを変えても、変わらない角がある」",
-				"どの角のことだろう。斜めの道を動かして確かめよう。",
+			{"type": "talk", "title": "曲がって運ぶ", "art": "field", "lines": [
+				"倉庫と倉庫のあいだに、平行な壁が二本。その間を荷を担いで通る。",
+				"まっすぐは通れない。柱を避けて、一度だけ折れて進むことになる。",
+				"「折れたところの角を測れ」と親方。「上と下の角も測っておけ」",
+				"三つの角にどんな関係があるのか。曲がる場所を変えて確かめよう。",
 			]},
-			{"type": "measure", "title": "斜めの道を動かす", "fig": "parallel_lines", "trials": 3,
-				"lead": "上の道の上にある金色の点を動かすと、斜めの道の傾きが変わる。"
-					+ "斜めに交わってできる「はす向かいの角」を記録しよう。",
-				"question": "傾きを変えると、2 つの角(錯角)はどうなった?",
+			{"type": "measure", "title": "曲がる場所を変える", "fig": "zigzag", "trials": 3,
+				"lead": "金色の点(曲がり角)を動かすと、上の角・下の角・折れ角の 3 つとも変わる。"
+					+ "いろいろな場所で記録して、3 つの数を見くらべよう。",
+				"question": "折れ角は、上の角と下の角とどんな関係だった?",
 				"choices": [
-					"いつも同じ大きさだった",
-					"上の角のほうがいつも大きかった",
-					"傾けるほど差が広がった",
-				], "answer": 0, "invariant": {"value": 0.0, "tol": 0.6},
-				"after": "はす向かいの角 ― 錯角は、どんな傾きでも等しい。"},
-			{"type": "talk", "title": "同位角と錯角", "fig": "parallel_proof", "lines": [
-				"平行線と交わる線がつくる角には名前がついている。",
-				"同じ向きにできる角が同位角、はす向かいの角が錯角。どちらも等しい。",
-				"これが分かると、離れた場所の角を「移してくる」ことができる。",
-				"第1章で内角の和が 180° になったのも、この錯角のおかげだった。",
+					"いつも 上の角 + 下の角 になっていた",
+					"いつも 180° から 2 つを引いた値だった",
+					"どれとも関係がなかった",
+				], "answer": 0, "invariant": {"value": 0.0, "tol": 0.8},
+				"after": "折れ角 = 上の角 + 下の角。曲がる場所をどこにしても変わらない。"},
+			{"type": "talk", "title": "曲がり角に線を引く", "fig": "zigzag_proof", "lines": [
+				"曲がり角を通って、壁と平行な線を 1 本引いてみる。",
+				"すると折れ角が上下に分かれ、上側は上の角と、下側は下の角と、",
+				"はす向かい(錯角)の関係になる ― どちらも等しい。",
+				"だから 折れ角 = 上の角 + 下の角。補助線 1 本で見えてしまった。",
 			]},
 			{"type": "solve", "title": "折れ線の角", "stage": "e4", "tier": 1,
 				"lead": "錯角を使って角を移してみよう。", "after": "角は移せる。覚えておこう。"},
-			{"type": "talk", "title": "岸を離れて", "art": "dusk", "lines": [
-				"川の対岸までの距離も、この理屈で測れるという。",
-				"直接は測れないものを、測れるものから割り出す ―",
-				"それが測量という仕事の正体らしい。",
+			{"type": "talk", "title": "線は引いてよい", "art": "dusk", "lines": [
+				"図に無い線を、自分で引いてよかったのだ。",
+				"引いた瞬間に、離れていた角が「はす向かい」でつながった。",
+				"― 補助線。これから何度も使うことになる道具だ。",
 			]},
 		],
 	},
@@ -206,7 +206,7 @@ const CHAPTERS := [
 		"place": "円形の劇場",
 		"found": "同じ弧を見る円周角は等しく、中心角のちょうど半分",
 		"scenes": [
-			{"type": "talk", "title": "どこから見ても", "art": "wheel", "lines": [
+			{"type": "talk", "title": "どこから見ても", "art": "theater", "lines": [
 				"円形の劇場に来た。舞台の左右の端を、客席のどこからでも見わたせる。",
 				"「どの席から見ても、舞台は同じ広さに見える」と案内人が言う。",
 				"そんなことがあるだろうか。席を移して確かめてみよう。",
@@ -229,7 +229,7 @@ const CHAPTERS := [
 			]},
 			{"type": "solve", "title": "円周角を求める", "stage": "j3", "tier": 1,
 				"lead": "中心角の半分を使ってみよう。", "after": "円の中の角が読めるようになった。"},
-			{"type": "talk", "title": "円は角を運ぶ", "art": "wheel", "lines": [
+			{"type": "talk", "title": "円は角を運ぶ", "art": "theater", "lines": [
 				"円周上の点は、どこにあっても同じ角を保っている。",
 				"位置が変わっても変わらないもの ― また一つ見つけた。",
 			]},
@@ -342,7 +342,7 @@ const CHAPTERS := [
 		"place": "近代、噴水のほとり",
 		"found": "放物線と直線が囲む面積は (交点の差)³ ÷ 6(6分の1公式)",
 		"scenes": [
-			{"type": "talk", "title": "噴水の水", "art": "dusk", "lines": [
+			{"type": "talk", "title": "噴水の水", "art": "fountain", "lines": [
 				"噴水の水が描く曲線は放物線。水面で切り取られた部分の面積を出したい。",
 				"曲線で囲まれた形に、底辺 × 高さ ÷ 2 は使えない。",
 				"だが交点の間隔を変えていくと、面積の変わり方に規則があるという。",
@@ -364,7 +364,7 @@ const CHAPTERS := [
 			]},
 			{"type": "solve", "title": "放物線と直線", "stage": "s8", "tier": 1,
 				"lead": "6 分の 1 公式を使ってみよう。", "after": "曲線の面積にも手が届いた。"},
-			{"type": "talk", "title": "図形をあばく者", "art": "night", "lines": [
+			{"type": "talk", "title": "図形をあばく者", "art": "fountain", "lines": [
 				"角の和、錯角、円周率、等積変形、三平方、円周角、相似比、正弦定理、",
 				"sin の面積、6 分の 1 公式 ― 10 の決まりが手の中にある。",
 				"どれも「動かしても変わらないもの」だった。",
@@ -413,8 +413,8 @@ static func start_of(kind: String) -> Vector2:
 	match kind:
 		"triangle":
 			return Vector2(4.0, 6.0)
-		"parallel_lines":
-			return Vector2(8.0, 6.0)
+		"zigzag":
+			return Vector2(1.0, 4.0)
 		"circle":
 			return Vector2(5.0, 0.0)
 		"equal_area":
@@ -437,8 +437,8 @@ static func clamp_of(kind: String, p: Vector2) -> Vector2:
 	match kind:
 		"triangle":
 			return Vector2(clampf(p.x, -4.0, 14.0), clampf(p.y, 2.0, 9.0))
-		"parallel_lines":
-			return Vector2(clampf(p.x, 4.0, 12.0), 6.0)
+		"zigzag":
+			return Vector2(clampf(p.x, -5.0, 6.0), clampf(p.y, 1.5, 6.5))
 		"circle":
 			return Vector2(clampf(p.x, 2.0, 8.0), 0.0)
 		"equal_area":
@@ -468,25 +468,35 @@ static func readout_of(kind: String, p: Vector2) -> Dictionary:
 			var sum := int(d[0]) + int(d[1]) + int(d[2])
 			return {"row": "∠A %d°  ∠B %d°  ∠C %d°  → 合計 %d°" % [
 				int(d[0]), int(d[1]), int(d[2]), sum], "value": float(sum)}
-		"parallel_lines":
-			var th := roundi(rad_to_deg(atan2(6.0, p.x - 2.0)))
-			return {"row": "下の角 %d°  上の角 %d°  → 差 0°" % [th, th], "value": 0.0}
+		"zigzag":
+			var z := zigzag_angles(p)
+			return {"row": "上の角 %d°  下の角 %d°  折れ角 %d°  → 上+下 %d°" % [
+				roundi(z[0]), roundi(z[1]), roundi(z[2]), roundi(z[0] + z[1])],
+				"value": z[2] - (z[0] + z[1])}
 		"circle":
 			var r: float = p.x
 			return {"row": "直径 %.1f  円周 %.2f  → 円周÷直径 %.3f" % [
 				2.0 * r, TAU * r, (TAU * r) / (2.0 * r)], "value": (TAU * r) / (2.0 * r)}
 		"equal_area":
-			var area := 10.0 * 6.0 * 0.5
-			return {"row": "底辺 10  高さ 6  → 面積 %.1f" % area, "value": area}
+			# 面積だけが動かない。辺の長さは動くので、そこを見せて「変わらなさ」を出す
+			var ab: float = p.distance_to(TRI_B)
+			var ac: float = p.distance_to(TRI_C)
+			return {"row": "辺 AB %.2f  辺 AC %.2f  高さ 6  → 面積 %.1f" % [
+				ab, ac, 30.0], "value": 30.0}
 		"pythagoras":
+			# c は「斜辺を測った長さ」から出す(a²+b² を 2 回書くと出来レースに見える)
 			var a2: float = p.x * p.x
 			var b2: float = p.y * p.y
-			return {"row": "a² %.1f ＋ b² %.1f ＝ %.1f   c² %.1f" % [
-				a2, b2, a2 + b2, a2 + b2], "value": 0.0}
+			var c_side: float = Vector2(p.x, 0.0).distance_to(Vector2(0.0, p.y))
+			return {"row": "a² %.1f ＋ b² %.1f ＝ %.1f   斜辺 %.2f → c² %.1f" % [
+				a2, b2, a2 + b2, c_side, c_side * c_side],
+				"value": c_side * c_side - (a2 + b2)}
 		"inscribed":
+			# 席の位置は変わるのに角が変わらない、という形にする
 			var deg := inscribed_angles(p)
-			return {"row": "円周角 %d°  中心角 %d°  → 中心角 − 円周角×2 = %d°" % [
-				roundi(deg[0]), roundi(deg[1]), roundi(deg[1] - 2.0 * deg[0])],
+			return {"row": "席の位置 %d°  円周角 %d°  中心角 %d°  → 中心角 − 円周角×2 = %d°" % [
+				roundi(rad_to_deg(atan2(p.y, p.x))), roundi(deg[0]), roundi(deg[1]),
+				roundi(deg[1] - 2.0 * deg[0])],
 				"value": deg[1] - 2.0 * deg[0]}
 		"sine_law":
 			var deg2 := inscribed_angles(p)
@@ -495,9 +505,13 @@ static func readout_of(kind: String, p: Vector2) -> Dictionary:
 			return {"row": "∠A %d°  a %.2f  → a÷sin A %.2f   2R %.2f" % [
 				roundi(deg2[0]), a_side, s, 2.0 * R_CIRCLE], "value": s - 2.0 * R_CIRCLE}
 		"similar":
+			# 面積は実際に頂点から計算する(k×k と書くだけでは確かめたことにならない)
 			var k: float = p.x
-			return {"row": "相似比 %.2f  面積比 %.2f  → 面積比÷(相似比×相似比) %.2f" % [
-				k, k * k, 1.0], "value": 1.0}
+			var s1 := polygon_area(tri_shape(1.0))
+			var s2 := polygon_area(tri_shape(k))
+			return {"row": "相似比 %.2f  小 %.2f  大 %.2f  → 面積比 %.2f ÷ (%.2f×%.2f) = %.2f" % [
+				k, s1, s2, s2 / s1, k, k, (s2 / s1) / (k * k)],
+				"value": (s2 / s1) / (k * k)}
 		"area_sin":
 			var t := atan2(p.y, p.x)
 			var area2 := 0.5 * SIDE_A * SIDE_B * sin(t)
@@ -543,6 +557,38 @@ static func rounded_angles(deg: Array) -> Array:
 	for k in lack:
 		base[int(rest[k][1])] += 1
 	return base
+
+
+## 折れ線の 3 つの角 [上の角, 下の角, 折れ角]。
+## 平行な壁(y=0 と y=8)の右側に端があり、曲がり角 p は左側にある
+const ZIG_LOW := Vector2(9.0, 0.0)
+const ZIG_HIGH := Vector2(11.0, 8.0)
+
+
+static func zigzag_angles(p: Vector2) -> Array:
+	var left := Vector2(-1.0, 0.0)
+	var up_ang := rad_to_deg(acos(clampf(
+		(p - ZIG_HIGH).normalized().dot(left), -1.0, 1.0)))
+	var low_ang := rad_to_deg(acos(clampf(
+		(p - ZIG_LOW).normalized().dot(left), -1.0, 1.0)))
+	var bend := rad_to_deg(acos(clampf(
+		(ZIG_HIGH - p).normalized().dot((ZIG_LOW - p).normalized()), -1.0, 1.0)))
+	return [up_ang, low_ang, bend]
+
+
+## 多角形の面積(靴ひもの公式)
+static func polygon_area(pts: Array) -> float:
+	var s := 0.0
+	for i in pts.size():
+		var a: Vector2 = pts[i]
+		var b: Vector2 = pts[(i + 1) % pts.size()]
+		s += a.x * b.y - b.x * a.y
+	return absf(s) * 0.5
+
+
+## 相似の章で使う三角形(k 倍したもの)
+static func tri_shape(k: float) -> Array:
+	return [Vector2(0.0, 0.0) * k, Vector2(4.0, 0.0) * k, Vector2(1.2, 3.0) * k]
 
 
 ## 円周角の図で使う、舞台の両端(弦の端)

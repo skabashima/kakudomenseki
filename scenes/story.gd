@@ -26,7 +26,8 @@ var answered := false
 
 ## measure 用
 var apex := Vector2(4.0, 6.0)
-var trials: Array = []          # 記録した [∠A, ∠B, ∠C]
+var trials: Array = []          # 記録した行(表示用の文字列)
+var guess := -1                 # 測る前の予想(-1 = まだ予想していない)
 ## solve 用
 var problem: Dictionary = {}
 
@@ -117,6 +118,8 @@ func _build_frame() -> void:
 func _show_scene() -> void:
 	answered = false
 	trials.clear()
+	if String((chapter["scenes"] as Array)[idx].get("type", "")) != "measure":
+		guess = -1
 	for c in body.get_children():
 		c.queue_free()
 	figure.drag_points = []
@@ -157,6 +160,22 @@ func _build_measure() -> void:
 	fig_panel.visible = true
 	apex = StoryDefs.start_of(_fig_kind())
 	_refresh_figure()
+	if guess < 0:
+		# 測る前に賭けさせる。当たっても外れても、そのあとの表の見え方が変わる
+		_add_label("測る前に予想しよう。" + String(scene_data["question"]), 24, HEAD)
+		var gb := VBoxContainer.new()
+		gb.add_theme_constant_override("separation", 10)
+		body.add_child(gb)
+		for i in (scene_data["choices"] as Array).size():
+			var g := Button.new()
+			g.text = String(scene_data["choices"][i])
+			g.custom_minimum_size = Vector2(0, 84)
+			g.add_theme_font_size_override("font_size", 23)
+			g.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+			GameState.style_button(g, Color(0.34, 0.3, 0.52))
+			g.pressed.connect(_do_guess.bind(i))
+			gb.add_child(g)
+		return
 	_add_label(String(scene_data["lead"]), 23, BODY)
 	var rec := Button.new()
 	rec.text = "この形を記録する"
@@ -199,6 +218,13 @@ func _build_solve() -> void:
 # =========================================================
 # measure の操作
 # =========================================================
+
+## 予想を選んだら、測る画面に切り替える
+func _do_guess(pick: int) -> void:
+	GameState.play_sfx("tap")
+	guess = pick
+	_show_scene()
+
 
 func _fig_kind() -> String:
 	return String(scene_data.get("fig", "triangle"))
@@ -264,6 +290,10 @@ func _choose(pick: int) -> void:
 		return
 	answered = true
 	GameState.play_sfx("correct")
+	if guess == pick:
+		_add_label("予想的中! 測る前から見抜いていた。", 24, HEAD)
+	elif guess >= 0:
+		_add_label("予想ははずれ。だが記録が正しい答えを教えてくれた。", 23, Color(0.85, 0.9, 1.0))
 	_add_label(String(scene_data.get("after", "")), 24, Color(0.7, 1.0, 0.8))
 	for b in choice_box.get_children():
 		if b is Button:

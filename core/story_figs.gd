@@ -18,8 +18,8 @@ static func spec(kind: String, p: Vector2) -> Dictionary:
 	match kind:
 		"triangle":
 			return _triangle(p)
-		"parallel_lines":
-			return _parallel_lines(p)
+		"zigzag":
+			return _zigzag(p)
 		"circle":
 			return _circle(p)
 		"equal_area":
@@ -38,6 +38,8 @@ static func spec(kind: String, p: Vector2) -> Dictionary:
 			return _parabola(p)
 		"parallel_proof":
 			return _parallel_proof()
+		"zigzag_proof":
+			return _zigzag_proof()
 		"circle_proof":
 			return _circle_proof()
 		"equal_area_proof":
@@ -85,18 +87,43 @@ static func _parallel_proof() -> Dictionary:
 	]}
 
 
-# ============ 第2章 平行線と錯角 ============
+# ============ 第2章 折れ線(平行線にはさまれた曲がり角) ============
 
-static func _parallel_lines(p: Vector2) -> Dictionary:
-	var lo := Vector2(2.0, 0.0)
+## 平行な壁と、右側の 2 点を結ぶ折れ線。曲がり角 p を動かす
+static func _zigzag(p: Vector2) -> Dictionary:
+	var lo := StoryDefs.ZIG_LOW
+	var hi := StoryDefs.ZIG_HIGH
+	var z: Array = StoryDefs.zigzag_angles(p)
 	return {"shapes": [
-		ProblemGen.seg(Vector2(-2.0, 0.0), Vector2(14.0, 0.0), WHITE, 4.0),
-		ProblemGen.seg(Vector2(-2.0, 6.0), Vector2(14.0, 6.0), WHITE, 4.0),
-		ProblemGen.seg(lo + (lo - p) * 0.5, p + (p - lo) * 0.4, GOLD, 3.5),
-		ProblemGen.ang(lo, Vector2(14.0, 0.0), p, "x", 2.0),
-		ProblemGen.ang(p, lo, Vector2(-2.0, 6.0), "y", 2.0),
-		ProblemGen.label(Vector2(-1.4, 0.8), "下の道"),
-		ProblemGen.label(Vector2(-1.4, 6.8), "上の道"),
+		ProblemGen.seg(Vector2(-8.0, 0.0), Vector2(14.0, 0.0), WHITE, 4.0),
+		ProblemGen.seg(Vector2(-8.0, 8.0), Vector2(14.0, 8.0), WHITE, 4.0),
+		ProblemGen.seg(hi, p, GOLD, 3.5),
+		ProblemGen.seg(p, lo, GOLD, 3.5),
+		ProblemGen.ang(hi, Vector2(-8.0, 8.0), p, "上 %d°" % roundi(z[0]), 1.8),
+		ProblemGen.ang(lo, p, Vector2(-8.0, 0.0), "下 %d°" % roundi(z[1]), 1.8),
+		ProblemGen.ang(p, lo, hi, "折れ %d°" % roundi(z[2]), 1.8),
+		ProblemGen.label(Vector2(-6.5, 8.8), "上の壁"),
+		ProblemGen.label(Vector2(-6.5, -0.9), "下の壁"),
+	]}
+
+
+## 曲がり角を通る平行線を引くと、折れ角が上下に分かれて錯角になる
+static func _zigzag_proof() -> Dictionary:
+	var lo := StoryDefs.ZIG_LOW
+	var hi := StoryDefs.ZIG_HIGH
+	var p := Vector2(1.0, 4.0)
+	var z: Array = StoryDefs.zigzag_angles(p)
+	return {"shapes": [
+		ProblemGen.seg(Vector2(-8.0, 0.0), Vector2(14.0, 0.0), WHITE, 4.0),
+		ProblemGen.seg(Vector2(-8.0, 8.0), Vector2(14.0, 8.0), WHITE, 4.0),
+		ProblemGen.seg(Vector2(-8.0, 4.0), Vector2(14.0, 4.0), DIM, 2.5, true),
+		ProblemGen.seg(hi, p, GOLD, 3.5),
+		ProblemGen.seg(p, lo, GOLD, 3.5),
+		ProblemGen.ang(hi, Vector2(-8.0, 8.0), p, "上 %d°" % roundi(z[0]), 1.8),
+		ProblemGen.ang(lo, p, Vector2(-8.0, 0.0), "下 %d°" % roundi(z[1]), 1.8),
+		ProblemGen.ang(p, Vector2(14.0, 4.0), hi, "上と同じ", 1.5),
+		ProblemGen.ang(p, lo, Vector2(14.0, 4.0), "下と同じ", 2.4),
+		ProblemGen.label(Vector2(-6.0, 4.8), "引いた補助線(壁と平行)"),
 	]}
 
 
@@ -229,21 +256,17 @@ static func _inscribed_proof() -> Dictionary:
 
 # ============ 第7章 相似比と面積比 ============
 
-static func _tri_shape() -> Array:
-	return [Vector2(0.0, 0.0), Vector2(4.0, 0.0), Vector2(1.2, 3.0)]
-
-
 static func _similar(p: Vector2) -> Dictionary:
 	var k: float = p.x
-	var big: Array = []
-	for q in _tri_shape():
-		big.append(q * k)
+	var small := StoryDefs.tri_shape(1.0)
+	var big := StoryDefs.tri_shape(k)
 	return {"shapes": [
 		ProblemGen.poly(big, ProblemGen.FILL_SUB, GOLD, 3.5),
-		ProblemGen.poly(_tri_shape(), ProblemGen.FILL_MAIN, WHITE, 3.5),
+		ProblemGen.poly(small, ProblemGen.FILL_MAIN, WHITE, 3.5),
 		ProblemGen.seg(Vector2(1.2, -2.0), Vector2(2.6, -2.0), DIM, 2.5, true),
-		ProblemGen.label(Vector2(5.0, 6.0), "相似比 %.2f 倍" % k),
-		ProblemGen.label(Vector2(5.0, 4.6), "面積比 %.2f 倍" % (k * k)),
+		ProblemGen.label(Vector2(6.2, 6.0), "相似比 %.2f 倍" % k),
+		ProblemGen.label(Vector2(6.2, 4.6), "小 %.2f" % StoryDefs.polygon_area(small)),
+		ProblemGen.label(Vector2(6.2, 3.2), "大 %.2f" % StoryDefs.polygon_area(big)),
 		ProblemGen.label(Vector2(1.9, -3.0), "← 動かすと拡大 →"),
 	]}
 
