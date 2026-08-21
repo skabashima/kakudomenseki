@@ -72,8 +72,29 @@ func _check_scene(cid: String, i: int, sc: Dictionary) -> void:
 						found = true
 			if not found:
 				bad.append(where + ": stage %s が本編に無い" % sid)
+				return
+			_check_solve_matches(where, sc)
 		_:
 			bad.append(where + ": 知らない type")
+
+
+## 章で見つけたことが、そのまま効く問題が出るか。
+## tier を 1 つ間違えると「折れ線を発見したのに、出題はただの錯角」のように
+## 話とつながらない問題が出てしまう(実際に起きた)ので、語で見張る
+func _check_solve_matches(where: String, sc: Dictionary) -> void:
+	var want := String(sc.get("expect", ""))
+	if want == "":
+		bad.append(where + ": expect(問題文に出るはずの語)が無い")
+		return
+	var rng := RandomNumberGenerator.new()
+	for i in 40:
+		rng.seed = 500 + i
+		var pr: Dictionary = ProblemGen.generate(
+			String(sc["stage"]), rng, int(sc.get("tier", 0)))
+		if not String(pr["q"]).contains(want):
+			bad.append("%s: tier %d の問題に「%s」が出ない → %s" % [
+				where, int(sc.get("tier", 0)), want, String(pr["q"]).substr(0, 40)])
+			return
 
 
 ## 動かしても「一定」と言っている量が本当に一定か

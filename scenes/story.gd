@@ -203,8 +203,7 @@ func _build_solve() -> void:
 	choice_box.add_theme_constant_override("separation", 10)
 	body.add_child(choice_box)
 	var ans := float(problem["answer"])
-	var opts := [ans, ans + 10.0, maxf(1.0, ans - 15.0)]
-	opts.shuffle()
+	var opts := _choices_for(ans)
 	for v in opts:
 		var b := Button.new()
 		b.text = "%s%s" % [ProblemGen.fmt(float(v)), String(problem["unit"])]
@@ -213,6 +212,27 @@ func _build_solve() -> void:
 		GameState.style_button(b, Color(0.24, 0.42, 0.72))
 		b.pressed.connect(_pick_answer.bind(float(v), ans))
 		choice_box.add_child(b)
+
+
+## 3 択の選択肢。まちがいの候補は答えに応じて作る。
+## ans ± 決め打ちだと、答えが小さいときに「1」のような不自然な値が並んで
+## 正解が丸わかりになってしまう
+func _choices_for(ans: float) -> Array:
+	var step := maxf(2.0, absf(ans) * 0.25)
+	var hi := ans + step
+	var lo := ans - maxf(2.0, absf(ans) * 0.2)
+	if lo <= 0.0:
+		lo = ans + step * 2.0
+	# 小数の答えなら小数のまま、整数なら整数に丸める(見た目をそろえる)
+	if is_equal_approx(ans, round(ans)):
+		hi = round(hi)
+		lo = round(lo)
+	else:
+		hi = snappedf(hi, 0.1)
+		lo = snappedf(lo, 0.1)
+	var opts := [ans, hi, lo]
+	opts.shuffle()
+	return opts
 
 
 # =========================================================
