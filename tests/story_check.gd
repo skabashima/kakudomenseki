@@ -64,37 +64,40 @@ func _check_scene(cid: String, i: int, sc: Dictionary) -> void:
 				bad.append(where + ": answer が選択肢の範囲外")
 			_check_invariant(where, sc)
 		"solve":
-			var sid := String(sc.get("stage", ""))
-			var found := false
-			for c in ProblemGen.COURSES:
-				for st in c["stages"]:
-					if String(st["id"]) == sid:
-						found = true
-			if not found:
-				bad.append(where + ": stage %s が本編に無い" % sid)
-				return
 			_check_solve_matches(where, sc)
 		_:
 			bad.append(where + ": 知らない type")
 
 
-## 章で見つけたことが、そのまま効く問題が出るか。
-## tier を 1 つ間違えると「折れ線を発見したのに、出題はただの錯角」のように
-## 話とつながらない問題が出てしまう(実際に起きた)ので、語で見張る
+## 依頼(solve)がちゃんと作れるか。
+## 本編の問題をそのまま出すのは禁止(同じ画面になって物語も発見も効かない)。
+## ここでは章ごとの依頼が、毎回きちんと文章・答え・図を返すかを見る
 func _check_solve_matches(where: String, sc: Dictionary) -> void:
-	var want := String(sc.get("expect", ""))
-	if want == "":
-		bad.append(where + ": expect(問題文に出るはずの語)が無い")
+	var kind := String(sc.get("fig", ""))
+	if kind == "":
+		bad.append(where + ": fig(依頼の種類)が無い")
 		return
 	var rng := RandomNumberGenerator.new()
-	for i in 40:
+	for i in 60:
 		rng.seed = 500 + i
-		var pr: Dictionary = ProblemGen.generate(
-			String(sc["stage"]), rng, int(sc.get("tier", 0)))
-		if not String(pr["q"]).contains(want):
-			bad.append("%s: tier %d の問題に「%s」が出ない → %s" % [
-				where, int(sc.get("tier", 0)), want, String(pr["q"]).substr(0, 40)])
+		var t: Dictionary = StoryTasks.make(kind, rng)
+		if String(t.get("q", "")) == "":
+			bad.append("%s(%s): 依頼の文が空" % [where, kind])
 			return
+		if not is_finite(float(t.get("answer", NAN))):
+			bad.append("%s(%s): 答えが数でない" % [where, kind])
+			return
+		if float(t.get("answer", 0.0)) <= 0.0:
+			bad.append("%s(%s): 答えが 0 以下(%s)" % [where, kind, str(t.get("answer"))])
+			return
+		if (t.get("fig", {}) as Dictionary).get("shapes", []).is_empty():
+			bad.append("%s(%s): 図が空" % [where, kind])
+			return
+		# 本編の問題文をそのまま使っていないか(教科書調の言い回しを弾く)
+		for ng in ["何度ですか。", "求めなさい。"]:
+			if String(t["q"]).ends_with(ng):
+				bad.append("%s(%s): 本編と同じ言い回しになっている" % [where, kind])
+				return
 
 
 ## 動かしても「一定」と言っている量が本当に一定か

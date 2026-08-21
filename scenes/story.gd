@@ -195,7 +195,9 @@ func _build_solve() -> void:
 	fig_panel.visible = true
 	var rng := RandomNumberGenerator.new()
 	rng.randomize()
-	problem = ProblemGen.generate(String(scene_data["stage"]), rng, int(scene_data.get("tier", 0)))
+	# 本編の問題をそのまま出すと、章の物語も直前の発見も効かない画面になる。
+	# その章の依頼として書き直したものを出す(数値は毎回変わる)
+	problem = StoryTasks.make(String(scene_data["fig"]), rng)
 	figure.set_spec(problem["fig"])
 	_add_label(String(scene_data.get("lead", "")), 23, BODY)
 	_add_label(String(problem["q"]), 25, BODY)
