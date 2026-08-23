@@ -41,6 +41,12 @@ static func _render(c: Control, kind: String, w: float, h: float) -> void:
 			_theater(c, w, h)
 		"fountain":
 			_fountain(c, w, h)
+		"wheel":
+			_wheel(c, w, h)
+		"roof":
+			_roof(c, w, h)
+		"night":
+			_night(c, w, h)
 		_:
 			c.draw_rect(Rect2(0, 0, w, h), SKY_DAY)
 
@@ -147,6 +153,79 @@ static func _fountain(c: Control, w: float, h: float) -> void:
 # =========================================================
 # 部品
 # =========================================================
+
+## 車輪の工房。大小の車輪が立てかけてある(第3章)
+static func _wheel(c: Control, w: float, h: float) -> void:
+	_sky(c, w, h, SKY_DAY, Color(0.82, 0.78, 0.68))
+	c.draw_rect(Rect2(0, h * 0.62, w, h * 0.38), SAND)
+	# 工房の壁と屋根
+	c.draw_rect(Rect2(w * 0.06, h * 0.26, w * 0.44, h * 0.40), Color(0.46, 0.36, 0.26))
+	_poly(c, [Vector2(w * 0.02, h * 0.28), Vector2(w * 0.54, h * 0.28),
+		Vector2(w * 0.28, h * 0.10)], Color(0.36, 0.28, 0.20))
+	# 大小の車輪
+	var wheels: Array = [[w * 0.66, h * 0.52, h * 0.22], [w * 0.86, h * 0.60, h * 0.14],
+		[w * 0.40, h * 0.60, h * 0.13]]
+	for wd in wheels:
+		var cx: float = wd[0]
+		var cy: float = wd[1]
+		var r: float = wd[2]
+		c.draw_arc(Vector2(cx, cy), r, 0.0, TAU, 40, Color(0.55, 0.42, 0.28), h * 0.030)
+		for k in 8:
+			var a := TAU * float(k) / 8.0
+			c.draw_line(Vector2(cx, cy), Vector2(cx + cos(a) * r, cy + sin(a) * r),
+				Color(0.62, 0.50, 0.34), h * 0.012)
+		c.draw_circle(Vector2(cx, cy), r * 0.16, Color(0.40, 0.31, 0.21))
+	_person(c, Vector2(w * 0.22, h * 0.66), h * 0.20, CLOTH)
+
+
+## 大工の作業場。組みかけの家の骨組み(第5章)
+static func _roof(c: Control, w: float, h: float) -> void:
+	_sky(c, w, h, SKY_DAY, Color(0.86, 0.84, 0.74))
+	c.draw_rect(Rect2(0, h * 0.70, w, h * 0.30), SAND)
+	# 土台と柱
+	c.draw_rect(Rect2(w * 0.12, h * 0.66, w * 0.66, h * 0.05), Color(0.50, 0.38, 0.26))
+	for k in 4:
+		var x := w * (0.16 + 0.20 * float(k))
+		c.draw_rect(Rect2(x, h * 0.34, w * 0.035, h * 0.33), Color(0.58, 0.44, 0.30))
+	# 屋根の骨(三角)
+	_poly(c, [Vector2(w * 0.10, h * 0.36), Vector2(w * 0.80, h * 0.36),
+		Vector2(w * 0.45, h * 0.12)], Color(0.44, 0.34, 0.23))
+	c.draw_line(Vector2(w * 0.10, h * 0.36), Vector2(w * 0.80, h * 0.36),
+		Color(0.66, 0.52, 0.34), h * 0.02)
+	# 立てかけた縄(結び目つき)
+	c.draw_line(Vector2(w * 0.84, h * 0.70), Vector2(w * 0.92, h * 0.40),
+		Color(0.80, 0.72, 0.52), h * 0.014)
+	for k in 3:
+		c.draw_circle(Vector2(w * (0.85 + 0.025 * float(k)), h * (0.63 - 0.10 * float(k))),
+			h * 0.014, Color(0.86, 0.78, 0.58))
+	_person(c, Vector2(w * 0.30, h * 0.70), h * 0.22, CLOTH)
+
+
+## 夜の天文台。星と観測の筒(第8章・第18章)
+static func _night(c: Control, w: float, h: float) -> void:
+	_sky(c, w, h, Color(0.06, 0.08, 0.22), Color(0.16, 0.20, 0.38))
+	# 星(規則的に散らす。乱数は使わないので毎回同じ空になる)
+	for i in 40:
+		var fx := fmod(0.6180339 * float(i * 7 + 3), 1.0)
+		var fy := fmod(0.4142135 * float(i * 5 + 1), 1.0)
+		var rr := h * (0.006 + 0.006 * fmod(0.7320508 * float(i), 1.0))
+		c.draw_circle(Vector2(w * fx, h * (0.06 + 0.52 * fy)), rr, Color(0.92, 0.94, 1.0))
+	# 遠くの山なみ
+	_poly(c, [Vector2(0, h * 0.82), Vector2(w * 0.22, h * 0.60), Vector2(w * 0.44, h * 0.82)],
+		Color(0.10, 0.12, 0.20))
+	_poly(c, [Vector2(w * 0.30, h * 0.82), Vector2(w * 0.52, h * 0.66), Vector2(w * 0.74, h * 0.82)],
+		Color(0.09, 0.11, 0.18))
+	# 地面と天文台のドーム
+	c.draw_rect(Rect2(0, h * 0.82, w, h * 0.18), Color(0.12, 0.14, 0.20))
+	var cx := w * 0.66
+	var cy := h * 0.82
+	c.draw_rect(Rect2(cx - w * 0.15, h * 0.66, w * 0.30, h * 0.16), Color(0.22, 0.24, 0.32))
+	c.draw_arc(Vector2(cx, h * 0.66), w * 0.15, PI, TAU, 32, Color(0.30, 0.33, 0.42), h * 0.06)
+	# 観測の筒(星のほうを向いている)
+	c.draw_line(Vector2(cx, h * 0.64), Vector2(cx + w * 0.15, h * 0.40),
+		Color(0.70, 0.74, 0.86), h * 0.030)
+	_person(c, Vector2(w * 0.26, h * 0.86), h * 0.22, Color(0.62, 0.66, 0.78))
+
 
 static func _sky(c: Control, w: float, h: float, top: Color, bottom: Color) -> void:
 	var bands := 12

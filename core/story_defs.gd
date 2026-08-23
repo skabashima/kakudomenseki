@@ -174,8 +174,115 @@ const CHAPTERS := [
 				"lead": "底辺と高さを見つけて計算しよう。", "after": "兄弟は納得して握手した。"},
 			{"type": "talk", "title": "四つの道具", "art": "dusk", "lines": [
 				"角の和、折れ角、円周率、そして崩してよい形 ― 四つ手に入れた。",
-				"カラスが手をひらひらさせて背を向ける。「子どもの町はここまでだ」",
-				"「次からは大人の現場だぞ。柱が立ち、船が出る」",
+				"カラスが手をひらひらさせて背を向ける。「まだ子どもの町だ」",
+				"「次の村は水売りの縄張りでな。水は 深さ で売るものだと、みんな思っている」",
+			]},
+		],
+	},
+	{
+		"id": "ch11", "title": "水は量で決まる", "level": "中学受験",
+		"place": "井戸のある村",
+		"found": "器の 幅 × 深さ は水の量そのもの。広い器ほど浅くなる",
+		"scenes": [
+			{"type": "talk", "title": "水売りの言い分", "art": "field", "lines": [
+				"日照りの村。井戸の水を配るのに、大きさのちがう水そうが並んでいる。",
+				"水売りに立ったカラスが、幅の広い水そうを指して値を上げた。",
+				"「見ろ、こちらのほうが深くまで水が入る。得なのはこっちだ」",
+				"村人が財布を出しかけたところで、トトが柄杓をこちらへ放ってよこした。",
+			]},
+			{"type": "measure", "title": "器の幅を変える", "fig": "tank", "trials": 3,
+				"lead": "金色の点をつまむと、水そうの右の壁が動いて幅が変わる。"
+					+ "水の量は同じまま。幅と深さを記録しよう。",
+				"question": "幅を変えると、深さはどうなった?",
+				"choices": [
+					"カラスの言うとおり、幅が広いほど深かった",
+					"幅 × 深さ がいつも同じだった",
+					"深さは幅と関係なく変わった",
+				], "answer": 1, "invariant": {"value": 48.0, "tol": 0.05},
+				"after": "幅 × 深さ は動かない。広い器は、同じ水でも浅くなるだけだった。"},
+			{"type": "talk", "title": "同じ水を移す", "fig": "tank_proof", "lines": [
+				"トトが同じ量の水を、幅のちがう二つの水そうに分けて入れて見せた。",
+				"幅が二倍の器では、水面はちょうど半分の高さで止まる。",
+				"水の量 = 底の広さ × 深さ。深さは器の大きさで勝手に決まる、ただの結果だ。",
+				"「深いから多い」は、底の広さを見ていない者の言い分だった。",
+			]},
+			{"type": "solve", "title": "水はどこまで来るか", "fig": "tank",
+				"lead": "村の水そうで確かめよう。", "after": "ふちの高さがちょうどよく決まった。"},
+			{"type": "talk", "title": "影がのびる", "art": "dusk", "lines": [
+				"カラスは値札を書き直しながら、それでも平気な顔で言った。",
+				"「量で売るならそれでいい。だが次の町のものは、量りようがないぞ」",
+				"指さす先には、夕日にのびる長い影と、影の先が見えない塔があった。",
+			]},
+		],
+	},
+	{
+		"id": "ch12", "title": "影で測る", "level": "中学受験",
+		"place": "塔のある町",
+		"found": "同じ時刻なら、どの物でも 高さ ÷ 影 は同じ",
+		"scenes": [
+			{"type": "talk", "title": "登れない塔", "art": "master", "lines": [
+				"町の見張り塔の高さを、記録に書き入れることになった。だが登る階段はとうに崩れている。",
+				"カラスが真顔で言う。「塔の高さは影の長さと同じだ。昔からそう決まっている」",
+				"それらしく聞こえる。実際、今の影は塔と同じくらいに見えなくもない。",
+				"トトは地面に杭を一本立て、その影を指でなぞった。まず、これで確かめろということだ。",
+			]},
+			{"type": "measure", "title": "太陽の高さを変える", "fig": "shadow", "trials": 3,
+				"lead": "金色の点を動かすと太陽の向きが変わり、杭と木の影が同時にのびちぢみする。"
+					+ "それぞれの 高さ ÷ 影 を記録しよう。",
+				"question": "杭と木で、高さ ÷ 影 はどうだった?",
+				"choices": [
+					"背の高いものほど大きかった",
+					"どちらもいつも同じ値だった",
+					"太陽の向きで入れかわった",
+				], "answer": 1, "invariant": {"value": 0.0, "tol": 0.01},
+				"after": "高さ ÷ 影 は、同じ時刻ならどの物でも同じ。影と同じ長さになるのは一日のうち一瞬だけだ。"},
+			{"type": "talk", "title": "光は平行", "fig": "shadow_proof", "lines": [
+				"トトが杭と木、それぞれの先から影の先へ線を引いた。二本の線はぴたりと平行だ。",
+				"太陽は遠い。だから光は平行にやってくる。すると二つの三角形は同じ形になる。",
+				"同じ形なら、辺の比も同じ。杭で分かった比が、そのまま塔にも効く。",
+				"「登らずに測る」とは、この比を運ぶことだった。",
+			]},
+			{"type": "solve", "title": "塔の高さ", "fig": "shadow",
+				"lead": "杭の比を塔まで運ぼう。", "after": "記録に、塔の高さが書き入れられた。"},
+			{"type": "talk", "title": "市場の門", "art": "dusk", "lines": [
+				"カラスは「昔からそう決まっている」を取り消さないまま、荷をまとめた。",
+				"「決まりを売るのは俺の商売でな。次は動くものだ。動くものは測れんぞ」",
+				"次の町では、市場の門を大きな板が横切っていくのだという。",
+			]},
+		],
+	},
+	{
+		"id": "ch13", "title": "通せんぼの板", "level": "中学受験",
+		"place": "市場の門",
+		"found": "重なりの面積は、進んだ長さに比例する(たてが変わらないから)",
+		"scenes": [
+			{"type": "talk", "title": "門をふさぐ荷", "art": "field", "lines": [
+				"市場の門を、荷車の大きな板がゆっくり横切っていく。門はその間ふさがれる。",
+				"門番が知りたいのは「今どれだけふさがれているか」。通れる隙間の広さだ。",
+				"カラスが割り込む。「動くものの面積は、動くたびに増え方が変わる。計算では追えん」",
+				"トトは門の柱に指をあてて、板の右端が進んだぶんだけをなぞった。",
+			]},
+			{"type": "measure", "title": "板を進めてみる", "fig": "overlap", "trials": 3,
+				"lead": "金色の点をつまむと板が進む。進んだ長さと、重なった部分の面積を記録しよう。",
+				"question": "進んだ長さと、重なりの面積の関係は?",
+				"choices": [
+					"カラスの言うとおり、進むほど増え方が速くなった",
+					"面積 ÷ 進んだ長さ がいつも同じだった",
+					"進んでも面積は変わらなかった",
+				], "answer": 1, "invariant": {"value": 4.0, "tol": 0.01},
+				"after": "面積 ÷ 進んだ長さ は板のたてそのもの。増え方は最初から最後まで一定だった。"},
+			{"type": "talk", "title": "たては変わらない", "fig": "overlap_proof", "lines": [
+				"重なった部分を三つ、並べて描いてみる。どれも長方形で、たては同じ。",
+				"変わるのは よこ だけ。よこは板が進んだ長さそのものだ。",
+				"だから面積は 進んだ長さ × たて。動いていても、形は素直だった。",
+				"「動くものは測れん」は、形が変わると思いこんだ者の言い分だ。",
+			]},
+			{"type": "solve", "title": "今ふさがれている広さ", "fig": "overlap",
+				"lead": "門番に伝えよう。", "after": "門番は通れる隙間を的確にさばいた。"},
+			{"type": "talk", "title": "大人の現場へ", "art": "dusk", "lines": [
+				"水の量、影の比、動くものの面積 ― 子どもだましと言われた町で、七つ手に入れた。",
+				"カラスが手をひらひらさせて背を向ける。「ここまでは前ふりだ」",
+				"「次からは大人の現場だぞ。柱が立ち、船が出て、倉に梁が渡る」",
 			]},
 		],
 	},
@@ -279,14 +386,195 @@ const CHAPTERS := [
 			]},
 			{"type": "solve", "title": "布の見積り", "fig": "similar",
 				"lead": "相似比の 2 乗を使おう。", "after": "帆はぴたりと張られ、船は出た。"},
-			{"type": "talk", "title": "海の向こうへ", "art": "master", "lines": [
-				"出港を見送りながら、カラスがぽつりと言った。",
-				"「俺が売っていた表は、あの船の行き先じゃ通じない。星の見え方が違うんだ」",
-				"星の位置で船が向きを知る、という話をあなたは初めて聞いた。",
+			{"type": "talk", "title": "港の倉へ", "art": "master", "lines": [
+				"出港を見送りながら、カラスが港の奥を指した。",
+				"「あの倉に梁を渡す仕事が残っている。斜めの長さは足し算だ ― と言っておこう」",
+				"言っておこう、という言い方が引っかかった。今度は本当かもしれない。",
+			]},
+		],
+	},
+	{
+		"id": "ch14", "title": "倉の梁", "level": "高校受験",
+		"place": "港の倉",
+		"found": "直方体の対角線は、3 辺の平方をぜんぶ足した数の平方根",
+		"scenes": [
+			{"type": "talk", "title": "斜めに一本", "art": "master", "lines": [
+				"港の倉。すみからすみへ、荷を吊るための梁を斜めに一本渡したいという。",
+				"床のすみから、天井の向かいのすみまで。長さが分からないと木は切れない。",
+				"カラスがすかさず言った。「たて・よこ・高さを足せばいい。斜めはその分だけ長い」",
+				"トトは床に膝をついて、まず床の対角線だけを縄で測ってみせた。",
+			]},
+			{"type": "measure", "title": "倉の形を変える", "fig": "box_diag", "trials": 3,
+				"lead": "金色の点を動かすと、おくゆきと高さが変わる。"
+					+ "対角線を測って、その 2 乗と 3 辺の平方の和を記録しよう。",
+				"question": "対角線と 3 辺には、どんな関係があった?",
+				"choices": [
+					"カラスの言うとおり、3 辺をたした長さと同じだった",
+					"対角線 × 対角線 が、3 辺それぞれの平方の和と同じだった",
+					"高さだけで決まっていた",
+				], "answer": 1, "invariant": {"value": 0.0, "tol": 0.05},
+				"after": "たすのは長さではなく、平方だった。3 辺を足す言い分はここで消える。"},
+			{"type": "talk", "title": "三平方を二回", "fig": "box_diag_proof", "lines": [
+				"トトが床の対角線に印をつけた。ここまでは平らな三平方、いつもの形だ。",
+				"その対角線を底辺、高さを立てた辺として、もう一度三平方を使う。",
+				"すると 対角線² = よこ² + おくゆき² + 高さ²。二回使っただけで、空間へ出られた。",
+				"「平らで覚えたものが、そのまま立体で効くんですね」― トトはうなずいただけだった。",
+			]},
+			{"type": "solve", "title": "梁を切る", "fig": "box_diag",
+				"lead": "倉に渡す長さを出そう。", "after": "梁はすみからすみへ、ぴたりと収まった。"},
+			{"type": "talk", "title": "樽の注文", "art": "master", "lines": [
+				"カラスは足し算の表を丸めて懐に入れ、港のほうを見た。",
+				"「次は樽づくりだ。あそこの親方は、大きさの勘定でいつも損をしている」",
+				"損をしている ― その言い方が、どこか楽しそうだった。",
+			]},
+		],
+	},
+	{
+		"id": "ch15", "title": "二倍の樽", "level": "高校受験",
+		"place": "樽づくりの工房",
+		"found": "長さを k 倍にすると、体積は k × k × k 倍になる",
+		"scenes": [
+			{"type": "talk", "title": "同じ形で大きく", "art": "master", "lines": [
+				"樽づくりの工房。「いまと同じ形で、長さだけ二倍の樽を」という注文が入った。",
+				"親方は請け書に「代金も二倍」と書こうとしている。中身も二倍だと思っているのだ。",
+				"カラスがめずらしく口を出した。「二倍で請けるな。四倍だ。面積の話を思い出せ」",
+				"帆の話(長さ二倍なら布は四倍)を覚えている。だが今度は入れ物 ― 中身の話だ。",
+			]},
+			{"type": "measure", "title": "箱を大きくする", "fig": "cube_scale", "trials": 3,
+				"lead": "金色の点を動かすと、右の箱が何倍かに拡大される。"
+					+ "もとの体積と、大きい箱の体積を記録しよう。",
+				"question": "長さを k 倍にすると、体積は何倍になった?",
+				"choices": [
+					"親方の言うとおり k 倍",
+					"カラスの言うとおり k × k 倍",
+					"k × k × k 倍",
+				], "answer": 2, "invariant": {"value": 1.0, "tol": 0.02},
+				"after": "二倍の樽には八倍入る。二倍でも四倍でもなかった。"},
+			{"type": "talk", "title": "三方向とも", "fig": "cube_scale_proof", "lines": [
+				"大きい箱の中に、もとの箱を並べてみる。たてに二つ、よこに二つ、高さに二つ。",
+				"合わせて 2 × 2 × 2 = 8 個。伸びた方向の数だけ、倍率が重なっていく。",
+				"長さは k、面積は k × k、体積は k × k × k。増える階段が一段ずつ違う。",
+				"カラスが舌打ちした。「面積で止めたのが俺の負けだ」",
+			]},
+			{"type": "solve", "title": "大きい樽に入る量", "fig": "cube_scale",
+				"lead": "親方に伝えよう。", "after": "請け書の代金が、正しく書き直された。"},
+			{"type": "talk", "title": "祭りの支度", "art": "field", "lines": [
+				"工房を出ると、通りは祭りの支度で騒がしかった。",
+				"「布から三角帽子を切り出すそうだ」とカラス。「あれは丸を平らに開く話でな」",
+				"丸いものを平らにひらく ― 聞いたことのない手つきだった。",
+			]},
+		],
+	},
+	{
+		"id": "ch16", "title": "三角帽子の型紙", "level": "高校受験",
+		"place": "祭りの仕立て屋",
+		"found": "円錐をひらいた弧の長さは、底面の円周と同じ(中心角 = 360 × 半径 ÷ 母線)",
+		"scenes": [
+			{"type": "talk", "title": "布が足りるか", "art": "theater", "lines": [
+				"祭りの三角帽子を、布から切り出す仕事。丸めて巻けば帽子になる。",
+				"仕立て屋が困っている。「おうぎ形に切るのは分かる。何度に切ればいいのかが分からん」",
+				"カラスが即答した。「半円だ。だいたい 180 度で巻ける。昔からそうしている」",
+				"トトは帽子を一つ、はさみで縦に切りひらいて、ぺたりと台に広げた。",
+			]},
+			{"type": "measure", "title": "斜めの辺を変える", "fig": "cone_net", "trials": 3,
+				"lead": "金色の点を動かすと母線(斜めの辺)が長くなる。"
+					+ "中心角と、ひらいた弧の長さ、底面の円周を記録しよう。",
+				"question": "母線を変えると、弧の長さはどうなった?",
+				"choices": [
+					"母線が長いほど弧も長くなった",
+					"弧の長さは、いつも底面の円周と同じだった",
+					"中心角がいつも同じだった",
+				], "answer": 1, "invariant": {"value": 0.0, "tol": 0.02},
+				"after": "弧は底面のふちに巻きつく部分。長さが変わるはずがなかった。180 度は偶然の一例だ。"},
+			{"type": "talk", "title": "巻きつく先", "fig": "cone_net_proof", "lines": [
+				"ひらいた弧は、かぶる口のふちにぐるりと巻きつく部分だ。だから弧 = 円周。",
+				"母線が長いほど、同じ弧を作るのに必要な角は小さくてすむ。",
+				"式にすれば 中心角 = 360 × 半径 ÷ 母線。丸と平らが、一本の式でつながった。",
+				"仕立て屋がはさみを持ち直した。「これなら布を無駄にせん」",
+			]},
+			{"type": "solve", "title": "布を切る角", "fig": "cone_net",
+				"lead": "型紙の角を出そう。", "after": "帽子はきれいに巻けて、祭りに間に合った。"},
+			{"type": "talk", "title": "庭の池", "art": "dusk", "lines": [
+				"祭りの灯りの向こうに、大きな屋敷の庭が見える。丸い池があるらしい。",
+				"「あの池には島がある」とカラス。「渡し板の長さで、庭師がずっと揉めている」",
+				"ここから先は、大人の現場よりもさらに厄介だ ― という顔をしていた。",
 			]},
 		],
 	},
 	# ============ 大学受験レベル ============
+	{
+		"id": "ch17", "title": "池ごしの板", "level": "大学受験",
+		"place": "円い池のある庭",
+		"found": "円の外の一点から引いた線では、近い岸まで × 遠い岸まで がいつも同じ",
+		"scenes": [
+			{"type": "talk", "title": "渡し板の見積り", "art": "fountain", "lines": [
+				"屋敷の庭の丸い池。中ほどに島があり、岸から板を渡して行き来している。",
+				"庭師が困っていた。「板を渡す向きを変えるたび、長さの見当がつかん」",
+				"カラスが胸を張る。「まっすぐ中心へ渡すときが一番短い。あとは向きしだいの運だ」",
+				"トトは杭を一本、池の外に打ち込んだ。ここから何本か渡してみろ、ということらしい。",
+			]},
+			{"type": "measure", "title": "渡す向きを変える", "fig": "power", "trials": 3,
+				"lead": "金色の点を動かすと、杭 P から引く板の向きが変わる。"
+					+ "近い岸までと遠い岸までの長さを記録して、かけ算してみよう。",
+				"question": "向きを変えると、二つの長さのかけ算はどうなった?",
+				"choices": [
+					"まっすぐ渡すときが一番大きかった",
+					"どの向きでも、かけ算はいつも同じだった",
+					"向きによってばらばらだった",
+				], "answer": 1, "invariant": {"value": 56.0, "tol": 0.05},
+				"after": "近い方 × 遠い方 は動かない。杭の位置だけで決まっていた。"},
+			{"type": "talk", "title": "同じ弧を見る角", "fig": "power_proof", "lines": [
+				"トトが二本の板の端どうしを結んで、三角形を二つ作った。",
+				"同じ弧を見こむ角は等しい ― 劇場で確かめたあれだ。だから二つの三角形は同じ形。",
+				"同じ形なら 近い:遠い の比が入れかわるだけ。かけ算にすると、比は打ち消し合って消える。",
+				"「向きしだいの運」は、確かめなかった者にだけ運に見えていた。",
+			]},
+			{"type": "solve", "title": "二本目の板", "fig": "power",
+				"lead": "一本目の測りから出そう。", "after": "板は寸分たがわず島に届いた。"},
+			{"type": "talk", "title": "見張り台", "art": "dusk", "lines": [
+				"カラスは池のふちに腰かけたまま、めずらしく素直に言った。",
+				"「俺はこの手のものを、いつも運だと言って売ってきた。運は高く売れるからな」",
+				"「次は綱張りだ。三本の綱を一点で交わらせる ― あれこそ運の話だと思うがね」",
+			]},
+		],
+	},
+	{
+		"id": "ch18", "title": "一点で交わる三本の綱", "level": "大学受験",
+		"place": "三つの見張り台",
+		"found": "三本が一点で交わるとき、三つの辺の比をかけると 1 になる(チェバの定理)",
+		"scenes": [
+			{"type": "talk", "title": "三本を一点で", "art": "master", "lines": [
+				"三つの見張り台を三角形に結び、それぞれの台から向かいの綱へ、支えの綱を張る。",
+				"三本の支えが一点で交わるように張れれば、力が真ん中に集まって台が揺れない。",
+				"「三本が一点で交わるかどうかは、張ってみるまで分からん」とカラス。「だから運だ」",
+				"トトは三角形の中に石を一つ置き、そこを通るように三本を引いてみせた。",
+			]},
+			{"type": "measure", "title": "交点を動かす", "fig": "ceva", "trials": 3,
+				"lead": "金色の点(交点 O)を三角形の中で動かすと、三つの辺の分かれ方が同時に変わる。"
+					+ "三つの比を記録して、かけ算してみよう。",
+				"question": "三つの比をかけると、どうなった?",
+				"choices": [
+					"三つの比はいつも等しかった",
+					"かけ算はいつも 1 になった",
+					"点の位置しだいで自由に変わった",
+				], "answer": 1, "invariant": {"value": 1.0, "tol": 0.02},
+				"after": "交点をどこへ動かしても、三つの比のかけ算は 1 のまま。運ではなく条件だった。"},
+			{"type": "talk", "title": "面積で言いかえる", "fig": "ceva_proof", "lines": [
+				"トトが三角形を、交点 O から三つに切り分けた。①②③ と面積に名前をつける。",
+				"辺の分かれ方は、そのまま面積の比で書ける。AF:FB = ③:②、BD:DC = ①:③、CE:EA = ②:①。",
+				"三つをかけると、分母と分子がすべて相殺して 1。図を見ないでも成り立つ理由がこれだ。",
+				"「張ってみるまで分からん」ものが、張る前に決められるようになった。",
+			]},
+			{"type": "solve", "title": "残る一本", "fig": "ceva",
+				"lead": "二本の張り方から、残りを出そう。", "after": "三本は一点で交わり、台は揺れなくなった。"},
+			{"type": "talk", "title": "星のほうへ", "art": "night", "lines": [
+				"綱を張り終えると、カラスは荷をまとめながら北の空を見上げた。",
+				"「俺が売っていた表は、海の向こうでは通じない。星の見え方が違うんだ」",
+				"星の位置で船が向きを知る、という話をあなたは初めて聞いた。",
+				"次の仕事場は天文台。空に描けない円を、地上から測る仕事だという。",
+			]},
+		],
+	},
 	{
 		"id": "ch8", "title": "外接円のひみつ", "level": "大学受験",
 		"place": "天文台の観測室",
@@ -387,8 +675,9 @@ const CHAPTERS := [
 			{"type": "solve", "title": "石を敷く", "fig": "parabola",
 				"lead": "6 分の 1 公式を使おう。", "after": "噴水のまわりに、石が過不足なく並んだ。"},
 			{"type": "talk", "title": "図形ハンター", "art": "fountain", "lines": [
-				"角の和、折れ角、円周率、崩してよい形、三平方、円周角、相似比、",
-				"正弦定理、sin の面積、6 分の 1 公式 ― 十の決まりが手の中にある。",
+				"角の和、折れ角、円周率、崩してよい形、水の量、影の比、動く重なり、",
+				"三平方、円周角、相似比、倉の対角線、体積の比、ひらいた弧、方べき、チェバ、",
+				"正弦定理、sin の面積、6 分の 1 公式 ― 十八の決まりが手の中にある。",
 				"どれも人から買ったものではない。全部、自分で動かして見つけた。",
 				"トトが初めて、まとまった言葉をくれた。「これで、お前も測れる者だ」",
 				"カラスの姿はもう無い。旅はここから、本編の 65 ステージへ続く。",
@@ -412,10 +701,14 @@ static func chapter_index(id: String) -> int:
 	return 0
 
 
-## その章を開いてよいか(前の章をクリアしていれば開く)
+## その章を開いてよいか(前の章をクリアしていれば開く)。
+## 一度クリアした章は、あとからその前に章を足しても開いたまま
+## (更新でいきなり読めなくなると、進めていた人が困る)
 static func is_unlocked(id: String, cleared: Dictionary) -> bool:
 	var i := chapter_index(id)
 	if i <= 0:
+		return true
+	if cleared.has(id):
 		return true
 	return cleared.has(String(CHAPTERS[i - 1]["id"]))
 
@@ -430,6 +723,24 @@ const TRI_C := Vector2(10.0, 0.0)    # 三角形の右下
 const R_CIRCLE := 6.0                # 円周角・正弦定理で使う円の半径
 const SIDE_A := 8.0                  # ch9 の辺 a
 const SIDE_B := 6.0                  # ch9 の辺 b
+
+# 追加した章で使う値(図と記録の両方から参照する)
+const TANK_V := 48.0                 # 水そうの章。水の量はいつもこれ
+const TANK_H := 11.0                 # 水そうの高さ(器のほう)
+const SHADOW_POLE := 3.0             # 影の章。杭の高さ
+const SHADOW_TREE := 7.0             # 影の章。木の高さ
+const SHADOW_TREE_X := 13.0          # 木の立っている場所
+const OVER_H := 4.0                  # 重なりの章。板のたて
+const OVER_FIX := 10.0               # 重なりの章。止まっている板のよこ
+const OVER_MOVE := 8.0               # 重なりの章。動く板のよこ
+const BOX_W := 6.0                   # 直方体の対角線の章。よこ
+const CONE_R := 3.0                  # 円錐の展開図の章。底面の半径
+const SCALE_BOX := Vector3(3.0, 2.0, 2.0)   # 相似比と体積比の章。小さい箱
+const POWER_P := Vector2(-9.0, 0.0)  # 方べきの章。円の外の点
+const POWER_R := 5.0                 # 方べきの章。円の半径
+const CEVA_A := Vector2(3.0, 8.0)    # チェバの章の三角形
+const CEVA_B := Vector2(0.0, 0.0)
+const CEVA_C := Vector2(10.0, 0.0)
 
 
 static func start_of(kind: String) -> Vector2:
@@ -452,6 +763,22 @@ static func start_of(kind: String) -> Vector2:
 			return Vector2(0.0, SIDE_B)
 		"parabola":
 			return Vector2(0.0, 4.0)
+		"tank":
+			return Vector2(6.0, 0.0)
+		"shadow":
+			return Vector2(cos(deg_to_rad(45.0)), sin(deg_to_rad(45.0))) * 7.0
+		"overlap":
+			return Vector2(4.0, 0.0)
+		"box_diag":
+			return Vector2(4.0, 5.0)
+		"cube_scale":
+			return Vector2(1.6, 0.0)
+		"cone_net":
+			return Vector2(6.0, 0.0)
+		"power":
+			return POWER_P + Vector2(7.0, 0.0)
+		"ceva":
+			return Vector2(4.3, 2.6)
 	return Vector2.ZERO
 
 
@@ -480,6 +807,38 @@ static func clamp_of(kind: String, p: Vector2) -> Vector2:
 			return Vector2(cos(t), sin(t)) * SIDE_B
 		"parabola":
 			return Vector2(0.0, clampf(p.y, 1.0, 9.0))
+		"tank":
+			# 水そうの右の壁。幅を変えると深さが変わる
+			return Vector2(clampf(p.x, 4.0, 12.0), 0.0)
+		"shadow":
+			# 太陽の向き。低すぎると影が画面から出るので角度を制限する
+			var sa := clampf(atan2(p.y, maxf(p.x, 0.1)), deg_to_rad(25.0), deg_to_rad(72.0))
+			return Vector2(cos(sa), sin(sa)) * 7.0
+		"overlap":
+			# 動く板の右端。重なりきる前だけを動かす
+			return Vector2(clampf(p.x, 1.0, 8.0), 0.0)
+		"box_diag":
+			# 奥ゆき(x)と高さ(y)
+			return Vector2(clampf(p.x, 2.0, 8.0), clampf(p.y, 2.0, 9.0))
+		"cube_scale":
+			return Vector2(clampf(p.x, 1.2, 2.6), 0.0)
+		"cone_net":
+			# 母線の長さ。底面の半径より短くはできない
+			return Vector2(clampf(p.x, CONE_R + 1.0, 9.0), 0.0)
+		"power":
+			# 割線の向き。円を突きぬける角度の中だけ動かす
+			var lim := rad_to_deg(asin(POWER_R / absf(POWER_P.x))) - 4.0
+			var u := (p - POWER_P)
+			if u.length() < 0.001:
+				u = Vector2(1.0, 0.0)
+			var ua := clampf(rad_to_deg(atan2(u.y, u.x)), -lim, lim)
+			var dir := Vector2(cos(deg_to_rad(ua)), sin(deg_to_rad(ua)))
+			# つまむ点は板の先。池の向こう岸より少し外に置く(水の上をつままない)
+			var far: float = power_lengths(POWER_P + dir)[1]
+			return POWER_P + dir * (far + 2.0)
+		"ceva":
+			# 三角形の内側だけ(つぶれた比を作らないように余白を残す)
+			return _inside_triangle(p, CEVA_A, CEVA_B, CEVA_C, 0.13)
 	return p
 
 
@@ -541,6 +900,60 @@ static func readout_of(kind: String, p: Vector2) -> Dictionary:
 			return {"row": "∠C %d°  sin C %.3f  面積 %.2f  → 面積÷sin C %.2f" % [
 				roundi(rad_to_deg(t)), sin(t), area2, area2 / maxf(sin(t), 0.0001)],
 				"value": area2 / maxf(sin(t), 0.0001)}
+		"tank":
+			# 水の量は変わらない。幅を広げた分だけ深さが減る
+			var w: float = p.x
+			var depth := TANK_V / w
+			return {"row": "幅 %.2f  深さ %.2f  → 幅 × 深さ %.2f" % [w, depth, w * depth],
+				"value": w * depth}
+		"shadow":
+			# 杭と木、それぞれの 高さ ÷ 影 を出して見くらべる
+			var th := atan2(p.y, p.x)
+			var s1 := SHADOW_POLE / tan(th)
+			var s2 := SHADOW_TREE / tan(th)
+			return {"row": "太陽の高さ %d°  杭 %.2f÷%.2f = %.2f   木 %.2f÷%.2f = %.2f" % [
+				roundi(rad_to_deg(th)), SHADOW_POLE, s1, SHADOW_POLE / s1,
+				SHADOW_TREE, s2, SHADOW_TREE / s2],
+				"value": SHADOW_POLE / s1 - SHADOW_TREE / s2}
+		"overlap":
+			# 重なりは長方形。進んだ分だけよこが伸びる
+			var moved: float = p.x
+			var over_area := moved * OVER_H
+			return {"row": "進んだ長さ %.2f  重なりの面積 %.2f  → 面積 ÷ 長さ %.2f" % [
+				moved, over_area, over_area / moved], "value": over_area / moved}
+		"box_diag":
+			# 対角線は 3 次元の距離として測る(3 辺から計算はしない)
+			var bd: float = p.x
+			var bh: float = p.y
+			var diag := Vector3(BOX_W, bd, bh).length()
+			var sq := BOX_W * BOX_W + bd * bd + bh * bh
+			return {"row": "よこ 6  おくゆき %.1f  高さ %.1f  対角線 %.2f → 対角線² %.1f  3辺の平方の和 %.1f" % [
+				bd, bh, diag, diag * diag, sq], "value": diag * diag - sq}
+		"cube_scale":
+			# 体積は 3 辺をかけて出す(k×k×k と書くだけでは確かめたことにならない)
+			var ks: float = p.x
+			var v1 := SCALE_BOX.x * SCALE_BOX.y * SCALE_BOX.z
+			var v2 := (SCALE_BOX.x * ks) * (SCALE_BOX.y * ks) * (SCALE_BOX.z * ks)
+			return {"row": "相似比 %.2f  小 %.2f  大 %.2f  → 体積比 %.2f ÷ (%.2f×%.2f×%.2f) = %.2f" % [
+				ks, v1, v2, v2 / v1, ks, ks, ks, (v2 / v1) / (ks * ks * ks)],
+				"value": (v2 / v1) / (ks * ks * ks)}
+		"cone_net":
+			# 母線を変えると中心角も変わるが、弧の長さは底面の円周のまま
+			var l: float = p.x
+			var ang := 360.0 * CONE_R / l
+			var arc_len := l * deg_to_rad(ang)
+			var around := TAU * CONE_R
+			return {"row": "母線 %.2f  中心角 %d°  弧の長さ %.2f  底面の円周 %.2f" % [
+				l, roundi(ang), arc_len, around], "value": arc_len - around}
+		"power":
+			var pa_pb := power_lengths(p)
+			return {"row": "近い方 %.2f  遠い方 %.2f  → かけ算 %.2f" % [
+				pa_pb[0], pa_pb[1], pa_pb[0] * pa_pb[1]], "value": pa_pb[0] * pa_pb[1]}
+		"ceva":
+			var r3 := ceva_ratios(p)
+			return {"row": "AF:FB %.2f  BD:DC %.2f  CE:EA %.2f  → 3 つをかけると %.3f" % [
+				r3[0], r3[1], r3[2], r3[0] * r3[1] * r3[2]],
+				"value": r3[0] * r3[1] * r3[2]}
 		"parabola":
 			var k2: float = p.y
 			var w := 2.0 * sqrt(k2)
@@ -597,6 +1010,62 @@ static func zigzag_angles(p: Vector2) -> Array:
 	var bend := rad_to_deg(acos(clampf(
 		(ZIG_HIGH - p).normalized().dot((ZIG_LOW - p).normalized()), -1.0, 1.0)))
 	return [up_ang, low_ang, bend]
+
+
+## 三角形の内側に押しこむ(重心寄りに margin の余白を残す)
+static func _inside_triangle(p: Vector2, a: Vector2, b: Vector2, c: Vector2,
+		margin: float) -> Vector2:
+	var d := (b.y - c.y) * (a.x - c.x) + (c.x - b.x) * (a.y - c.y)
+	var w1 := ((b.y - c.y) * (p.x - c.x) + (c.x - b.x) * (p.y - c.y)) / d
+	var w2 := ((c.y - a.y) * (p.x - c.x) + (a.x - c.x) * (p.y - c.y)) / d
+	var w3 := 1.0 - w1 - w2
+	w1 = clampf(w1, margin, 1.0)
+	w2 = clampf(w2, margin, 1.0)
+	w3 = clampf(w3, margin, 1.0)
+	var sum := w1 + w2 + w3
+	return (a * w1 + b * w2 + c * w3) / sum
+
+
+## 方べきの章。点 p の向きに引いた割線が円と交わる 2 点までの距離 [近い, 遠い]
+static func power_lengths(p: Vector2) -> Array:
+	var u := (p - POWER_P).normalized()
+	var b := POWER_P.dot(u)
+	var c := POWER_P.length_squared() - POWER_R * POWER_R
+	var disc := maxf(b * b - c, 0.0)
+	var root := sqrt(disc)
+	return [-b - root, -b + root]
+
+
+## チェバの章。3 つの比 [AF:FB, BD:DC, CE:EA]
+static func ceva_ratios(o: Vector2) -> Array:
+	var d := _line_cross(CEVA_A, o, CEVA_B, CEVA_C)
+	var e := _line_cross(CEVA_B, o, CEVA_C, CEVA_A)
+	var f := _line_cross(CEVA_C, o, CEVA_A, CEVA_B)
+	return [
+		CEVA_A.distance_to(f) / maxf(f.distance_to(CEVA_B), 0.0001),
+		CEVA_B.distance_to(d) / maxf(d.distance_to(CEVA_C), 0.0001),
+		CEVA_C.distance_to(e) / maxf(e.distance_to(CEVA_A), 0.0001),
+	]
+
+
+## 直線 p1p2 と p3p4 の交点
+static func _line_cross(p1: Vector2, p2: Vector2, p3: Vector2, p4: Vector2) -> Vector2:
+	var d1 := p2 - p1
+	var d2 := p4 - p3
+	var den := d1.x * d2.y - d1.y * d2.x
+	if absf(den) < 0.000001:
+		return p1
+	var t := ((p3.x - p1.x) * d2.y - (p3.y - p1.y) * d2.x) / den
+	return p1 + d1 * t
+
+
+## チェバの章で使う交点 [D(BC 上), E(CA 上), F(AB 上)]
+static func ceva_points(o: Vector2) -> Array:
+	return [
+		_line_cross(CEVA_A, o, CEVA_B, CEVA_C),
+		_line_cross(CEVA_B, o, CEVA_C, CEVA_A),
+		_line_cross(CEVA_C, o, CEVA_A, CEVA_B),
+	]
 
 
 ## 多角形の面積(靴ひもの公式)

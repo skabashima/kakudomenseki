@@ -56,7 +56,8 @@ static func spec(kind: String, p: Vector2) -> Dictionary:
 			return _area_sin_proof()
 		"parabola_proof":
 			return _parabola_proof()
-	return {"shapes": []}
+	# 第11章から先の図は core/story_figs2.gd にある
+	return StoryFigs2.spec(kind, p)
 
 
 # ============ 第1章 三角形の内角の和 ============
