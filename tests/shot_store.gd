@@ -52,9 +52,10 @@ func _run() -> void:
 	await _scene("res://scenes/challenge_select.tscn", "07_challenge.png")
 	# 8) 記録(段位・コース別・自己ベスト)
 	await _scene("res://scenes/records.tscn", "08_records.png")
-	# 9) ステージ一覧(面積編。大学受験まで並ぶ)
+	# 9) ステージ一覧(面積編)。大学受験レベルまで下げて撮る
+	# (方べき・チェバ・円の方程式・回転体まで入っていることが、ここで伝わる)
 	GameState.current_course = "men"
-	await _scene("res://scenes/stage_select.tscn", "09_stage_select_men.png")
+	await _scene("res://scenes/stage_select.tscn", "09_stage_select_men.png", 1494)
 	# 10) 解放画面(App Store の課金審査用スクショにも使う)
 	GameState.premium = false
 	GameState.debug_unlock_all = false
@@ -82,6 +83,17 @@ func _fill_progress() -> void:
 	GameState.combo = 0
 
 
+## そのシーンの中の ScrollContainer を 1 つ探す
+func _find_scroll(n: Node) -> ScrollContainer:
+	if n is ScrollContainer:
+		return n
+	for c in n.get_children():
+		var got := _find_scroll(c)
+		if got != null:
+			return got
+	return null
+
+
 func _clear_progress() -> void:
 	GameState.stars = {}
 	GameState.scores = {}
@@ -93,11 +105,19 @@ func _clear_progress() -> void:
 	GameState.premium = false
 
 
-func _scene(path: String, out_name: String) -> void:
+## scroll_to > 0 なら、画面の中のスクロールをその位置まで動かしてから撮る
+## (ステージ一覧は長いので、大学受験レベルを見せたいときに使う)
+func _scene(path: String, out_name: String, scroll_to := 0) -> void:
 	var inst: Node = (load(path) as PackedScene).instantiate()
 	sub.add_child(inst)
 	for f in 14:
 		await get_tree().process_frame
+	if scroll_to > 0:
+		var sc := _find_scroll(inst)
+		if sc != null:
+			sc.scroll_vertical = scroll_to
+			for f in 4:
+				await get_tree().process_frame
 	# デバッグビルドで出る「デバッグ: 全ステージ解放」はストア画像に写さない
 	if "debug_btn" in inst and inst.debug_btn != null:
 		inst.debug_btn.visible = false
