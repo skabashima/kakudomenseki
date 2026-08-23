@@ -9,6 +9,9 @@ class_name GenElementary
 ## 数字が変わるだけでなく解法そのものが変わっていく。
 static func gen(stage_id: String, rng: RandomNumberGenerator, tier: int) -> Dictionary:
 	var t := clampi(tier, 0, 9)
+	# e18 以降(立体・水そう・図形の移動・相似)は別ファイル
+	if stage_id.substr(1).to_int() >= 18:
+		return GenSolid.gen(stage_id, rng, t)
 	match stage_id:
 		"e1":
 			# 内角の和 → 角の比 → 三角定規 → 外角 → 外角2つ

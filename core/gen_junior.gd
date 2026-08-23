@@ -15,6 +15,9 @@ const TRIPLES := [
 ## 挑戦モード 10 問は 1 問ごとに解法そのものが変わっていく。
 static func gen(stage_id: String, rng: RandomNumberGenerator, tier: int) -> Dictionary:
 	var t := clampi(tier, 0, 9)
+	# j13 以降(角錐と円錐・空間の三平方・平行線と線分の比・相似比と体積比)は別ファイル
+	if stage_id.substr(1).to_int() >= 13:
+		return GenSolid.gen(stage_id, rng, t)
 	match stage_id:
 		"j1":
 			# 外角の和 → 逆算 → 3 直線の交点

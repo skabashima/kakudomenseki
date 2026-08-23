@@ -55,7 +55,7 @@ func _run() -> void:
 	# 9) ステージ一覧(面積編)。大学受験レベルまで下げて撮る
 	# (方べき・チェバ・円の方程式・回転体まで入っていることが、ここで伝わる)
 	GameState.current_course = "men"
-	await _scene("res://scenes/stage_select.tscn", "09_stage_select_men.png", 1494)
+	await _scene("res://scenes/stage_select.tscn", "09_stage_select_men.png", "大学受験レベル")
 	# 10) 解放画面(App Store の課金審査用スクショにも使う)
 	GameState.premium = false
 	GameState.debug_unlock_all = false
@@ -83,6 +83,17 @@ func _fill_progress() -> void:
 	GameState.combo = 0
 
 
+## その文字をふくむ Label を探す
+func _find_label(n: Node, needle: String) -> Label:
+	if n is Label and (n as Label).text.contains(needle):
+		return n
+	for c in n.get_children():
+		var got := _find_label(c, needle)
+		if got != null:
+			return got
+	return null
+
+
 ## そのシーンの中の ScrollContainer を 1 つ探す
 func _find_scroll(n: Node) -> ScrollContainer:
 	if n is ScrollContainer:
@@ -105,17 +116,20 @@ func _clear_progress() -> void:
 	GameState.premium = false
 
 
-## scroll_to > 0 なら、画面の中のスクロールをその位置まで動かしてから撮る
-## (ステージ一覧は長いので、大学受験レベルを見せたいときに使う)
-func _scene(path: String, out_name: String, scroll_to := 0) -> void:
+## scroll_to が空でなければ、その文字が出ている見出しが上に来るまでスクロールしてから撮る
+## (ステージ一覧は長いので、大学受験レベルを見せたいときに使う。
+##  ステージが増えても位置がずれないよう、数値ではなく文字で指定する)
+func _scene(path: String, out_name: String, scroll_to := "") -> void:
 	var inst: Node = (load(path) as PackedScene).instantiate()
 	sub.add_child(inst)
 	for f in 14:
 		await get_tree().process_frame
-	if scroll_to > 0:
+	if scroll_to != "":
 		var sc := _find_scroll(inst)
-		if sc != null:
-			sc.scroll_vertical = scroll_to
+		var target := _find_label(inst, scroll_to)
+		if sc != null and target != null:
+			sc.scroll_vertical = int(target.global_position.y - sc.global_position.y
+				+ sc.scroll_vertical)
 			for f in 4:
 				await get_tree().process_frame
 	# デバッグビルドで出る「デバッグ: 全ステージ解放」はストア画像に写さない

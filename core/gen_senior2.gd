@@ -167,9 +167,9 @@ static func _abc_labels(v: Array) -> Array:
 	]
 
 
-## 立体を斜めに投影して 2D の座標にする(奥行きは右上へ)
+## 立体を斜めに投影して 2D の座標にする(向きは他の立体ステージと共通)
 static func _proj(p: Vector3) -> Vector2:
-	return Vector2(p.x + p.y * 0.42, p.z + p.y * 0.30)
+	return ProblemGen.proj3(p)
 
 
 ## 分数の見た目("3/4" / 整数ならそのまま)

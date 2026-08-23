@@ -42,7 +42,7 @@ const COURSES := [
 		],
 	},
 	{
-		"id": "men", "name": "面積編", "sub": "長さと面積をきわめる ― 図形の計量",
+		"id": "men", "name": "面積編", "sub": "長さ・面積・体積をきわめる ― 図形の計量",
 		"color": Color(0.24, 0.5, 0.72),
 		"stages": [
 			{"id": "e2", "title": "正方形と長方形", "desc": "面積のきほん"},
@@ -54,12 +54,20 @@ const COURSES := [
 			{"id": "e15", "title": "長方形の中の点", "desc": "向かい合う三角形の和(応用)"},
 			{"id": "e16", "title": "底辺の比と面積比", "desc": "高さが同じなら比は底辺(応用)"},
 			{"id": "e10", "title": "葉っぱ形に挑戦", "desc": "中学受験の名物問題"},
+			{"id": "e18", "title": "立体の体積と表面積", "desc": "直方体・角柱・円柱"},
+			{"id": "e19", "title": "水そうと水位", "desc": "深さ・石をしずめる・給水"},
+			{"id": "e20", "title": "図形の移動と重なり", "desc": "動く長方形・点の移動・転がり"},
+			{"id": "e21", "title": "相似で長さを出す", "desc": "ピラミッド型・砂時計型・影"},
 			{"id": "j5", "title": "三平方の定理", "desc": "a² + b² = c²"},
 			{"id": "j6", "title": "特別な直角三角形", "desc": "45°・30°・60°"},
 			{"id": "j7", "title": "おうぎ形の計算", "desc": "弧の長さと面積"},
 			{"id": "j8", "title": "相似と面積比", "desc": "相似比の 2 乗"},
+			{"id": "j15", "title": "平行線と線分の比", "desc": "比例式・中点連結定理"},
+			{"id": "j16", "title": "相似比と体積比", "desc": "長さが k 倍なら体積は k の 3 乗倍"},
 			{"id": "j9", "title": "座標平面の面積", "desc": "直線とグラフ"},
 			{"id": "j10", "title": "ヒポクラテスの月", "desc": "円がらみの難問"},
+			{"id": "j13", "title": "角錐と円錐", "desc": "体積・表面積・展開図の中心角"},
+			{"id": "j14", "title": "空間の三平方", "desc": "直方体の対角線・最短経路"},
 			{"id": "s16", "title": "方べきの定理", "desc": "PA × PB = PC × PD"},
 			{"id": "s17", "title": "チェバとメネラウス", "desc": "辺の比を一周してかける"},
 			{"id": "s18", "title": "二等分線と中線定理", "desc": "BD:DC = AB:AC"},
@@ -254,6 +262,12 @@ static func curve(pts: Array, color = null, w := 4.0) -> Dictionary:
 	if color != null:
 		d["color"] = color
 	return d
+
+
+## 立体を斜めから見た形に投影する(奥行き y は右上へ)。
+## 立体を扱うステージはすべてこの向きで描くので、見え方がそろう
+static func proj3(p: Vector3) -> Vector2:
+	return Vector2(p.x + p.y * 0.42, p.z + p.y * 0.30)
 
 
 static func grid(from: Vector2, to: Vector2) -> Dictionary:
