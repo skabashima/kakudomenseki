@@ -36,6 +36,9 @@ const INCIRCLE_SETS := [
 ## 挑戦モード 10 問は 1 問ごとに解法そのものが変わっていく。
 static func gen(stage_id: String, rng: RandomNumberGenerator, tier: int) -> Dictionary:
 	var t := clampi(tier, 0, 9)
+	# s13 以降(数A 図形の性質・数II 図形と方程式・空間図形・数III)は別ファイル
+	if stage_id.substr(1).to_int() >= 13:
+		return GenSenior2.gen(stage_id, rng, t)
 	match stage_id:
 		"s1":
 			# c を求める → c² を求める → 3 辺から角 C(cos の逆算)

@@ -183,6 +183,10 @@ func is_stage_unlocked(course_id: String, index: int) -> bool:
 	var stages: Array = ProblemGen.stages_of(course_id)
 	if index >= stages.size():
 		return false
+	# 一度クリアしたステージは、あとからその前に新ステージを足しても開いたまま
+	# (更新でいきなり遊べなくなると、進めていた人が困る)
+	if int(stars.get(String(stages[index]["id"]), 0)) > 0:
+		return true
 	return int(stars.get(String(stages[index - 1]["id"]), 0)) > 0
 
 
