@@ -9,8 +9,11 @@ class_name GenElementary
 ## 数字が変わるだけでなく解法そのものが変わっていく。
 static func gen(stage_id: String, rng: RandomNumberGenerator, tier: int) -> Dictionary:
 	var t := clampi(tier, 0, 9)
-	# e18 以降(立体・水そう・図形の移動・相似)は別ファイル
-	if stage_id.substr(1).to_int() >= 18:
+	# e18 以降(立体・水そう・図形の移動・相似)と e22 以降(切断・展開図)は別ファイル
+	var num := stage_id.substr(1).to_int()
+	if num >= 22:
+		return GenExtra.gen(stage_id, rng, t)
+	if num >= 18:
 		return GenSolid.gen(stage_id, rng, t)
 	match stage_id:
 		"e1":
