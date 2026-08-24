@@ -206,7 +206,7 @@ func _build_ui() -> void:
 	# --- 問題文 ---
 	question_lbl = Label.new()
 	question_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	question_lbl.add_theme_font_size_override("font_size", 27)
+	question_lbl.add_theme_font_size_override("font_size", 30)
 	question_lbl.custom_minimum_size = Vector2(0, 116)
 	root.add_child(question_lbl)
 
@@ -343,6 +343,13 @@ func _unhandled_key_input(event: InputEvent) -> void:
 # 出題
 # ---------------------------------------------------------
 
+## 小学生むけのステージなら、漢字によみを付ける
+func _kids(text: String) -> String:
+	if Ruby.needed(stage_id):
+		return Ruby.apply(text)
+	return text
+
+
 func _next_question(first := false) -> void:
 	if not first:
 		q_index += 1
@@ -369,7 +376,7 @@ func _next_question(first := false) -> void:
 		tier = rng.randi_range(0, mini(2 + int(ramp * 7.0), 9))
 	problem = ProblemGen.generate(sid, rng, tier)
 	figure.set_spec(problem["fig"])
-	question_lbl.text = String(problem["q"])
+	question_lbl.text = _kids(String(problem["q"]))
 	# 電卓と補助線の存在をそっと知らせる(ヒントを出すと上書きされる)
 	hint_lbl.text = "式のまま答えてOK(例: 12×8÷2)。図は指でなぞって書ける(「補助線」でまっすぐな線)"
 	hint_lbl.add_theme_color_override("font_color", Color(0.55, 0.62, 0.75, 0.8))
@@ -476,7 +483,7 @@ func _show_hint() -> void:
 		return
 	GameState.play_sfx("hint")
 	hints_used += 1
-	var text := String(problem["hint1"]) if hints_used == 1 else String(problem["hint2"])
+	var text := _kids(String(problem["hint1"]) if hints_used == 1 else String(problem["hint2"]))
 	hint_lbl.text = "ヒント%d: %s" % [hints_used, text]
 	hint_lbl.add_theme_color_override("font_color", Color(0.65, 0.9, 1.0))
 	if hints_used >= 2:
@@ -528,14 +535,14 @@ func _generic_steps() -> Array:
 	var mark := _outline_shapes()
 	var head := "図の光っているところに注目。" if not mark.is_empty() else "図をよく見てみよう。"
 	if hints_used < 1:
-		head += String(problem["hint1"])
+		head += _kids(String(problem["hint1"]))
 	var first := {"say": head}
 	if not mark.is_empty():
 		first["add"] = mark
 	steps.append(first)
 	if hints_used < 2:
 		steps.append({"say": String(problem["hint2"])})
-	for part in _split_expl(String(problem["expl"])):
+	for part in _split_expl(_kids(String(problem["expl"]))):
 		steps.append({"say": part})
 	steps.append({"say": "解き方はここまで。答えを入力してつぎへ進もう(この問題は0点)"})
 	return steps
@@ -765,7 +772,7 @@ func _fail_stage() -> void:
 		_add_label(v, "ハートがなくなった…", 44, Color(1.0, 0.55, 0.55))
 	_add_label(v, "正解は %s%s" % [ProblemGen.fmt(float(problem["answer"])), String(problem["unit"])],
 		34, Color(1.0, 0.9, 0.5))
-	var expl := _add_label(v, String(problem["expl"]), 24, Color(0.85, 0.9, 1.0))
+	var expl := _add_label(v, _kids(String(problem["expl"])), 24, Color(0.85, 0.9, 1.0))
 	expl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	expl.custom_minimum_size = Vector2(640, 0)
 	_add_button(v, "リトライ(べつの数値で)", Color(0.2, 0.55, 0.35), func() -> void:

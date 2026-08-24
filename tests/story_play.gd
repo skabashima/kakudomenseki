@@ -26,6 +26,9 @@ func _ready() -> void:
 	GameState.story_clear = keep_clear
 	GameState.story_chapter = keep_chapter
 	GameState.story_scene = keep_scene
+	# 通しプレイの途中でクリアが保存されるので、元に戻した状態で書き戻す
+	# (そうしないと、遊んでいない章がクリア済みとして残ってしまう)
+	GameState.save_game()
 
 	if failures.is_empty():
 		print("STORY PLAY OK: %d 章を最後まで通した" % StoryDefs.CHAPTERS.size())

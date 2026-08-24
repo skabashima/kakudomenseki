@@ -117,6 +117,13 @@ func _build_frame() -> void:
 # シーンの組み立て
 # =========================================================
 
+## 小学生が読む章(中学受験レベル)なら、漢字によみを付ける
+func _kids(text: String) -> String:
+	if String(chapter.get("level", "")) == "中学受験":
+		return Ruby.apply(text)
+	return text
+
+
 func _show_scene() -> void:
 	answered = false
 	trials.clear()
@@ -155,7 +162,7 @@ func _build_talk() -> void:
 		frame.add_child(art)
 		body.add_child(frame)
 	for line in scene_data["lines"]:
-		_add_label(String(line), 24, BODY)
+		_add_label(_kids(String(line)), 24, BODY)
 	_add_next("つぎへ ▶")
 
 
@@ -171,7 +178,7 @@ func _build_measure() -> void:
 		body.add_child(gb)
 		for i in (scene_data["choices"] as Array).size():
 			var g := Button.new()
-			g.text = String(scene_data["choices"][i])
+			g.text = _kids(String(scene_data["choices"][i]))
 			g.custom_minimum_size = Vector2(0, 84)
 			g.add_theme_font_size_override("font_size", 23)
 			g.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -179,7 +186,7 @@ func _build_measure() -> void:
 			g.pressed.connect(_do_guess.bind(i))
 			gb.add_child(g)
 		return
-	_add_label(String(scene_data["lead"]), 23, BODY)
+	_add_label(_kids(String(scene_data["lead"])), 23, BODY)
 	var rec := Button.new()
 	rec.text = "この形を記録する"
 	rec.custom_minimum_size = Vector2(0, 78)
@@ -202,7 +209,7 @@ func _build_solve() -> void:
 	# その章の依頼として書き直したものを出す(数値は毎回変わる)
 	problem = StoryTasks.make(String(scene_data["fig"]), rng)
 	figure.set_spec(problem["fig"])
-	_add_label(String(scene_data.get("lead", "")), 23, BODY)
+	_add_label(_kids(String(scene_data.get("lead", ""))), 23, BODY)
 	_add_label(String(problem["q"]), 25, BODY)
 	choice_box = VBoxContainer.new()
 	choice_box.add_theme_constant_override("separation", 10)

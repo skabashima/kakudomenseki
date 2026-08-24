@@ -90,23 +90,7 @@ func _ready() -> void:
 	vbox.add_child(progress)
 
 	vbox.add_child(_spacer(8))
-	# ストーリー(この作品の入口。図を動かして「変わらないもの」を見つける)
-	var story_done := 0
-	for ch in StoryDefs.CHAPTERS:
-		if GameState.story_clear.has(String(ch["id"])):
-			story_done += 1
-	vbox.add_child(_menu_button("ストーリー",
-		"全%d章  %s" % [StoryDefs.CHAPTERS.size(),
-			("%d章クリア" % story_done) if story_done > 0 else "ここから始めよう"],
-		Color(0.45, 0.35, 0.62), func() -> void:
-			GameState.change_scene("res://scenes/story_select.tscn")))
-
-	# 【試作】相続ミステリー。指で線を引いて、遺言どおりに土地を分ける
-	vbox.add_child(_menu_button("たからの地図(試作)",
-		"かどを ちぎって ならべよう", Color(0.52, 0.30, 0.34), func() -> void:
-			GameState.change_scene("res://scenes/estate.tscn")))
-
-	# 2 編(それぞれのテーマ色)
+	# ■ まず 2 編(このアプリの本体)。いちばん大きく、いちばん上に置く
 	for c in ProblemGen.COURSES:
 		var cid := String(c["id"])
 		var stages: Array = c["stages"]
@@ -119,6 +103,29 @@ func _ready() -> void:
 			GameState.current_course = cid
 			GameState.mode = "normal"
 			GameState.change_scene("res://scenes/stage_select.tscn")))
+
+	# ■ そのほかの遊び方(物語・試作)。見出しを付けて、本体と分ける
+	vbox.add_child(_spacer(6))
+	var other := Label.new()
+	other.text = "― そのほか ―"
+	other.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	other.add_theme_font_size_override("font_size", 22)
+	other.add_theme_color_override("font_color", Color(0.62, 0.70, 0.85))
+	vbox.add_child(other)
+
+	var story_done := 0
+	for ch in StoryDefs.CHAPTERS:
+		if GameState.story_clear.has(String(ch["id"])):
+			story_done += 1
+	vbox.add_child(_menu_button("ストーリー",
+		"全%d章  %s" % [StoryDefs.CHAPTERS.size(),
+			("%d章クリア" % story_done) if story_done > 0 else "図を動かして見つける"],
+		Color(0.45, 0.35, 0.62), func() -> void:
+			GameState.change_scene("res://scenes/story_select.tscn"), true))
+
+	vbox.add_child(_menu_button("たからの地図(試作)",
+		"かどを ちぎって ならべよう", Color(0.52, 0.30, 0.34), func() -> void:
+			GameState.change_scene("res://scenes/estate.tscn"), true))
 
 	vbox.add_child(_menu_button("チャレンジ", "タイムアタック / サバイバル", SECONDARY, func() -> void:
 		GameState.change_scene("res://scenes/challenge_select.tscn"), true))

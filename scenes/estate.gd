@@ -120,9 +120,13 @@ func _process(delta: float) -> void:
 func _new_triangle() -> void:
 	var rng := RandomNumberGenerator.new()
 	rng.randomize()
-	var b := rng.randf_range(35.0, 85.0)
-	var c := rng.randf_range(35.0, 85.0)
+	var b := rng.randf_range(40.0, 80.0)
+	var c := rng.randf_range(40.0, 80.0)
 	var a := 180.0 - b - c
+	while a < 32.0 or a > 100.0:
+		b = rng.randf_range(40.0, 80.0)
+		c = rng.randf_range(40.0, 80.0)
+		a = 180.0 - b - c
 	deg = [a, b, c]
 	var side := 11.0
 	var p_b := Vector2(-side * 0.5, -3.0)
@@ -150,9 +154,22 @@ func _placed_count() -> int:
 # 絵
 # =========================================================
 
+## 三角形は形によって細長くもなるので、そのつど はかって画面に収める
 func _to_screen(p: Vector2) -> Vector2:
-	var k := minf(map.size.x / 14.0, map.size.y / 26.0)
-	return Vector2(map.size.x * 0.5 + p.x * k, map.size.y * 0.36 - p.y * k)
+	var lo := Vector2(1e9, 1e9)
+	var hi := Vector2(-1e9, -1e9)
+	for q in tri:
+		lo = lo.min(q)
+		hi = hi.max(q)
+	var span := hi - lo
+	# 三角形を置ける場所(せんより上。ちぎった かどのぶんの余白も残す)
+	var top := 90.0
+	var bottom := _line_y() - 190.0
+	var k := minf((map.size.x - 200.0) / maxf(span.x, 0.001),
+		(bottom - top) / maxf(span.y, 0.001))
+	var center := (lo + hi) * 0.5
+	return Vector2(map.size.x * 0.5 + (p.x - center.x) * k,
+		(top + bottom) * 0.5 - (p.y - center.y) * k)
 
 
 func _line_y() -> float:
@@ -342,6 +359,7 @@ func _make_quiz() -> void:
 	var p_a := p_b + Vector2(cos(deg_to_rad(float(b))), sin(deg_to_rad(float(b)))) * ab
 	tri = [p_a, p_b, p_c]
 	var wrong1 := a + rng.randi_range(12, 30)
+	# (クイズの三角形も同じ理由で、極端な形は作らない)
 	var wrong2 := maxi(a - rng.randi_range(12, 30), 10)
 	var opts := [a, wrong1, wrong2]
 	opts.shuffle()
