@@ -48,89 +48,72 @@ func _ready() -> void:
 	vbox.add_child(title)
 
 	var subtitle := Label.new()
-	subtitle.text = "角度と面積を、数字で撃ち落とせ。\n中学・高校・大学受験"
+	subtitle.text = "中学・高校・大学受験の 角度と面積"
 	subtitle.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	subtitle.add_theme_font_size_override("font_size", 26 if portrait else 30)
 	subtitle.add_theme_color_override("font_color", Color(0.8, 0.85, 0.95))
 	vbox.add_child(subtitle)
 
-	# 段位と総得点(遊ぶほど積み上がる指標)。
-	# 段位名に「角度ハンター」「面積マイスター」があってコース名(角度編/面積編)と
-	# 紛らわしいので、「段位」「総得点」と書いて別物だと分かるようにする
-	var rank := Label.new()
-	rank.text = "段位 %s" % GameState.rank_name()
-	rank.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	rank.add_theme_font_size_override("font_size", 30 if portrait else 34)
-	rank.add_theme_color_override("font_color", Color(1.0, 0.82, 0.35))
-	vbox.add_child(rank)
-	var total_lbl := Label.new()
-	total_lbl.text = "総得点 %s 点(角度編 + 面積編)" % GameState.comma(GameState.total_score())
-	total_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	total_lbl.add_theme_font_size_override("font_size", 24 if portrait else 28)
-	total_lbl.add_theme_color_override("font_color", Color(0.95, 0.97, 1.0))
-	vbox.add_child(total_lbl)
-
-	# 進捗のサマリー
+	# 遊びぐあいは 1 行だけ(こまかい内訳は「きろく」で見られる)
 	var done := 0
 	var total := 0
 	var total_stars := 0
 	for c in ProblemGen.COURSES:
-		for s in c["stages"]:
+		for st in c["stages"]:
 			total += 1
-			var st := int(GameState.stars.get(String(s["id"]), 0))
-			if st > 0:
+			var got := int(GameState.stars.get(String(st["id"]), 0))
+			if got > 0:
 				done += 1
-			total_stars += st
-	var progress := Label.new()
-	progress.text = "クリア %d / %d   ★ %d / %d   解いた問題 %d 問" % [
-		done, total, total_stars, total * 3, int(GameState.stats.get("correct", 0))]
-	progress.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	progress.add_theme_font_size_override("font_size", 22)
-	progress.add_theme_color_override("font_color", Color(0.78, 0.85, 0.96))
-	vbox.add_child(progress)
+			total_stars += got
+	var rank := Label.new()
+	rank.text = "%s ・ ★ %d ・ %s 点" % [GameState.rank_name(), total_stars,
+		GameState.comma(GameState.total_score())]
+	rank.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	rank.add_theme_font_size_override("font_size", 28 if portrait else 32)
+	rank.add_theme_color_override("font_color", Color(1.0, 0.82, 0.35))
+	vbox.add_child(rank)
 
-	vbox.add_child(_spacer(8))
-	# ■ まず 2 編(このアプリの本体)。いちばん大きく、いちばん上に置く
+	vbox.add_child(_spacer(10))
+	# ■ 2 編は絵で見せる。ことばを減らして、どちらを押すか一目で分かるように
+	var pair := HBoxContainer.new()
+	pair.add_theme_constant_override("separation", 14)
+	vbox.add_child(pair)
+	var icon_of := {"kaku": Icons.angle_mark(96.0, Color(1, 1, 1, 0.95)),
+		"men": Icons.area_mark(96.0, Color(1, 1, 1, 0.95))}
 	for c in ProblemGen.COURSES:
 		var cid := String(c["id"])
 		var stages: Array = c["stages"]
 		var cleared := 0
-		for s in stages:
-			if int(GameState.stars.get(String(s["id"]), 0)) > 0:
+		for st in stages:
+			if int(GameState.stars.get(String(st["id"]), 0)) > 0:
 				cleared += 1
-		var txt := "%s  %d/%d" % [String(c["name"]), cleared, stages.size()]
-		vbox.add_child(_menu_button(txt, String(c["sub"]), c["color"], func() -> void:
-			GameState.current_course = cid
-			GameState.mode = "normal"
-			GameState.change_scene("res://scenes/stage_select.tscn")))
+		pair.add_child(_course_card(String(c["name"]).replace("編", ""),
+			"%d / %d" % [cleared, stages.size()], c["color"], icon_of[cid], func() -> void:
+				GameState.current_course = cid
+				GameState.mode = "normal"
+				GameState.change_scene("res://scenes/stage_select.tscn")))
 
-	# ■ そのほかの遊び方(物語・試作)。見出しを付けて、本体と分ける
-	vbox.add_child(_spacer(6))
-	var other := Label.new()
-	other.text = "― そのほか ―"
-	other.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	other.add_theme_font_size_override("font_size", 22)
-	other.add_theme_color_override("font_color", Color(0.62, 0.70, 0.85))
-	vbox.add_child(other)
+	# ■ そのほかは小さく、名前だけ
+	vbox.add_child(_spacer(8))
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 10)
+	vbox.add_child(row)
+	row.add_child(_small_card("ものがたり", Color(0.45, 0.35, 0.62),
+		Icons.book(52.0, Color(1, 1, 1, 0.92)), func() -> void:
+			GameState.change_scene("res://scenes/story_select.tscn")))
+	row.add_child(_small_card("たからの地図", Color(0.52, 0.30, 0.34),
+		Icons.flag(52.0, Color(1, 1, 1, 0.92)), func() -> void:
+			GameState.change_scene("res://scenes/estate.tscn")))
+	var row2 := HBoxContainer.new()
+	row2.add_theme_constant_override("separation", 10)
+	vbox.add_child(row2)
+	row2.add_child(_small_card("チャレンジ", SECONDARY,
+		Icons.timer(52.0, Color(1, 1, 1, 0.92)), func() -> void:
+			GameState.change_scene("res://scenes/challenge_select.tscn")))
+	row2.add_child(_small_card("きろく", SECONDARY,
+		Icons.chart(52.0, Color(1, 1, 1, 0.92)), func() -> void:
+			GameState.change_scene("res://scenes/records.tscn")))
 
-	var story_done := 0
-	for ch in StoryDefs.CHAPTERS:
-		if GameState.story_clear.has(String(ch["id"])):
-			story_done += 1
-	vbox.add_child(_menu_button("ストーリー",
-		"全%d章  %s" % [StoryDefs.CHAPTERS.size(),
-			("%d章クリア" % story_done) if story_done > 0 else "図を動かして見つける"],
-		Color(0.45, 0.35, 0.62), func() -> void:
-			GameState.change_scene("res://scenes/story_select.tscn"), true))
-
-	vbox.add_child(_menu_button("たからの地図(試作)",
-		"かどを ちぎって ならべよう", Color(0.52, 0.30, 0.34), func() -> void:
-			GameState.change_scene("res://scenes/estate.tscn"), true))
-
-	vbox.add_child(_menu_button("チャレンジ", "タイムアタック / サバイバル", SECONDARY, func() -> void:
-		GameState.change_scene("res://scenes/challenge_select.tscn"), true))
-	vbox.add_child(_menu_button("記録", "段位・★・自己ベスト", SECONDARY, func() -> void:
-		GameState.change_scene("res://scenes/records.tscn"), true))
 	# 未購入のときだけ解放の入口を出す(買い切り 1 商品・広告なし)
 	if not GameState.premium:
 		vbox.add_child(_spacer(10))
@@ -170,6 +153,66 @@ func _update_debug_btn() -> void:
 	else:
 		debug_btn.text = "デバッグ: 全ステージ解放 OFF"
 		GameState.style_button(debug_btn, SECONDARY.darkened(0.25))
+
+
+## 2 編のカード(絵 + 名前 + すすみぐあい)。ことばは 2 語だけ
+func _course_card(name: String, progress_text: String, color: Color,
+		icon: Control, callback: Callable) -> Button:
+	var btn := Button.new()
+	btn.custom_minimum_size = Vector2(0, 250)
+	btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	GameState.style_button(btn, color)
+	btn.pressed.connect(func() -> void:
+		GameState.play_sfx("tap")
+		callback.call())
+	var v := VBoxContainer.new()
+	v.set_anchors_preset(Control.PRESET_FULL_RECT)
+	v.alignment = BoxContainer.ALIGNMENT_CENTER
+	v.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	v.add_theme_constant_override("separation", 6)
+	btn.add_child(v)
+	var holder := CenterContainer.new()
+	holder.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	holder.add_child(icon)
+	v.add_child(holder)
+	var lbl := Label.new()
+	lbl.text = name
+	lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	lbl.add_theme_font_size_override("font_size", 42)
+	v.add_child(lbl)
+	var sub := Label.new()
+	sub.text = progress_text
+	sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	sub.add_theme_font_size_override("font_size", 26)
+	sub.add_theme_color_override("font_color", Color(1, 1, 1, 0.8))
+	v.add_child(sub)
+	return btn
+
+
+## そのほかのカード(小さめ。絵と名前だけ)
+func _small_card(name: String, color: Color, icon: Control, callback: Callable) -> Button:
+	var btn := Button.new()
+	btn.custom_minimum_size = Vector2(0, 108)
+	btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	GameState.style_button(btn, color)
+	btn.pressed.connect(func() -> void:
+		GameState.play_sfx("tap")
+		callback.call())
+	var h := HBoxContainer.new()
+	h.set_anchors_preset(Control.PRESET_FULL_RECT)
+	h.alignment = BoxContainer.ALIGNMENT_CENTER
+	h.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	h.add_theme_constant_override("separation", 10)
+	btn.add_child(h)
+	var holder := CenterContainer.new()
+	holder.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	holder.add_child(icon)
+	h.add_child(holder)
+	var lbl := Label.new()
+	lbl.text = name
+	lbl.add_theme_font_size_override("font_size", 27)
+	h.add_child(lbl)
+	return btn
 
 
 func _menu_button(text: String, sub: String, color: Color, callback: Callable, small := false) -> Button:

@@ -750,7 +750,7 @@ static func _e11_hands(rng: RandomNumberGenerator, step_m: int) -> Dictionary:
 			"add": [ProblemGen.ang(Vector2.ZERO, up, min_tip, "%s°" % ProblemGen.fmt(ma), 3.4)]})
 	steps.append({"say": "2 つの差は %s°。180° より大きいときは 360° から引いて、小さい方の角 x = %s°。入力してみよう!" % [ProblemGen.fmt(dd), ProblemGen.fmt(x)]})
 	return {
-		"q": "時計が %d 時 %d 分をさしています。長針と短針のつくる角のうち、小さい方の角 x は何度ですか。" % [h, m],
+		"q": "時計が %d 時 %d 分のとき、長針と短針の作る角 x は何度ですか(小さい方)。" % [h, m],
 		"answer": x, "unit": "度",
 		"hint1": "長針は 1 分で 6°、短針は 1 時間で 30°(1 分で 0.5°)進むよ。",
 		"hint2": "短針は 12 時から %s°、長針は %s°。差をとろう。" % [ProblemGen.fmt(30.0 * h + 0.5 * m), ProblemGen.fmt(6.0 * m)],
@@ -1693,7 +1693,7 @@ static func _e11_dial(rng: RandomNumberGenerator) -> Dictionary:
 		ProblemGen.ang(Vector2.ZERO, Vector2(cos(deg_to_rad(da)), sin(deg_to_rad(da))), Vector2(cos(deg_to_rad(db)), sin(deg_to_rad(db))), "x", 1.2),
 	]
 	return {
-		"q": "時計の文字盤で、中心から %d と %d へ線を引きました。間の角(小さい方)は何度ですか。" % [a, b],
+		"q": "時計の %d と %d のあいだの角 x は何度ですか。" % [a, b],
 		"answer": float(x), "unit": "度",
 		"hint1": "文字盤の数字 1 つ分の角は 360 ÷ 12 = 30° だよ。",
 		"hint2": "30 × %d" % diff,

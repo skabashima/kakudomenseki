@@ -30,7 +30,9 @@ var map: Control
 var talk: Label
 var big: Label
 var act_btn: Button
-var choice_row: HBoxContainer
+var keypad: Keypad
+var answer_btn: Button
+var input_text := ""
 var step := 0
 
 const SCRIPT := [
@@ -93,10 +95,18 @@ func _ready() -> void:
 	talk.add_theme_color_override("font_color", INK)
 	root.add_child(talk)
 
-	choice_row = HBoxContainer.new()
-	choice_row.add_theme_constant_override("separation", 12)
-	choice_row.visible = false
-	root.add_child(choice_row)
+	keypad = Keypad.new()
+	keypad.key_pressed.connect(_on_key)
+	keypad.visible = false
+	root.add_child(keypad)
+	answer_btn = Button.new()
+	answer_btn.text = "こたえる"
+	answer_btn.custom_minimum_size = Vector2(0, 92)
+	answer_btn.add_theme_font_size_override("font_size", 32)
+	GameState.style_button(answer_btn, Color(0.22, 0.55, 0.35))
+	answer_btn.pressed.connect(_submit)
+	answer_btn.visible = false
+	root.add_child(answer_btn)
 
 	act_btn = Button.new()
 	act_btn.custom_minimum_size = Vector2(0, 92)
@@ -325,15 +335,15 @@ func _all_placed() -> void:
 	cheer = 1.0
 	tries += 1
 	GameState.play_sfx("clear")
-	big.text = "ぴったり まっすぐ！  180 ど"
+	big.text = "ぴったり まっすぐ！  180°"
 	if tries == 1:
-		talk.text = "3 つの かどを ならべたら、まっすぐな せんに なった。まっすぐは 180 ど。"
+		talk.text = "3 つの かどを ならべたら、まっすぐな せんに なった。まっすぐは 180°。"
 		act_btn.text = "べつの 三角で ためす"
 	elif tries == 2:
 		talk.text = "形を かえても、また まっすぐ。ぐうぜん かな?"
 		act_btn.text = "もう いちど ためす"
 	else:
-		talk.text = "3 回とも まっすぐ。どんな 形の 三角形でも、3 つの かどを あわせると 180 ど。"
+		talk.text = "3 回とも まっすぐ。どんな 形の 三角形でも、3 つの かどを あわせると 180°。"
 		act_btn.text = "地図の しるしを 見る"
 	act_btn.disabled = false
 
@@ -361,21 +371,12 @@ func _make_quiz() -> void:
 	var wrong1 := a + rng.randi_range(12, 30)
 	# (クイズの三角形も同じ理由で、極端な形は作らない)
 	var wrong2 := maxi(a - rng.randi_range(12, 30), 10)
-	var opts := [a, wrong1, wrong2]
-	opts.shuffle()
-	quiz = {"a": a, "b": b, "c": c, "opts": opts}
-	for child in choice_row.get_children():
-		child.queue_free()
-	for v in opts:
-		var btn := Button.new()
-		btn.text = "%d ど" % int(v)
-		btn.custom_minimum_size = Vector2(0, 96)
-		btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		btn.add_theme_font_size_override("font_size", 34)
-		GameState.style_button(btn, Color(0.34, 0.42, 0.62))
-		btn.pressed.connect(func() -> void: _answer(int(v)))
-		choice_row.add_child(btn)
-	choice_row.visible = true
+	quiz = {"a": a, "b": b, "c": c}
+	input_text = ""
+	keypad.answer_lbl.text = " "
+	keypad.unit_lbl.text = "度"
+	keypad.visible = true
+	answer_btn.visible = true
 
 
 func _draw_quiz(c: Control, font: Font) -> void:
@@ -384,7 +385,7 @@ func _draw_quiz(c: Control, font: Font) -> void:
 		sp.append(_to_screen(p))
 	c.draw_colored_polygon(sp, Color(0.40, 0.60, 0.95, 0.30))
 	c.draw_polyline(PackedVector2Array([sp[0], sp[1], sp[2], sp[0]]), INK, 4.0)
-	var labels := ["?", "%d ど" % int(quiz["b"]), "%d ど" % int(quiz["c"])]
+	var labels := ["?", "%d°" % int(quiz["b"]), "%d°" % int(quiz["c"])]
 	var cols := [GOLD, SKY, SKY]
 	for i in 3:
 		var at: Vector2 = sp[i]
@@ -392,24 +393,42 @@ func _draw_quiz(c: Control, font: Font) -> void:
 		c.draw_string(font, at + to_in * 74.0 + Vector2(-30, 10), labels[i],
 			HORIZONTAL_ALIGNMENT_LEFT, -1, 34, cols[i])
 	c.draw_string(font, Vector2(24, c.size.y - 24),
-		"3 つ あわせて 180 ど だったね", HORIZONTAL_ALIGNMENT_LEFT, -1, 28,
+		"3 つ あわせて 180° だったね", HORIZONTAL_ALIGNMENT_LEFT, -1, 28,
 		Color(0.75, 0.82, 0.95))
 
 
-func _answer(v: int) -> void:
-	if v == int(quiz["a"]):
+## キーを押したとき(入力の決まりは本編と同じ)
+func _on_key(k: String) -> void:
+	GameState.play_sfx("type")
+	input_text = Keypad.apply(input_text, k)
+	keypad.answer_lbl.text = input_text if input_text != "" else " "
+
+
+## 「こたえる」を押したとき。式のまま答えてもよい(180−58−38 など)
+func _submit() -> void:
+	var v := Keypad.value_of(input_text)
+	if is_nan(v):
+		GameState.play_sfx("fail")
+		big.text = "数を いれてね"
+		return
+	_answer(v)
+
+
+func _answer(v: float) -> void:
+	if absf(v - float(quiz["a"])) < 0.5:
 		GameState.play_sfx("clear")
-		big.text = "あたり！  %d ど" % v
+		big.text = "あたり！  %d°" % int(quiz["a"])
 		talk.text = "180 から %d と %d を ひくと %d。ほる ばしょが きまった。" % [
 			int(quiz["b"]), int(quiz["c"]), int(quiz["a"])]
-		choice_row.visible = false
+		keypad.visible = false
+		answer_btn.visible = false
 		act_btn.text = "つづきを 見る"
 		act_btn.disabled = false
 		phase = 3
 	else:
 		GameState.play_sfx("fail")
 		big.text = "ちがうみたい"
-		talk.text = "3 つ あわせて 180 ど。のこりは いくつかな?"
+		talk.text = "3 つ あわせて 180°。のこりは いくつかな?"
 
 
 # =========================================================
@@ -439,7 +458,7 @@ func _advance() -> void:
 		if tries >= 3:
 			phase = 2
 			big.text = ""
-			talk.text = "地図の しるしは 三角。かどが ひとつ 消えている。のこりの かどは 何ど?"
+			talk.text = "地図の しるしは 三角。かどが ひとつ 消えている。のこりの かどは 何度?"
 			act_btn.text = "えらんでね"
 			act_btn.disabled = true
 			_make_quiz()

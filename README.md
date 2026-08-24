@@ -310,6 +310,7 @@ core/
   story_figs.gd       ストーリーで使う図のスペック(第1章〜第10章ぶん)
   story_figs2.gd      同上(水そう・影・移動・立体・方べき・チェバ)
   story_figs3.gd      同上(多角形・ブーメラン・折り返し・道・星形・接弦・余弦・内心ほか)
+  ruby.gd             小学生むけの文に ふりがな を付ける(小 1 の漢字だけ そのまま)
   story_tasks.gd      章の依頼(solve)。本編の問題をそのまま出さないための書き下ろし
   iap.gd              課金マネージャ (Autoload)。Android/iOS/スタブの 3 層
 scenes/
@@ -346,6 +347,7 @@ tests/
   smoke.tscn             全シーンのロード確認 (--headless 可)
   iap_gate.tscn          課金ゲート(無料/有料の線引き)の検証 (--headless 可)
   story_check.gd         ストーリーの章データと角度の丸めの検証 (--headless 可)
+  ruby_check.gd          小学生むけの文が「小 1 の漢字 + ふりがな」だけかを検証 (--headless 可)
   story_play.tscn        ストーリー全30章を実際に最後まで通す (--headless 可)
   font_check.gd          画面に出る文字が同梱フォントにあるか検証 (--headless 可)
   variation_report.tscn  ステージごとの問題バリエーション数を実測 (--headless 可)
@@ -366,4 +368,5 @@ godot --headless --path "<このフォルダ>" res://tests/iap_gate.tscn
 godot --headless --path "<このフォルダ>" res://tests/story_play.tscn
 godot --headless --path "<このフォルダ>" -s tests/story_check.gd
 godot --headless --path "<このフォルダ>" -s tests/font_check.gd
+godot --headless --path "<このフォルダ>" -s tests/ruby_check.gd
 ```

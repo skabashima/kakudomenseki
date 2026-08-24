@@ -31,6 +31,94 @@ static func crown(sz: float, col: Color) -> Control:
 	return c
 
 
+## 角度編の印(2 本の線と、その間の弧)
+static func angle_mark(sz: float, col: Color) -> Control:
+	var c := _base(sz)
+	c.draw.connect(func() -> void:
+		var at := Vector2(sz * 0.16, sz * 0.82)
+		var w := sz * 0.14
+		c.draw_line(at, at + Vector2(sz * 0.76, 0), col, w * 0.6)
+		c.draw_line(at, at + Vector2(sz * 0.62, -sz * 0.62), col, w * 0.6)
+		c.draw_arc(at, sz * 0.34, -PI * 0.25, 0.0, 18, col, w * 0.45))
+	return c
+
+
+## 面積編の印(ぬりつぶした四角と三角)
+static func area_mark(sz: float, col: Color) -> Control:
+	var c := _base(sz)
+	c.draw.connect(func() -> void:
+		# ぬりつぶした四角(面積のイメージ)と、その中の ます目
+		var r := Rect2(sz * 0.12, sz * 0.24, sz * 0.62, sz * 0.62)
+		c.draw_rect(r, col)
+		for i in 2:
+			var t := float(i + 1) / 3.0
+			c.draw_line(Vector2(r.position.x + r.size.x * t, r.position.y),
+				Vector2(r.position.x + r.size.x * t, r.position.y + r.size.y),
+				Color(0, 0, 0, 0.25), sz * 0.035)
+			c.draw_line(Vector2(r.position.x, r.position.y + r.size.y * t),
+				Vector2(r.position.x + r.size.x, r.position.y + r.size.y * t),
+				Color(0, 0, 0, 0.25), sz * 0.035)
+		# 右上に小さな三角(図形の合わせ)
+		c.draw_colored_polygon(PackedVector2Array([
+			Vector2(sz * 0.62, sz * 0.10), Vector2(sz * 0.92, sz * 0.10),
+			Vector2(sz * 0.92, sz * 0.40)]), col.lightened(0.3)))
+	return c
+
+
+## ものがたりの印(開いた本)
+static func book(sz: float, col: Color) -> Control:
+	var c := _base(sz)
+	c.draw.connect(func() -> void:
+		var left := PackedVector2Array([
+			Vector2(sz * 0.10, sz * 0.26), Vector2(sz * 0.48, sz * 0.34),
+			Vector2(sz * 0.48, sz * 0.82), Vector2(sz * 0.10, sz * 0.74)])
+		var right := PackedVector2Array([
+			Vector2(sz * 0.90, sz * 0.26), Vector2(sz * 0.52, sz * 0.34),
+			Vector2(sz * 0.52, sz * 0.82), Vector2(sz * 0.90, sz * 0.74)])
+		c.draw_colored_polygon(left, col)
+		c.draw_colored_polygon(right, col.darkened(0.18)))
+	return c
+
+
+## たからの地図の印(旗)
+static func flag(sz: float, col: Color) -> Control:
+	var c := _base(sz)
+	c.draw.connect(func() -> void:
+		c.draw_line(Vector2(sz * 0.26, sz * 0.14), Vector2(sz * 0.26, sz * 0.88), col, sz * 0.10)
+		c.draw_colored_polygon(PackedVector2Array([
+			Vector2(sz * 0.30, sz * 0.16), Vector2(sz * 0.84, sz * 0.32),
+			Vector2(sz * 0.30, sz * 0.50)]), col))
+	return c
+
+
+## チャレンジの印(すな時計)
+static func timer(sz: float, col: Color) -> Control:
+	var c := _base(sz)
+	c.draw.connect(func() -> void:
+		c.draw_colored_polygon(PackedVector2Array([
+			Vector2(sz * 0.18, sz * 0.14), Vector2(sz * 0.82, sz * 0.14),
+			Vector2(sz * 0.50, sz * 0.50)]), col)
+		c.draw_colored_polygon(PackedVector2Array([
+			Vector2(sz * 0.50, sz * 0.50), Vector2(sz * 0.82, sz * 0.86),
+			Vector2(sz * 0.18, sz * 0.86)]), col)
+		c.draw_line(Vector2(sz * 0.14, sz * 0.12), Vector2(sz * 0.86, sz * 0.12), col, sz * 0.08)
+		c.draw_line(Vector2(sz * 0.14, sz * 0.88), Vector2(sz * 0.86, sz * 0.88), col, sz * 0.08))
+	return c
+
+
+## きろくの印(棒グラフ)
+static func chart(sz: float, col: Color) -> Control:
+	var c := _base(sz)
+	c.draw.connect(func() -> void:
+		var xs := [0.16, 0.42, 0.68]
+		var hs := [0.34, 0.56, 0.74]
+		for i in 3:
+			var x: float = xs[i] * sz
+			var h: float = hs[i] * sz
+			c.draw_rect(Rect2(x, sz * 0.86 - h, sz * 0.16, h), col))
+	return c
+
+
 ## 南京錠(まだ開いていないステージの印)
 static func lock(sz: float, col: Color) -> Control:
 	var c := _base(sz)
