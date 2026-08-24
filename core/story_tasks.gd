@@ -54,6 +54,30 @@ static func make(kind: String, rng: RandomNumberGenerator) -> Dictionary:
 			return _t_power(rng)
 		"ceva":
 			return _t_ceva(rng)
+		"polygon":
+			return _t_polygon(rng)
+		"dart":
+			return _t_dart(rng)
+		"fold":
+			return _t_fold(rng)
+		"road":
+			return _t_road(rng)
+		"star":
+			return _t_star(rng)
+		"tangent_chord":
+			return _t_tangent_chord(rng)
+		"special_tri":
+			return _t_special_tri(rng)
+		"euler":
+			return _t_euler(rng)
+		"cosine":
+			return _t_cosine(rng)
+		"incenter":
+			return _t_incenter(rng)
+		"radian":
+			return _t_radian(rng)
+		"circle_eq":
+			return _t_circle_eq(rng)
 	return {"q": "", "answer": 0.0, "unit": "", "tol": 0.01, "fig": {"shapes": []}}
 
 
@@ -494,6 +518,292 @@ static func _t_ceva(rng: RandomNumberGenerator) -> Dictionary:
 			ProblemGen.label((a + f) * 0.5 + Vector2(-1.4, 0.2), "%d:%d" % [f1, f2], DIM, 24),
 			ProblemGen.label((b + d) * 0.5 + Vector2(0, -1.1), "%d:%d" % [d1, d2], DIM, 24),
 			ProblemGen.label((c + e) * 0.5 + Vector2(1.4, 0.2), "x:1", GOLD, 26),
+		]}}
+
+
+## 五角形の飾り窓(内角の和)
+static func _t_polygon(rng: RandomNumberGenerator) -> Dictionary:
+	var known: Array = []
+	var rest := 540
+	for i in 4:
+		var v := rng.randi_range(80, 130)
+		known.append(v)
+		rest -= v
+	while rest < 60 or rest > 170:
+		known[3] = int(known[3]) + (1 if rest > 170 else -1)
+		rest = 540 - int(known[0]) - int(known[1]) - int(known[2]) - int(known[3])
+	var pts: Array = StoryDefs.penta_points(Vector2(0.0, 7.0))
+	var out: Array = [ProblemGen.poly(pts, ProblemGen.FILL_MAIN, WHITE, 3.5)]
+	for i in 5:
+		var txt := "?" if i == 0 else "%d°" % int(known[i - 1])
+		out.append(ProblemGen.ang(pts[i], pts[(i + 4) % 5], pts[(i + 1) % 5], txt, 1.6))
+	return {
+		"q": "五角形の飾り窓に鉄の骨を入れる。読めるのは %d°・%d°・%d°・%d° の 4 か所だけで、"
+			% [known[0], known[1], known[2], known[3]]
+			+ "残る 1 か所は塗りつぶされている。そこは何度で組めばいい?",
+		"answer": float(rest), "unit": "度", "tol": 0.5,
+		"fig": {"shapes": out}}
+
+
+## 矢じり形の紋章(ブーメラン形)
+static func _t_dart(rng: RandomNumberGenerator) -> Dictionary:
+	var a := rng.randi_range(30, 70)
+	var b := rng.randi_range(20, 50)
+	var c := rng.randi_range(20, 50)
+	var x := a + b + c
+	var pa := StoryDefs.DART_A
+	var pb := StoryDefs.DART_B
+	var pc := StoryDefs.DART_C
+	var pp := Vector2(0.0, 1.0)
+	return {
+		"q": "矢じりの形をした紋章を鋳型で作る。先の角が %d°、左右の角が %d° と %d°。" % [a, b, c]
+			+ "へこんだところは何度で彫ればいい?",
+		"answer": float(x), "unit": "度", "tol": 0.5,
+		"fig": {"shapes": [
+			ProblemGen.poly([pa, pb, pp, pc], ProblemGen.FILL_MAIN, WHITE, 3.5),
+			ProblemGen.ang(pa, pb, pc, "%d°" % a, 1.8),
+			ProblemGen.ang(pb, pa, pp, "%d°" % b, 1.8),
+			ProblemGen.ang(pc, pp, pa, "%d°" % c, 1.8),
+			ProblemGen.ang(pp, pb, pc, "?", 1.6),
+		]}}
+
+
+## テープの折り返し
+static func _t_fold(rng: RandomNumberGenerator) -> Dictionary:
+	var a := rng.randi_range(30, 70)
+	var x := 180 - 2 * a
+	var h := StoryDefs.TAPE_H
+	var f := Vector2.ZERO
+	var g := Vector2(h / tan(deg_to_rad(float(a))), h)
+	var dir := Vector2(cos(deg_to_rad(180.0 + 2.0 * float(a))),
+		sin(deg_to_rad(180.0 + 2.0 * float(a))))
+	var k := g + dir * (h / maxf(absf(dir.y), 0.0001))
+	return {
+		"q": "帯を斜めに一度だけ折って、包みのふたにする。折り目が帯のふちと作る角は %d°。" % a
+			+ "折り返した辺は、ふちと何度で交わることになる?",
+		"answer": float(x), "unit": "度", "tol": 0.5,
+		"fig": {"shapes": [
+			ProblemGen.seg(Vector2(-10.0, 0), Vector2(10.0, 0), WHITE, 4.0),
+			ProblemGen.seg(Vector2(-10.0, h), Vector2(10.0, h), WHITE, 4.0),
+			ProblemGen.poly([f, g, k], ProblemGen.FILL_ACCENT, GOLD, 3.0),
+			ProblemGen.ang(f, Vector2(6.0, 0), g, "%d°" % a, 1.7),
+			ProblemGen.ang(k, Vector2(-8.0, 0), g, "?", 1.7),
+		]}}
+
+
+## 畑に通す道
+static func _t_road(rng: RandomNumberGenerator) -> Dictionary:
+	var w := rng.randi_range(8, 20)
+	var h := rng.randi_range(6, 15)
+	var rw := rng.randi_range(1, 3)
+	var rest := (w - rw) * (h - rw)
+	var rx := float(rng.randi_range(2, w - rw - 2))
+	var ry := float(rng.randi_range(2, h - rw - 2))
+	var road := Color(0.55, 0.50, 0.42, 0.75)
+	return {
+		"q": "%d × %d の畑に、はば %d の道をたてとよこに 1 本ずつ通す。" % [w, h, rw]
+			+ "道を引いたあと、畑として残るのはどれだけか?",
+		"answer": float(rest), "unit": "", "tol": 0.5,
+		"fig": {"shapes": [
+			ProblemGen.poly([Vector2(0, 0), Vector2(w, 0), Vector2(w, h), Vector2(0, h)],
+				ProblemGen.FILL_SUB, WHITE, 3.5),
+			ProblemGen.poly([Vector2(rx, 0), Vector2(rx + rw, 0), Vector2(rx + rw, h),
+				Vector2(rx, h)], road, null, 0.0),
+			ProblemGen.poly([Vector2(0, ry), Vector2(w, ry), Vector2(w, ry + rw),
+				Vector2(0, ry + rw)], road, null, 0.0),
+			ProblemGen.label(Vector2(float(w) * 0.5, -1.2), "%d × %d、道のはば %d" % [w, h, rw],
+				DIM, 26),
+			ProblemGen.label(Vector2(rx * 0.5, ry * 0.5), "?", GOLD, 30),
+		]}}
+
+
+## 星形の飾り
+static func _t_star(rng: RandomNumberGenerator) -> Dictionary:
+	var known: Array = []
+	var rest := 180
+	for i in 4:
+		var v := rng.randi_range(20, 45)
+		known.append(v)
+		rest -= v
+	while rest < 15 or rest > 60:
+		known[3] = int(known[3]) + (1 if rest > 60 else -1)
+		rest = 180 - int(known[0]) - int(known[1]) - int(known[2]) - int(known[3])
+	var pts: Array = StoryDefs.star_points(Vector2(0.0, StoryDefs.STAR_R))
+	var order: Array = [pts[0], pts[2], pts[4], pts[1], pts[3]]
+	var out: Array = [ProblemGen.poly(order, ProblemGen.FILL_MAIN, GOLD, 3.0)]
+	for i in 5:
+		var txt := "?" if i == 0 else "%d°" % int(known[i - 1])
+		out.append(ProblemGen.ang(pts[i], pts[(i + 2) % 5], pts[(i + 3) % 5], txt, 1.5))
+	return {
+		"q": "祭りの星形の飾りを、五本の板を組んで作る。とがった先のうち 4 つは "
+			+ "%d°・%d°・%d°・%d° に切ってある。最後の一本は何度に切る?" % [
+				known[0], known[1], known[2], known[3]],
+		"answer": float(rest), "unit": "度", "tol": 0.5,
+		"fig": {"shapes": out}}
+
+
+## 岸に接する道(接弦定理)
+static func _t_tangent_chord(rng: RandomNumberGenerator) -> Dictionary:
+	var deg := rng.randi_range(25, 75)
+	var r := StoryDefs.TC_R
+	var t := Vector2(0.0, -r)
+	var b := Vector2(0.0, r)
+	var a := Vector2(cos(deg_to_rad(90.0 - 2.0 * float(deg))),
+		sin(deg_to_rad(90.0 - 2.0 * float(deg)))) * r
+	return {
+		"q": "円い堀のふちに、接するように道が走っている。道と、接点から対岸の杭 A へ張った縄との角が"
+			+ " %d°。堀の向こう側の点 B から同じ縄を見こむ角は、どれだけになる?" % deg,
+		"answer": float(deg), "unit": "度", "tol": 0.5,
+		"fig": {"shapes": [
+			ProblemGen.circle(Vector2.ZERO, r, ProblemGen.FILL_MAIN, WHITE, 3.0),
+			ProblemGen.seg(Vector2(-r - 3.0, -r), Vector2(r + 3.0, -r), Color(0.55, 0.85, 1.0), 3.5),
+			ProblemGen.seg(t, a, GOLD, 3.5),
+			ProblemGen.seg(b, t, DIM, 2.5),
+			ProblemGen.seg(b, a, DIM, 2.5),
+			ProblemGen.ang(t, Vector2(r + 3.0, -r), a, "%d°" % deg, 1.6),
+			ProblemGen.ang(b, t, a, "?", 1.6),
+			ProblemGen.label(t + Vector2(-0.2, -1.1), "接点", Color(0.55, 0.85, 1.0), 24),
+			ProblemGen.label(a + Vector2(0.8, 0.5), "A", GOLD, 26),
+			ProblemGen.label(b + Vector2(0.0, 0.9), "B", DIM, 26),
+		]}}
+
+
+## 屋根の勾配(30-60-90 の比)
+static func _t_special_tri(rng: RandomNumberGenerator) -> Dictionary:
+	var short_side := rng.randi_range(2, 12)
+	var hyp := short_side * 2
+	var long_side := float(short_side) * 1.73
+	var b := Vector2.ZERO
+	var c := Vector2(long_side, 0.0)
+	var a := Vector2(long_side, float(short_side))
+	return {
+		"q": "屋根を 30° の勾配で葺く。棟から軒までの高さは %d。" % short_side
+			+ "垂木は何ぶんの長さに切ればいい?",
+		"answer": float(hyp), "unit": "", "tol": 0.05,
+		"fig": {"shapes": [
+			ProblemGen.poly([b, c, a], ProblemGen.FILL_MAIN, WHITE, 3.5),
+			ProblemGen.right(c, b, a),
+			ProblemGen.ang(b, c, a, "30°", 1.8),
+			ProblemGen.side_label(c, a, "%d" % short_side, 1.0, 0.8),
+			ProblemGen.side_label(b, a, "?", 1.0, 0.9),
+		]}}
+
+
+## 見張り小屋の骨組み(角柱の辺の数)
+static func _t_euler(rng: RandomNumberGenerator) -> Dictionary:
+	var n := rng.randi_range(3, 10)
+	var ask_edge := rng.randf() < 0.6
+	var ans := 3 * n if ask_edge else 2 * n
+	var out: Array = StoryFigs3._prism(n, 4.0, 5.0, WHITE)
+	out.append(ProblemGen.label(Vector2(0.0, 9.2), "%d 角柱" % n, GOLD, 30))
+	return {
+		"q": "見張り小屋を %d 角柱の形に組む。" % n
+			+ ("材木は何本いるか(辺の数)、棟梁に伝えたい。" if ask_edge
+				else "継ぎ手をいくつ作ればいいか(頂点の数)、鍛冶屋に伝えたい。"),
+		"answer": float(ans), "unit": "", "tol": 0.05,
+		"fig": {"shapes": out}}
+
+
+## 向こう岸までの距離(余弦定理)
+static func _t_cosine(rng: RandomNumberGenerator) -> Dictionary:
+	var sets: Array = [[5, 8, 60, 7], [3, 8, 60, 7], [8, 15, 60, 13], [7, 15, 60, 13],
+		[5, 21, 60, 19], [3, 5, 120, 7], [7, 8, 120, 13], [5, 16, 120, 19],
+		[6, 10, 120, 14], [14, 16, 120, 26]]
+	var s: Array = sets[rng.randi_range(0, sets.size() - 1)]
+	var a: int = s[0]
+	var b: int = s[1]
+	var deg: int = s[2]
+	var c: int = s[3]
+	var pc := Vector2.ZERO
+	var pb := Vector2(float(a), 0.0)
+	var pa := Vector2(cos(deg_to_rad(float(deg))), sin(deg_to_rad(float(deg)))) * float(b)
+	return {
+		"q": "川の手前の一点から、両岸の杭までの距離が %d と %d、そのはさむ角が %d° と測れた。" % [
+			a, b, deg] + "杭と杭のあいだ ― 川はばはどれだけある?",
+		"answer": float(c), "unit": "", "tol": 0.05,
+		"fig": {"shapes": [
+			ProblemGen.poly([pa, pb, pc], ProblemGen.FILL_MAIN, WHITE, 3.5),
+			ProblemGen.ang(pc, pb, pa, "%d°" % deg, 1.8),
+			ProblemGen.side_label(pc, pb, "%d" % a, -1.0, 0.8),
+			ProblemGen.side_label(pc, pa, "%d" % b, 1.0, 0.8),
+			ProblemGen.side_label(pa, pb, "?", 1.0, 0.9),
+		]}}
+
+
+## 三方から等しい距離の井戸(内心の角)
+static func _t_incenter(rng: RandomNumberGenerator) -> Dictionary:
+	var a_deg := rng.randi_range(10, 25) * 4
+	var ans := 90 + a_deg / 2
+	var rest := 180 - a_deg
+	var b_deg := rng.randi_range(int(rest * 0.4), int(rest * 0.6))
+	var v: Array = ProblemGen.tri_from_angles(float(b_deg), float(rest - b_deg), 11.0)
+	var inc := StoryDefs._incenter_of(v[0], v[1], v[2])
+	return {
+		"q": "三つの村から等しい距離になる場所に井戸を掘る。村を結ぶと三角形になり、"
+			+ "頂点の村から見た角は %d°。井戸から残り二つの村を見こむ角はいくつになる?" % a_deg,
+		"answer": float(ans), "unit": "度", "tol": 0.5,
+		"fig": {"shapes": [
+			ProblemGen.poly(v, ProblemGen.FILL_MAIN, WHITE, 3.5),
+			ProblemGen.seg(v[1], inc, GOLD, 3.0),
+			ProblemGen.seg(v[2], inc, GOLD, 3.0),
+			ProblemGen.ang(v[0], v[1], v[2], "%d°" % a_deg, 1.8),
+			ProblemGen.ang(inc, v[1], v[2], "?", 1.5),
+			ProblemGen.label(inc + Vector2(0.0, -1.0), "井戸", GOLD, 24),
+		]}}
+
+
+## 巻き取り機(弧度法)
+static func _t_radian(rng: RandomNumberGenerator) -> Dictionary:
+	var r := rng.randi_range(2, 12)
+	var th: float = [0.5, 1.0, 1.5, 2.0, 2.5, 3.0][rng.randi_range(0, 5)]
+	var ans := float(r) * th
+	return {
+		"q": "縄の巻き取り機。軸の半径は %d で、%s ラジアンだけ回した。" % [r, ProblemGen.fmt(th)]
+			+ "縄はどれだけ出たか ― 印をつけて確かめたい。",
+		"answer": ans, "unit": "", "tol": 0.05,
+		"fig": {"shapes": [
+			ProblemGen.sector(Vector2.ZERO, float(r), 0.0, rad_to_deg(th),
+				ProblemGen.FILL_ACCENT, GOLD),
+			ProblemGen.arc(Vector2.ZERO, float(r), 0.0, rad_to_deg(th),
+				Color(0.55, 0.85, 1.0), 4.5),
+			ProblemGen.seg(Vector2.ZERO, Vector2(r, 0), GOLD, 3.0),
+			ProblemGen.label(Vector2(float(r) * 0.5, -1.0), "半径 %d" % r, GOLD, 26),
+			ProblemGen.label(Vector2(cos(th * 0.5), sin(th * 0.5)) * (float(r) + 1.6), "?",
+				Color(0.55, 0.85, 1.0), 30),
+			ProblemGen.ang(Vector2.ZERO, Vector2(r, 0),
+				Vector2(cos(th), sin(th)) * float(r), "%s rad" % ProblemGen.fmt(th), 1.5),
+		]}}
+
+
+## 円形の柵(円の方程式)
+static func _t_circle_eq(rng: RandomNumberGenerator) -> Dictionary:
+	var tri: Array = [[3, 4, 5], [6, 8, 10], [5, 12, 13], [8, 15, 17], [9, 12, 15], [7, 24, 25]]
+	var t: Array = tri[rng.randi_range(0, tri.size() - 1)]
+	var dx: int = t[0]
+	var dy: int = t[1]
+	var r: int = t[2]
+	var cx := rng.randi_range(-4, 4)
+	var cy := rng.randi_range(-4, 4)
+	var px := cx + dx
+	var py := cy + dy
+	var c := Vector2(cx, cy)
+	var p := Vector2(px, py)
+	var lo := Vector2(minf(c.x, p.x) - float(r) - 1.0, minf(c.y, p.y) - float(r) - 1.0)
+	var hi := Vector2(maxf(c.x, p.x) + float(r) + 1.0, maxf(c.y, p.y) + float(r) + 1.0)
+	return {
+		"q": "羊の囲いを円く作る。杭は (%d, %d) に打ってあり、囲いは (%d, %d) の木を通す。" % [
+			cx, cy, px, py] + "縄はどれだけの長さがいる?",
+		"answer": float(r), "unit": "", "tol": 0.05,
+		"fig": {"shapes": [
+			ProblemGen.grid(lo, hi), ProblemGen.axes(lo, hi),
+			ProblemGen.circle(c, float(r), ProblemGen.FILL_MAIN, WHITE, 3.0),
+			ProblemGen.seg(c, p, GOLD, 3.0),
+			ProblemGen.seg(c, Vector2(p.x, c.y), Color(0.55, 0.85, 1.0), 2.5, true),
+			ProblemGen.seg(Vector2(p.x, c.y), p, Color(0.55, 0.85, 1.0), 2.5, true),
+			ProblemGen.right(Vector2(p.x, c.y), c, p),
+			ProblemGen.label(c + Vector2(-1.2, -0.9), "杭", DIM, 24),
+			ProblemGen.label(p + Vector2(0.8, 0.7), "木", GOLD, 26),
+			ProblemGen.label((c + p) * 0.5 + Vector2(-0.6, 0.8), "?", GOLD, 30),
 		]}}
 
 

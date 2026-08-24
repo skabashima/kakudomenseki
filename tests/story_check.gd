@@ -23,7 +23,7 @@ func _init() -> void:
 		quit(0)
 	else:
 		for b in bad:
-			print("FAIL: " + String(b))
+			print("FAIL: " + str(b))
 		print("STORY CHECK FAILED: %d 件" % bad.size())
 		quit(1)
 
@@ -35,11 +35,27 @@ func _scene_count() -> int:
 	return n
 
 
+## 日本語の文に、まぎれこんではいけない文字が入っていないか。
+## 書いている途中でキリル文字が紛れこんだことが実際にあり、
+## 画面に出るまで誰も気づけなかった(読める人がいないと気づけない)
+func _check_letters(where: String, text: String) -> void:
+	for i in text.length():
+		var code := text.unicode_at(i)
+		if code >= 0x0400 and code <= 0x04FF:
+			bad.append("%s: キリル文字が混ざっている(%s)" % [where, text.substr(0, 24)])
+			return
+		if code >= 0x0E00 and code <= 0x0EFF:
+			bad.append("%s: タイ文字が混ざっている(%s)" % [where, text.substr(0, 24)])
+			return
+
+
 func _check_chapter(ch: Dictionary) -> void:
-	var cid := String(ch.get("id", "?"))
+	var cid := str(ch.get("id", "?"))
 	for key in ["title", "level", "place", "found", "scenes"]:
-		if not ch.has(key) or String(ch[key]) == "":
+		if not ch.has(key) or str(ch[key]) == "":
 			bad.append("%s: %s が無い" % [cid, key])
+	_check_letters(cid, str(ch.get("title", "")) + str(ch.get("found", ""))
+		+ str(ch.get("place", "")))
 	for i in (ch.get("scenes", []) as Array).size():
 		_check_scene(cid, i, ch["scenes"][i])
 
@@ -48,12 +64,18 @@ func _check_scene(cid: String, i: int, sc: Dictionary) -> void:
 	var where := "%s のシーン %d" % [cid, i + 1]
 	if not sc.has("title"):
 		bad.append(where + ": title が無い")
-	match String(sc.get("type", "")):
+	_check_letters(where, str(sc.get("title", "")) + str(sc.get("lead", ""))
+		+ str(sc.get("question", "")) + str(sc.get("after", "")))
+	for line in (sc.get("lines", []) as Array):
+		_check_letters(where, str(line))
+	for c in (sc.get("choices", []) as Array):
+		_check_letters(where, str(c))
+	match str(sc.get("type", "")):
 		"talk":
 			if (sc.get("lines", []) as Array).is_empty():
 				bad.append(where + ": lines が空")
 			if sc.has("fig"):
-				_check_fig(where, String(sc["fig"]), Vector2.ZERO)
+				_check_fig(where, str(sc["fig"]), Vector2.ZERO)
 		"measure":
 			for key in ["lead", "question", "choices", "answer", "trials", "fig", "invariant"]:
 				if not sc.has(key):
@@ -73,7 +95,7 @@ func _check_scene(cid: String, i: int, sc: Dictionary) -> void:
 ## 本編の問題をそのまま出すのは禁止(同じ画面になって物語も発見も効かない)。
 ## ここでは章ごとの依頼が、毎回きちんと文章・答え・図を返すかを見る
 func _check_solve_matches(where: String, sc: Dictionary) -> void:
-	var kind := String(sc.get("fig", ""))
+	var kind := str(sc.get("fig", ""))
 	if kind == "":
 		bad.append(where + ": fig(依頼の種類)が無い")
 		return
@@ -81,7 +103,7 @@ func _check_solve_matches(where: String, sc: Dictionary) -> void:
 	for i in 60:
 		rng.seed = 500 + i
 		var t: Dictionary = StoryTasks.make(kind, rng)
-		if String(t.get("q", "")) == "":
+		if str(t.get("q", "")) == "":
 			bad.append("%s(%s): 依頼の文が空" % [where, kind])
 			return
 		if not is_finite(float(t.get("answer", NAN))):
@@ -95,14 +117,14 @@ func _check_solve_matches(where: String, sc: Dictionary) -> void:
 			return
 		# 本編の問題文をそのまま使っていないか(教科書調の言い回しを弾く)
 		for ng in ["何度ですか。", "求めなさい。"]:
-			if String(t["q"]).ends_with(ng):
+			if str(t["q"]).ends_with(ng):
 				bad.append("%s(%s): 本編と同じ言い回しになっている" % [where, kind])
 				return
 
 
 ## 動かしても「一定」と言っている量が本当に一定か
 func _check_invariant(where: String, sc: Dictionary) -> void:
-	var kind := String(sc["fig"])
+	var kind := str(sc["fig"])
 	var want: float = float(sc["invariant"]["value"])
 	var tol: float = float(sc["invariant"]["tol"])
 	var rng := RandomNumberGenerator.new()
@@ -116,7 +138,7 @@ func _check_invariant(where: String, sc: Dictionary) -> void:
 		if not is_finite(v):
 			bad.append("%s(%s): 値が数でない" % [where, kind])
 			return
-		if String(out["row"]) == "":
+		if str(out["row"]) == "":
 			bad.append("%s(%s): 表示する行が空" % [where, kind])
 			return
 		worst = maxf(worst, absf(v - want))

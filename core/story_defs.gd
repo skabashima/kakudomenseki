@@ -103,8 +103,115 @@ const CHAPTERS := [
 				"lead": "折れ線の角を出そう。", "after": "梁はぴたりと収まった。"},
 			{"type": "talk", "title": "二勝", "art": "dusk", "lines": [
 				"カラスは二度外した。それでも去るとき、なぜか機嫌がよかった。",
-				"「よく測る見習いだ。だが次の町のものは、巻いてみないと分からんぞ」",
-				"次の町は車輪の工房。丸いものばかりだという。",
+				"「よく測る見習いだ。だが次の広場のものは、数えても合わんぞ」",
+				"次の町では、五角形の広場に石畳を敷いているという。",
+			]},
+		],
+	},
+	{
+		"id": "ch19", "title": "五角の広場", "level": "中学受験",
+		"place": "石畳の広場",
+		"found": "五角形の内角の和は、形を変えても 540°",
+		"scenes": [
+			{"type": "talk", "title": "石を切りそろえる", "art": "field", "lines": [
+				"五角形の広場に石畳を敷く。ふちの石は、角の形に合わせて切らなければならない。",
+				"石工が困っていた。「四つは寸法どおりだが、残りひとつの角が図面から消えている」",
+				"カラスがすかさず言う。「五角形の角の和は、形によって変わる。細長ければ小さくなる」",
+				"トトは砂に五角形を描き、頂点のひとつを棒で押した。形が変わる。",
+			]},
+			{"type": "measure", "title": "頂点を動かす", "fig": "polygon", "trials": 3,
+				"lead": "金色の点を動かすと五角形の形が変わる。5 つの角を記録して、合計してみよう。",
+				"question": "形を変えると、5 つの角の和はどうなった?",
+				"choices": [
+					"カラスの言うとおり、細長いほど小さかった",
+					"どんな形でも 540° のままだった",
+					"大きい五角形ほど大きかった",
+				], "answer": 1, "invariant": {"value": 540.0, "tol": 0.5},
+				"after": "和はいつも 540°。残りの角は、引き算だけで出せる。"},
+			{"type": "talk", "title": "三角形に切り分ける", "fig": "polygon_proof", "lines": [
+				"トトが一つの頂点から、向かいの頂点へ線を二本引いた。五角形が三角形三つに分かれる。",
+				"三角形の角の和は 180°。三つ集まって 540°。それが五角形の角の和そのものだ。",
+				"六角形なら四つに分かれて 720°。何角形でも、同じやり方で数えられる。",
+				"「形ではなく、分けられる三角形の数で決まるんですね」― トトはうなずいた。",
+			]},
+			{"type": "solve", "title": "消えた角", "fig": "polygon",
+				"lead": "図面の穴を埋めよう。", "after": "石はぴたりと組まれ、広場が閉じた。"},
+			{"type": "talk", "title": "鋳物師の紋章", "art": "dusk", "lines": [
+				"カラスは「五角形は特別だ」と言い残して、鋳物師の工房のほうへ歩いていった。",
+				"「あそこの紋章はへこんだ形でな。へこみの角は、誰にも読めん」",
+				"へこんだ形 ― 矢じりのような紋章のことらしい。",
+			]},
+		],
+	},
+	{
+		"id": "ch20", "title": "矢じりの紋章", "level": "中学受験",
+		"place": "鋳物師の工房",
+		"found": "へこんだ角は、ほかの 3 つの角をたした大きさ",
+		"scenes": [
+			{"type": "talk", "title": "へこんだ角", "art": "master", "lines": [
+				"鋳物師の工房。矢じりの形をした紋章を鋳型で作る仕事だ。",
+				"外の三つの角は指図書に書いてある。だが、へこんだところの角がどこにも無い。",
+				"カラスが断じた。「へこみの角は 360 から三つを引いた残りだ。四角形なんだからな」",
+				"トトは型を一つ手に取り、へこみの点を指でぐっと押しこんでみせた。",
+			]},
+			{"type": "measure", "title": "へこみを動かす", "fig": "dart", "trials": 3,
+				"lead": "金色の点(へこみ P)を動かすと、4 つの角がいっしょに変わる。"
+					+ "先・左・右の 3 つと、へこみの角を記録しよう。",
+				"question": "へこみの角は、ほかの 3 つとどんな関係だった?",
+				"choices": [
+					"3 つをたした大きさだった",
+					"カラスの言うとおり 360 から 3 つを引いた値だった",
+					"どれとも関係がなかった",
+				], "answer": 0, "invariant": {"value": 0.0, "tol": 0.6},
+				"after": "へこみ = 先 + 左 + 右。四角形の和 360 から出るのは、外向きの角のほうだった。"},
+			{"type": "talk", "title": "線を一本のばす", "fig": "dart_proof", "lines": [
+				"トトが先の点 A とへこみの点 P を結び、そのまま外へのばした。",
+				"三角形の外角は、離れた二つの角の和 ― それが左右で一回ずつ起きている。",
+				"二つを合わせると、へこみの角は 3 つの角の和になる。",
+				"「引く」ではなく「たす」。カラスは向きをひとつ間違えていた。",
+			]},
+			{"type": "solve", "title": "鋳型の角", "fig": "dart",
+				"lead": "彫る角度を出そう。", "after": "紋章は指図書どおりに鋳上がった。"},
+			{"type": "talk", "title": "包み紙", "art": "dusk", "lines": [
+				"工房を出ると、通りの店先で職人が紙の帯を斜めに折って包みを作っていた。",
+				"「折るだけで角が決まる」とカラス。「あれは手の勘だ。数では出せん」",
+				"手の勘。― 今日で三度、同じ言い方を聞いた。",
+			]},
+		],
+	},
+	{
+		"id": "ch21", "title": "斜めに折る", "level": "中学受験",
+		"place": "包み紙の店",
+		"found": "折り返してできる角は 180 − 折り目の角 × 2",
+		"scenes": [
+			{"type": "talk", "title": "折るだけの仕事", "art": "field", "lines": [
+				"贈り物の包み。帯を斜めに一度だけ折って、ふたにする。",
+				"店主が言う。「折り目の角は決められる。だが折り返した辺がどこへ来るかは、折ってみないと」",
+				"カラスがうなずいた。「そのとおり。折りは勘の仕事だ ― 教えるなら銀貨二枚だな」",
+				"トトは帯を一枚取り、折り目の角をゆっくり変えながら折ってみせた。",
+			]},
+			{"type": "measure", "title": "折り目の角を変える", "fig": "fold", "trials": 3,
+				"lead": "金色の点を動かすと折り目の角が変わる。"
+					+ "折り目の角と、折り返した辺がふちと作る角を記録しよう。",
+				"question": "折り目の角と、重なった角の関係は?",
+				"choices": [
+					"折り目 × 2 と重なった角をたすと、いつも 180° だった",
+					"折り目と重なった角はいつも同じだった",
+					"折るたびにばらばらだった",
+				], "answer": 0, "invariant": {"value": 0.0, "tol": 0.5},
+				"after": "重なった角 = 180 − 折り目 × 2。折る前に、どこへ来るか分かる。"},
+			{"type": "talk", "title": "重ねただけ", "fig": "fold_proof", "lines": [
+				"折るとは、重ねること。折り目をはさんで、同じ角がもう一つできる。",
+				"帯のふちは一直線 ― 180°。そこに折り目の角が二つ並び、残りが重なった角になる。",
+				"だから 180 − 2a。勘ではなく、折り目を決めた時点で決まっていた。",
+				"店主が手を止めた。「先に角度が分かるなら、切る手間が減る」",
+			]},
+			{"type": "solve", "title": "ふたの角", "fig": "fold",
+				"lead": "折る前に出しておこう。", "after": "包みは同じ形にそろって仕上がった。"},
+			{"type": "talk", "title": "車輪の工房へ", "art": "dusk", "lines": [
+				"カラスは銀貨二枚を受け取れなかった。それでも背を向けながら言う。",
+				"「まっすぐな紙はこれで終わりだ。次は丸いものだぞ ― 丸は、折れんからな」",
+				"次の町は車輪の工房。まるいものばかりだという。",
 			]},
 		],
 	},
@@ -175,7 +282,43 @@ const CHAPTERS := [
 			{"type": "talk", "title": "四つの道具", "art": "dusk", "lines": [
 				"角の和、折れ角、円周率、そして崩してよい形 ― 四つ手に入れた。",
 				"カラスが手をひらひらさせて背を向ける。「まだ子どもの町だ」",
-				"「次の村は水売りの縄張りでな。水は 深さ で売るものだと、みんな思っている」",
+				"「次の村では畑に道を通すそうだ。道を通せば畑は目減りする ― それは分かるな?」",
+			]},
+		],
+	},
+	{
+		"id": "ch22", "title": "畑を横切る道", "level": "中学受験",
+		"place": "用水路の村",
+		"found": "道の位置を変えても、残る畑の広さは同じ",
+		"scenes": [
+			{"type": "talk", "title": "道をどこに通すか", "art": "field", "lines": [
+				"長方形の畑に、はば一定の道をたてとよこに一本ずつ通すことになった。",
+				"地主が渋っている。「道を真ん中に通すと、畑が四つに割れて損だ。端に寄せろ」",
+				"カラスが調子を合わせた。「そのとおり。真ん中を通せば畑は目減りする」",
+				"トトは畦に立って、道の位置を右へ左へと動かしてみせた。",
+			]},
+			{"type": "measure", "title": "道の位置を動かす", "fig": "road", "trials": 3,
+				"lead": "金色の点を動かすと、たての道とよこの道の位置が変わる。"
+					+ "4 つに割れた区画の面積をたして記録しよう。",
+				"question": "道の位置を変えると、残る畑の広さはどうなった?",
+				"choices": [
+					"真ん中に通すほど狭くなった",
+					"どこに通しても同じ広さだった",
+					"端に寄せるほど狭くなった",
+				], "answer": 1, "invariant": {"value": 77.0, "tol": 0.05},
+				"after": "四つに割れても、たせば同じ。減るのは道の分だけだった。"},
+			{"type": "talk", "title": "道を端へ寄せる", "fig": "road_proof", "lines": [
+				"トトが道を端いっぱいへ寄せてみせた。残った畑は一つの長方形になる。",
+				"たては 元のたて − 道のはば、よこも同じ。位置はどこにも出てこない。",
+				"だから真ん中でも端でも、残りは同じ。割れて見えるだけだ。",
+				"地主が黙った。「割れているのが損に見えていただけか」",
+			]},
+			{"type": "solve", "title": "残る畑", "fig": "road",
+				"lead": "地主に伝えよう。", "after": "道は使いやすい真ん中に通った。"},
+			{"type": "talk", "title": "水売りの村", "art": "dusk", "lines": [
+				"カラスは畦道を先に歩きながら、振り返らずに言った。",
+				"「面積の話はここまでだ。次の村は水売りの縄張りでな」",
+				"「水は 深さ で売るものだと、あそこでは誰もが思っている」",
 			]},
 		],
 	},
@@ -318,7 +461,43 @@ const CHAPTERS := [
 			{"type": "talk", "title": "測れない高さ", "art": "roof", "lines": [
 				"二辺が分かれば残りが出る ― 塔の高さも、影と縄で届きそうだ。",
 				"カラスはこの町では何も売らず、ただ図面を覗き込んでいた。",
+				"「次は屋根葺きだ。30° の勾配で垂木を切る ― あれは勘の仕事でな」",
+			]},
+		],
+	},
+	{
+		"id": "ch23", "title": "三角定規の秘密", "level": "高校受験",
+		"place": "屋根葺きの現場",
+		"found": "30° の直角三角形では、斜辺はいつも短い辺の 2 倍",
+		"scenes": [
+			{"type": "talk", "title": "垂木を切る", "art": "roof", "lines": [
+				"屋根を 30° の勾配で葺く現場。棟から軒へわたす垂木を、何本も同じ長さに切る。",
+				"若い大工が定規を当てて悩んでいる。「高さは分かる。斜めの長さが分からん」",
+				"カラスが自信たっぷりに言った。「30° なら斜めは高さの 1.5 倍だ。それで足りる」",
+				"トトは三角定規を一枚置き、大きさを変えながら同じ形を何度も描いてみせた。",
+			]},
+			{"type": "measure", "title": "大きさを変える", "fig": "special_tri", "trials": 3,
+				"lead": "金色の点を動かすと三角定規の大きさが変わる(角は 30°・60°・90° のまま)。"
+					+ "短い辺と斜辺を記録しよう。",
+				"question": "大きさを変えると、斜辺 ÷ 短い辺 はどうなった?",
+				"choices": [
+					"大きいほど比も大きくなった",
+					"いつもちょうど 2 だった",
+					"カラスの言うとおり 1.5 くらいだった",
+				], "answer": 1, "invariant": {"value": 2.0, "tol": 0.01},
+				"after": "斜辺は短い辺の 2 倍。大きさをいくら変えても、比は動かない。"},
+			{"type": "talk", "title": "正三角形を半分に", "fig": "special_tri_proof", "lines": [
+				"トトが正三角形を一つ描き、まん中で半分に折った。折った形が三角定規そのものだ。",
+				"折る前の一辺が斜辺、折り目で半分になった辺が短い辺 ― だから 2 倍。",
+				"長いほうの辺は √3 倍。この二つの比は、大きさに関係なく決まっている。",
+				"「1.5 倍では屋根が短い」。若い大工が青くなった。",
+			]},
+			{"type": "solve", "title": "垂木の長さ", "fig": "special_tri",
+				"lead": "切る長さを出そう。", "after": "垂木はどれも同じ長さで、屋根がまっすぐ通った。"},
+			{"type": "talk", "title": "円い劇場", "art": "dusk", "lines": [
+				"カラスは 1.5 倍の表を破りながら、丘の下を指した。",
 				"「次は劇場だ。あそこの席売りは、俺の得意分野でな」",
+				"円く並んだ客席が、夕日の中に見えていた。",
 			]},
 		],
 	},
@@ -355,6 +534,78 @@ const CHAPTERS := [
 				"「なぜ嘘を売る」と聞くと、カラスは初めて真顔になった。",
 				"「嘘じゃない。誰も確かめないから、値がつくんだ」",
 				"確かめる者がいる限り、その商売は成り立たない ― そういうことらしい。",
+			]},
+		],
+	},
+	{
+		"id": "ch24", "title": "堀にふれる道", "level": "高校受験",
+		"place": "円い堀の城下",
+		"found": "接線と弦の角は、その弦を向こう側から見こむ角と等しい",
+		"scenes": [
+			{"type": "talk", "title": "対岸の杭", "art": "theater", "lines": [
+				"城の円い堀。ふちに接するように道が一本走っている。",
+				"堀の向こう岸に杭が打ってあり、そこへ縄を張る角度を先に知りたいという。",
+				"カラスが胸を張った。「接している点は特別だ。あそこだけは角の決まりが効かん」",
+				"トトは接点に立ち、対岸の杭の位置を左右へずらしながら、縄の角を測れという顔をした。",
+			]},
+			{"type": "measure", "title": "対岸の杭を動かす", "fig": "tangent_chord", "trials": 3,
+				"lead": "金色の点(対岸の杭 A)を動かすと、縄の向きが変わる。"
+					+ "道と縄の角、そして向こう側の点 B から見こむ角を記録しよう。",
+				"question": "接線と弦の角は、向こう側から見た角とどうだった?",
+				"choices": [
+					"いつも等しかった",
+					"カラスの言うとおり、決まりが効かずばらばらだった",
+					"いつも 2 倍だった",
+				], "answer": 0, "invariant": {"value": 0.0, "tol": 0.05},
+				"after": "接線と弦の角 = 向こう側の円周角。接点でも決まりは効いていた。"},
+			{"type": "talk", "title": "直径を引く", "fig": "tangent_chord_proof", "lines": [
+				"トトが接点から直径を引いた。接線と半径は垂直だから、そこに 90° ができる。",
+				"直径を見こむ角も 90°。二つの直角から、残りの角どうしが等しいと分かる。",
+				"円周角の決まりが、接線というぎりぎりの場所でもそのまま生きていた。",
+				"「接するのは、二つの交点が重なった形なんですね」― トトが少しだけ笑った。",
+			]},
+			{"type": "solve", "title": "縄を張る角", "fig": "tangent_chord",
+				"lead": "対岸の角を出そう。", "after": "縄は一度で正しい角に張られた。"},
+			{"type": "talk", "title": "祭りの飾り", "art": "dusk", "lines": [
+				"城下は祭りの支度で、星形の飾りが軒先に並びはじめていた。",
+				"「五本の板を組むだけの飾りだ」とカラス。「だが角の合わせ方で、必ず一本あまる」",
+				"必ずあまる ― それも確かめてみればいい話だった。",
+			]},
+		],
+	},
+	{
+		"id": "ch25", "title": "星形の飾り", "level": "高校受験",
+		"place": "祭りの飾り職人",
+		"found": "星形のとがった 5 つの角の和は、いつも 180°",
+		"scenes": [
+			{"type": "talk", "title": "五本の板", "art": "theater", "lines": [
+				"祭りの星形の飾りを、五本の板を組んで作る。とがった先はそれぞれ角度を切ってある。",
+				"職人が言う。「四本は切った。最後の一本を何度にすれば、きれいに閉じるのか」",
+				"カラスが答えた。「星は五つの角だ。五角形と同じで和は 540 になる」",
+				"トトは星形の頂点をひとつつまんで、ぐっとずらしてみせた。",
+			]},
+			{"type": "measure", "title": "頂点をずらす", "fig": "star", "trials": 3,
+				"lead": "金色の点を円の上で動かすと、星の形がゆがむ。"
+					+ "とがった 5 つの角を記録して、合計しよう。",
+				"question": "形をゆがめると、とがった 5 つの角の和はどうなった?",
+				"choices": [
+					"カラスの言うとおり 540° だった",
+					"どんな形でも 180° のままだった",
+					"ゆがめるほど小さくなった",
+				], "answer": 1, "invariant": {"value": 180.0, "tol": 0.6},
+				"after": "和は 180°。五角形の 540° とはまったく別のものだった。"},
+			{"type": "talk", "title": "三角形にたたむ", "fig": "star_proof", "lines": [
+				"トトが星の中に一つ三角形を取り出した。とがった角は、外角としてこの三角形に集まる。",
+				"外角をたどっていくと、五つの角がぜんぶ一つの三角形の三つの角に置きかわる。",
+				"三角形の和は 180°。だから星の五つの角の和も 180°。",
+				"職人が板を持ち上げた。「四本ぶんを引けば、最後の一本が出るわけだ」",
+			]},
+			{"type": "solve", "title": "最後の一本", "fig": "star",
+				"lead": "切る角を出そう。", "after": "星はきれいに閉じ、軒先に並んだ。"},
+			{"type": "talk", "title": "帆の仕事場", "art": "dusk", "lines": [
+				"祭りの灯りの向こう、港のほうに大きな布が干してあるのが見えた。",
+				"「船の帆だ」とカラス。「あそこの仕立て屋は、大きさの勘定でいつも損をしている」",
+				"損をしている ― また同じ言い方だった。",
 			]},
 		],
 	},
@@ -496,8 +747,44 @@ const CHAPTERS := [
 				"lead": "型紙の角を出そう。", "after": "帽子はきれいに巻けて、祭りに間に合った。"},
 			{"type": "talk", "title": "庭の池", "art": "dusk", "lines": [
 				"祭りの灯りの向こうに、大きな屋敷の庭が見える。丸い池があるらしい。",
-				"「あの池には島がある」とカラス。「渡し板の長さで、庭師がずっと揉めている」",
-				"ここから先は、大人の現場よりもさらに厄介だ ― という顔をしていた。",
+				"「まずは石切り場だ」とカラス。「柱の石を切り出すのに、稜の数が読めんそうでな」",
+				"面の数から辺の数を出す ― そんな表があるなら見てみたい、という顔をしていた。",
+			]},
+		],
+	},
+	{
+		"id": "ch26", "title": "石を切り出す", "level": "高校受験",
+		"place": "石切り場",
+		"found": "どんな多面体でも 頂点 − 辺 + 面 = 2",
+		"scenes": [
+			{"type": "talk", "title": "注文書の数", "art": "master", "lines": [
+				"石切り場。柱の形に石を切り出す仕事で、注文書には面の数だけが書いてある。",
+				"親方が渋い顔だ。「面の数から、稜(辺)が何本になるか分からんと、道具の数が読めん」",
+				"カラスが言った。「形ごとに違う。数えるしかない。表を売ってやろうか」",
+				"トトは角柱の模型を並べ、底面の角を三つ、四つ、五つと増やして見せた。",
+			]},
+			{"type": "measure", "title": "底面の角を増やす", "fig": "euler", "trials": 3,
+				"lead": "金色の点を動かすと、角柱の底面の角の数が変わる。"
+					+ "頂点・辺・面の数を記録して、頂点 − 辺 + 面 を計算しよう。",
+				"question": "頂点 − 辺 + 面 はどうなった?",
+				"choices": [
+					"いつも 2 になった",
+					"カラスの言うとおり、形ごとにばらばらだった",
+					"角の数と同じだけ増えた",
+				], "answer": 0, "invariant": {"value": 2.0, "tol": 0.01},
+				"after": "いつも 2。面の数さえ分かれば、辺も頂点も出せる。"},
+			{"type": "talk", "title": "角錐でも", "fig": "euler_proof", "lines": [
+				"角柱だけではない。角錐でも、正十二面体でも、へこんでいない多面体なら必ず 2 になる。",
+				"面をひとつ増やすと辺と頂点も決まった数だけ増える ― 差し引きがいつも同じなのだ。",
+				"「オイラーの多面体定理」。名前より先に、数えて出てきたことのほうが大事だった。",
+				"親方が注文書に道具の数を書き入れた。「表はいらん」",
+			]},
+			{"type": "solve", "title": "道具の数", "fig": "euler",
+				"lead": "辺の数を数えて伝えよう。", "after": "石は無駄なく切り出された。"},
+			{"type": "talk", "title": "屋敷の庭", "art": "dusk", "lines": [
+				"カラスは表を売れないまま、丘の上の屋敷を見上げた。",
+				"「あそこの庭には丸い池がある。島へ板を渡す仕事で、庭師がずっと揉めていてな」",
+				"渡す向きで長さが変わる ― そういう話らしい。",
 			]},
 		],
 	},
@@ -568,7 +855,79 @@ const CHAPTERS := [
 			{"type": "solve", "title": "残る一本", "fig": "ceva",
 				"lead": "二本の張り方から、残りを出そう。", "after": "三本は一点で交わり、台は揺れなくなった。"},
 			{"type": "talk", "title": "星のほうへ", "art": "night", "lines": [
-				"綱を張り終えると、カラスは荷をまとめながら北の空を見上げた。",
+				"綱を張り終えると、カラスは荷をまとめながら川のほうを見た。",
+				"「次は渡し場だ。流れが速くて縄が渡せん。川はばは測りようがないぞ」",
+				"縄を渡す ― ではなく、手前から二辺とはさむ角を測るだけなら、できそうに思えた。",
+			]},
+		],
+	},
+	{
+		"id": "ch27", "title": "渡れない川", "level": "大学受験",
+		"place": "川の渡し場",
+		"found": "c² = a² + b² − 2ab cos C。直角でなくても使える三平方",
+		"scenes": [
+			{"type": "talk", "title": "川はばを測る", "art": "field", "lines": [
+				"渡し場の川はばを知りたい。だが流れが速く、縄を渡すことができない。",
+				"手前の一点から、両岸の杭までの距離と、そのはさむ角なら測れる。",
+				"カラスが首を振った。「三平方は直角のときだけだ。斜めの角では使えん。あきらめろ」",
+				"トトは砂に三角形を描き、はさむ角をゆっくり開いたり閉じたりしてみせた。",
+			]},
+			{"type": "measure", "title": "はさむ角を変える", "fig": "cosine", "trials": 3,
+				"lead": "金色の点を動かすと、二辺のはさむ角 C が変わる(辺の長さは変わらない)。"
+					+ "測った c の 2 乗と、a² + b² − 2ab cos C を記録して見くらべよう。",
+				"question": "測った c² と、a² + b² − 2ab cos C はどうだった?",
+				"choices": [
+					"いつもぴたりと同じだった",
+					"カラスの言うとおり、直角のときだけ合った",
+					"角が大きいほどずれた",
+				], "answer": 0, "invariant": {"value": 0.0, "tol": 0.05},
+				"after": "どの角でも一致する。直角(cos 90° = 0)のときだけ、三平方の形になる。"},
+			{"type": "talk", "title": "垂線を下ろす", "fig": "cosine_proof", "lines": [
+				"トトが頂点から底辺へ垂線を下ろした。直角三角形が二つできる。",
+				"垂線の足までの長さが b cos C、垂線そのものが b sin C。",
+				"あとは三平方を一度使うだけで、c² = a² + b² − 2ab cos C が出てくる。",
+				"「三平方が消えたのではなく、斜めのぶんが −2ab cos C として出ていたんですね」",
+			]},
+			{"type": "solve", "title": "川はば", "fig": "cosine",
+				"lead": "測った二辺と角から出そう。", "after": "渡し船の綱の長さが決まった。"},
+			{"type": "talk", "title": "三つの村", "art": "dusk", "lines": [
+				"カラスは川を見ながら言った。「測ることはできても、まん中は出せんぞ」",
+				"「次の仕事は井戸だ。三つの村から等しい距離のところに掘るという」",
+				"等しい距離 ― どこにあるのかは、まだ見当もつかなかった。",
+			]},
+		],
+	},
+	{
+		"id": "ch28", "title": "三つの村の井戸", "level": "大学受験",
+		"place": "三角に並んだ村",
+		"found": "内心から二頂点を見こむ角は 90 + A ÷ 2",
+		"scenes": [
+			{"type": "talk", "title": "どこに掘るか", "art": "field", "lines": [
+				"三つの村が三角形に並んでいる。三方から等しく使える井戸を、どこに掘るか。",
+				"三つの辺(道)から等しい距離の点 ― それが内心だと、トトは名前だけ教えた。",
+				"カラスが口をはさむ。「掘る前に確かめる方法はない。掘ってから測るしかない」",
+				"だが井戸から二つの村を見こむ角なら、掘る前に計算できるはずだ。",
+			]},
+			{"type": "measure", "title": "村の位置を動かす", "fig": "incenter", "trials": 3,
+				"lead": "金色の点(上の村 A)を動かすと三角形の形が変わる。"
+					+ "∠A と、井戸から見こむ角 ∠BIC を記録しよう。",
+				"question": "∠BIC は ∠A とどんな関係だった?",
+				"choices": [
+					"∠A の半分に 90 をたした値だった",
+					"カラスの言うとおり、決まった関係はなかった",
+					"いつも ∠A の 2 倍だった",
+				], "answer": 0, "invariant": {"value": 90.0, "tol": 0.05},
+				"after": "∠BIC = 90 + A ÷ 2。掘る前に、井戸から見える角が分かる。"},
+			{"type": "talk", "title": "半分ずつ集める", "fig": "incenter_proof", "lines": [
+				"内心は角の二等分線の交点。だから ∠IBC は B の半分、∠ICB は C の半分。",
+				"三角形 IBC の角の和は 180° だから、∠BIC = 180 − (B + C) ÷ 2。",
+				"B + C = 180 − A を入れると、∠BIC = 90 + A ÷ 2。半分ずつ集めただけだった。",
+				"井戸はまだ掘っていないのに、そこから見える景色が決まっている。",
+			]},
+			{"type": "solve", "title": "井戸から見る角", "fig": "incenter",
+				"lead": "掘る前に出しておこう。", "after": "井戸は三つの村のどこからも同じ距離に掘られた。"},
+			{"type": "talk", "title": "天文台へ", "art": "night", "lines": [
+				"仕事を終えると、カラスが北の空を見上げていた。",
 				"「俺が売っていた表は、海の向こうでは通じない。星の見え方が違うんだ」",
 				"星の位置で船が向きを知る、という話をあなたは初めて聞いた。",
 				"次の仕事場は天文台。空に描けない円を、地上から測る仕事だという。",
@@ -640,8 +999,80 @@ const CHAPTERS := [
 				"lead": "½ × a × b × sin C を使おう。", "after": "土地の登記が通った。"},
 			{"type": "talk", "title": "最後の依頼", "art": "night", "lines": [
 				"まっすぐな辺で囲まれた形は、これでほぼ手中にある。",
-				"残るは曲線。カラスが一枚の図面を差し出した。噴水の設計図だ。",
-				"「これは俺にも解けなかった。おまえがやってみろ」― 初めての、売りつけでない話。",
+				"「次は港の巻き上げ機だ」とカラス。「軸の太さごとに、俺の表がよく売れる」",
+				"軸を替えるたびに表が要る ― 本当にそうだろうか。",
+			]},
+		],
+	},
+	{
+		"id": "ch29", "title": "巻き上げ機", "level": "大学受験",
+		"place": "港の巻き上げ機",
+		"found": "弧 ÷ 半径 は角の大きさそのもの(ラジアン)",
+		"scenes": [
+			{"type": "talk", "title": "何回まわすか", "art": "master", "lines": [
+				"港の巻き上げ機。軸を回した分だけ縄が出る。荷を上げる高さから、回す角を決めたい。",
+				"職人が言う。「軸を替えると、同じ角でも出る縄の長さが変わる。表が軸ごとに要る」",
+				"カラスがにやりとした。「その表なら、俺が軸の太さごとに用意している」",
+				"トトは軸の太さを変えながら、出た縄の長さを軸の半径で割ってみろと合図した。",
+			]},
+			{"type": "measure", "title": "軸の太さを変える", "fig": "radian", "trials": 3,
+				"lead": "金色の点を動かすと軸の半径が変わる(回す角は同じまま)。"
+					+ "半径と、出た縄(弧)の長さを記録して、割ってみよう。",
+				"question": "弧 ÷ 半径 はどうなった?",
+				"choices": [
+					"軸が太いほど大きくなった",
+					"どの太さでも同じ値だった",
+					"軸が細いほど大きくなった",
+				], "answer": 1, "invariant": {"value": 1.5, "tol": 0.01},
+				"after": "弧 ÷ 半径 は軸の太さによらない。これが角の大きさそのものだった。"},
+			{"type": "talk", "title": "半径 1 で測る", "fig": "radian_proof", "lines": [
+				"半径 1 の円で弧の長さを測れば、それがそのまま角の大きさになる ― これがラジアン。",
+				"度は「一周を 360 に分けた」人の決めごと。ラジアンは円そのものから出てくる。",
+				"半径が何倍でも弧も同じだけ何倍になるから、割れば元に戻る。",
+				"「表は軸ごとに要らない。ひとつの数で足りる」。職人は表を返した。",
+			]},
+			{"type": "solve", "title": "出る縄の長さ", "fig": "radian",
+				"lead": "半径と角から出そう。", "after": "荷はぴたりと目当ての高さで止まった。"},
+			{"type": "talk", "title": "羊飼いの丘", "art": "dusk", "lines": [
+				"カラスは表の束を懐にしまい、丘のほうを見た。",
+				"「次は羊の囲いだ。丸く囲うのに、縄がどれだけいるかで毎年もめている」",
+				"丸い囲い ― 杭を一本打って、縄を張るだけの仕事に見えた。",
+			]},
+		],
+	},
+	{
+		"id": "ch30", "title": "羊の囲い", "level": "大学受験",
+		"place": "羊飼いの丘",
+		"found": "円は「中心からの距離が一定」。座標では (x − a)² + (y − b)² = r²",
+		"scenes": [
+			{"type": "talk", "title": "縄の長さ", "art": "field", "lines": [
+				"羊の囲いを円く作る。杭を一本打ち、そこから縄を張って回れば囲いになる。",
+				"羊飼いが言う。「囲いは、あの木のところを通したい。縄はどれだけいる?」",
+				"カラスが答えた。「歩いて測るしかない。地面の上のことは、紙の上では決まらん」",
+				"トトは地面に格子を描いた。杭と木に印をつけ、座標で呼べるようにする。",
+			]},
+			{"type": "measure", "title": "囲いの上を歩く", "fig": "circle_eq", "trials": 3,
+				"lead": "金色の点を円の上で動かすと、囲いのいろいろな場所に立てる。"
+					+ "杭からのよこの差とたての差を、それぞれ 2 乗して記録しよう。",
+				"question": "よこの差² + たての差² はどうなった?",
+				"choices": [
+					"立つ場所によって変わった",
+					"どこに立っても同じ値だった",
+					"杭に近いほど大きかった",
+				], "answer": 1, "invariant": {"value": 25.0, "tol": 0.05},
+				"after": "いつも同じ。その値は 縄の長さ × 縄の長さ ― 円は距離が一定な点の集まりだった。"},
+			{"type": "talk", "title": "三平方が式になる", "fig": "circle_eq_proof", "lines": [
+				"杭から立っている場所まで、よこの差とたての差で直角三角形ができる。",
+				"三平方で (よこの差)² + (たての差)² = 縄の長さ²。どこに立っても同じ形の式だ。",
+				"これを座標で書けば (x − a)² + (y − b)² = r²。円の方程式そのものになる。",
+				"「地面の上のことが、紙の上で決まりましたね」― カラスは何も言わなかった。",
+			]},
+			{"type": "solve", "title": "いる縄の長さ", "fig": "circle_eq",
+				"lead": "杭と木の座標から出そう。", "after": "囲いは一度で木のところを通った。"},
+			{"type": "talk", "title": "噴水のほとり", "art": "fountain", "lines": [
+				"丘を下りると、カラスが一枚の図面を差し出した。噴水の設計図だ。",
+				"「これは俺にも解けなかった。水が描く線は、まっすぐでも丸でもない」",
+				"「おまえがやってみろ」― 初めての、売りつけでない話だった。",
 			]},
 		],
 	},
@@ -676,8 +1107,10 @@ const CHAPTERS := [
 				"lead": "6 分の 1 公式を使おう。", "after": "噴水のまわりに、石が過不足なく並んだ。"},
 			{"type": "talk", "title": "図形ハンター", "art": "fountain", "lines": [
 				"角の和、折れ角、円周率、崩してよい形、水の量、影の比、動く重なり、",
-				"三平方、円周角、相似比、倉の対角線、体積の比、ひらいた弧、方べき、チェバ、",
-				"正弦定理、sin の面積、6 分の 1 公式 ― 十八の決まりが手の中にある。",
+				"多角形の和、へこみの角、折り返し、道の位置、三平方、三角定規、円周角、接弦、",
+				"星形、相似比、倉の対角線、体積の比、ひらいた弧、多面体、方べき、チェバ、",
+				"余弦定理、内心、ラジアン、円の方程式、",
+				"正弦定理、sin の面積、6 分の 1 公式 ― 三十の決まりが手の中にある。",
 				"どれも人から買ったものではない。全部、自分で動かして見つけた。",
 				"トトが初めて、まとまった言葉をくれた。「これで、お前も測れる者だ」",
 				"カラスの姿はもう無い。旅はここから、本編の 65 ステージへ続く。",
@@ -742,6 +1175,23 @@ const CEVA_A := Vector2(3.0, 8.0)    # チェバの章の三角形
 const CEVA_B := Vector2(0.0, 0.0)
 const CEVA_C := Vector2(10.0, 0.0)
 
+# さらに足した章の値
+const PENTA := [Vector2(-6.0, 2.0), Vector2(-4.0, -5.0), Vector2(4.0, -5.0), Vector2(6.0, 2.0)]
+const DART_A := Vector2(0.0, 8.0)    # ブーメラン形の先
+const DART_B := Vector2(-6.0, -3.0)
+const DART_C := Vector2(6.0, -3.0)
+const TAPE_H := 4.0                  # 折り返しの章。テープのはば
+const FIELD_W := 12.0                # 道の面積の章。畑のよこ
+const FIELD_H := 8.0                 # 畑のたて
+const ROAD_W := 1.0                  # 道のはば
+const STAR_R := 6.0                  # 星形の章。5 点をのせる円
+const TC_R := 6.0                    # 接弦定理の章。円の半径
+const COS_A := 8.0                   # 余弦定理の章。辺 a(CB)
+const COS_B := 6.0                   # 余弦定理の章。辺 b(CA)
+const RAD_TH := 1.5                  # 弧度法の章。中心角(ラジアン)
+const CIRCLE_EQ_C := Vector2(3.0, 2.0)   # 円の方程式の章。中心
+const CIRCLE_EQ_R := 5.0                 # 円の方程式の章。半径
+
 
 static func start_of(kind: String) -> Vector2:
 	match kind:
@@ -779,6 +1229,30 @@ static func start_of(kind: String) -> Vector2:
 			return POWER_P + Vector2(7.0, 0.0)
 		"ceva":
 			return Vector2(4.3, 2.6)
+		"polygon":
+			return Vector2(0.0, 7.0)
+		"dart":
+			return Vector2(0.0, 1.0)
+		"fold":
+			return Vector2(cos(deg_to_rad(55.0)), sin(deg_to_rad(55.0))) * 5.0
+		"road":
+			return Vector2(5.0, 3.0)
+		"star":
+			return Vector2(cos(deg_to_rad(90.0)), sin(deg_to_rad(90.0))) * STAR_R
+		"tangent_chord":
+			return Vector2(cos(deg_to_rad(35.0)), sin(deg_to_rad(35.0))) * TC_R
+		"special_tri":
+			return Vector2(5.0, 0.0)
+		"euler":
+			return Vector2(5.0, 0.0)
+		"cosine":
+			return Vector2(cos(deg_to_rad(60.0)), sin(deg_to_rad(60.0))) * COS_B
+		"incenter":
+			return Vector2(4.0, 7.0)
+		"radian":
+			return Vector2(5.0, 0.0)
+		"circle_eq":
+			return CIRCLE_EQ_C + Vector2(CIRCLE_EQ_R, 0.0)
 	return Vector2.ZERO
 
 
@@ -839,6 +1313,49 @@ static func clamp_of(kind: String, p: Vector2) -> Vector2:
 		"ceva":
 			# 三角形の内側だけ(つぶれた比を作らないように余白を残す)
 			return _inside_triangle(p, CEVA_A, CEVA_B, CEVA_C, 0.13)
+		"polygon":
+			# 五角形の上の頂点。へこませない範囲で動かす
+			return Vector2(clampf(p.x, -3.5, 3.5), clampf(p.y, 3.5, 11.0))
+		"dart":
+			# ブーメラン形のへこむ点。三角形の内側だけ
+			return _inside_triangle(p, DART_A, DART_B, DART_C, 0.14)
+		"fold":
+			# 折り目の角。浅すぎ・深すぎだと折り返しが図から出る
+			var fa := clampf(atan2(p.y, maxf(p.x, 0.1)), deg_to_rad(28.0), deg_to_rad(72.0))
+			return Vector2(cos(fa), sin(fa)) * 5.0
+		"road":
+			# 縦の道と横の道の位置
+			return Vector2(clampf(p.x, 1.0, FIELD_W - ROAD_W - 1.0),
+				clampf(p.y, 1.0, FIELD_H - ROAD_W - 1.0))
+		"star":
+			# 星の 1 つの頂点。円の上を動く(となりと重ならない範囲で)
+			var sa := clampf(rad_to_deg(atan2(p.y, p.x)), 60.0, 120.0)
+			return Vector2(cos(deg_to_rad(sa)), sin(deg_to_rad(sa))) * STAR_R
+		"tangent_chord":
+			# 弦のもう一方の端。接点と重ならないように離す
+			var ta := clampf(rad_to_deg(atan2(p.y, p.x)), 15.0, 165.0)
+			return Vector2(cos(deg_to_rad(ta)), sin(deg_to_rad(ta))) * TC_R
+		"special_tri":
+			# 三角定規の大きさ
+			return Vector2(clampf(p.x, 2.0, 9.0), 0.0)
+		"euler":
+			# 角柱の底面の角の数(3 から 10)
+			return Vector2(clampf(p.x, 3.0, 10.0), 0.0)
+		"cosine":
+			# 中心 C から距離 b の円の上(はさむ角だけが変わる)
+			var ca := clampf(atan2(p.y, p.x), deg_to_rad(25.0), deg_to_rad(150.0))
+			return Vector2(cos(ca), sin(ca)) * COS_B
+		"incenter":
+			return Vector2(clampf(p.x, -3.0, 13.0), clampf(p.y, 3.0, 10.0))
+		"radian":
+			# おうぎ形の半径
+			return Vector2(clampf(p.x, 2.0, 9.0), 0.0)
+		"circle_eq":
+			# 円周の上だけを動く
+			var d := p - CIRCLE_EQ_C
+			if d.length() < 0.001:
+				d = Vector2(1.0, 0.0)
+			return CIRCLE_EQ_C + d.normalized() * CIRCLE_EQ_R
 	return p
 
 
@@ -900,6 +1417,98 @@ static func readout_of(kind: String, p: Vector2) -> Dictionary:
 			return {"row": "∠C %d°  sin C %.3f  面積 %.2f  → 面積÷sin C %.2f" % [
 				roundi(rad_to_deg(t)), sin(t), area2, area2 / maxf(sin(t), 0.0001)],
 				"value": area2 / maxf(sin(t), 0.0001)}
+		"polygon":
+			# 五角形の 5 つの角。頂点を動かしても和は変わらない
+			var pv: Array = penta_points(p)
+			var pd: Array = rounded_sum(polygon_angles(pv), 540)
+			var psum := 0
+			for v in pd:
+				psum += int(v)
+			return {"row": "%d° %d° %d° %d° %d°  → 合計 %d°" % [
+				int(pd[0]), int(pd[1]), int(pd[2]), int(pd[3]), int(pd[4]), psum],
+				"value": float(psum)}
+		"dart":
+			# ブーメラン形。へこんだ角と、ほかの 3 つの角
+			var da := dart_angles(p)
+			return {"row": "先 %d°  左 %d°  右 %d°  へこみ %d°  → 3 つの和 %d°" % [
+				roundi(da[0]), roundi(da[1]), roundi(da[2]), roundi(da[3]),
+				roundi(da[0] + da[1] + da[2])],
+				"value": da[3] - (da[0] + da[1] + da[2])}
+		"fold":
+			# 折り目の角 a と、折り返された辺がテープと作る角 x
+			var fa := rad_to_deg(atan2(p.y, maxf(p.x, 0.1)))
+			var fx := 180.0 - 2.0 * fa
+			return {"row": "折り目の角 %d°  重なった角 %d°  → 折り目 × 2 + 重なった角 %d°" % [
+				roundi(fa), roundi(fx), roundi(2.0 * fa + fx)],
+				"value": 2.0 * fa + fx - 180.0}
+		"road":
+			# 道の位置を変えても、残りの畑(4 区画の和)は変わらない
+			var rx: float = p.x
+			var ry: float = p.y
+			var left := rx
+			var right := FIELD_W - rx - ROAD_W
+			var low := ry
+			var high := FIELD_H - ry - ROAD_W
+			var parts := left * low + right * low + left * high + right * high
+			return {"row": "4 つの区画 %.1f + %.1f + %.1f + %.1f → 残りの畑 %.1f" % [
+				left * low, right * low, left * high, right * high, parts],
+				"value": parts}
+		"star":
+			# 星形の 5 つのとがった角
+			var st := star_angles(p)
+			var ssum := 0.0
+			for v in st:
+				ssum += float(v)
+			return {"row": "とがった 5 つの角 %d° %d° %d° %d° %d°  → 合計 %d°" % [
+				roundi(st[0]), roundi(st[1]), roundi(st[2]), roundi(st[3]), roundi(st[4]),
+				roundi(ssum)], "value": ssum}
+		"tangent_chord":
+			var tc := tangent_chord_angles(p)
+			return {"row": "接線と弦の角 %d°  向こう側から見た角 %d°  → 差 %d°" % [
+				roundi(tc[0]), roundi(tc[1]), roundi(tc[0] - tc[1])],
+				"value": tc[0] - tc[1]}
+		"special_tri":
+			# 30-60-90 の三角定規。大きさを変えても辺の比は変わらない
+			var short: float = p.x * 0.5
+			var long_side: float = p.x * 0.5 * sqrt(3.0)
+			return {"row": "短い辺 %.2f  長い辺 %.2f  斜辺 %.2f  → 斜辺 ÷ 短い辺 %.3f" % [
+				short, long_side, p.x, p.x / maxf(short, 0.0001)],
+				"value": p.x / maxf(short, 0.0001)}
+		"euler":
+			var n := int(round(p.x))
+			var vv := 2 * n
+			var ee := 3 * n
+			var ff := n + 2
+			return {"row": "%d 角柱  頂点 %d  辺 %d  面 %d  → 頂点 − 辺 + 面 %d" % [
+				n, vv, ee, ff, vv - ee + ff], "value": float(vv - ee + ff)}
+		"cosine":
+			# 角 C を変えると c も変わる。c² と a² + b² − 2ab cos C を見くらべる
+			var cth := atan2(p.y, p.x)
+			var c_side := p.distance_to(Vector2(COS_A, 0.0))
+			var formula := COS_A * COS_A + COS_B * COS_B - 2.0 * COS_A * COS_B * cos(cth)
+			return {"row": "∠C %d°  測った c %.2f  c² %.1f   a²+b²−2ab cosC %.1f" % [
+				roundi(rad_to_deg(cth)), c_side, c_side * c_side, formula],
+				"value": c_side * c_side - formula}
+		"incenter":
+			# 内心から見た角と、頂角 A の半分
+			var iv: Array = angles_of(p, TRI_B, TRI_C)
+			var inc := _incenter_of(p, TRI_B, TRI_C)
+			var bic: float = angles_of(inc, TRI_B, TRI_C)[0]
+			return {"row": "∠A %d°  ∠BIC %d°  → ∠BIC − A ÷ 2 %d°" % [
+				roundi(iv[0]), roundi(bic), roundi(bic - iv[0] * 0.5)],
+				"value": bic - iv[0] * 0.5}
+		"radian":
+			# 半径を変えても 弧 ÷ 半径 は同じ。これが角の新しい測り方
+			var rr: float = p.x
+			var arc_len := rr * RAD_TH
+			return {"row": "半径 %.2f  弧の長さ %.2f  → 弧 ÷ 半径 %.3f" % [
+				rr, arc_len, arc_len / rr], "value": arc_len / rr}
+		"circle_eq":
+			var dx: float = p.x - CIRCLE_EQ_C.x
+			var dy: float = p.y - CIRCLE_EQ_C.y
+			return {"row": "点 (%.1f, %.1f)  よこの差² %.2f + たての差² %.2f = %.2f" % [
+				p.x, p.y, dx * dx, dy * dy, dx * dx + dy * dy],
+				"value": dx * dx + dy * dy}
 		"tank":
 			# 水の量は変わらない。幅を広げた分だけ深さが減る
 			var w: float = p.x
@@ -1010,6 +1619,98 @@ static func zigzag_angles(p: Vector2) -> Array:
 	var bend := rad_to_deg(acos(clampf(
 		(ZIG_HIGH - p).normalized().dot((ZIG_LOW - p).normalized()), -1.0, 1.0)))
 	return [up_ang, low_ang, bend]
+
+
+## 五角形の頂点(先頭が動かす点)
+static func penta_points(p: Vector2) -> Array:
+	var out: Array = [p]
+	for q in PENTA:
+		out.append(q)
+	return out
+
+
+## 多角形の内角(度)を頂点の並び順に返す
+static func polygon_angles(pts: Array) -> Array:
+	var n := pts.size()
+	var out: Array = []
+	for i in n:
+		var at: Vector2 = pts[i]
+		var d1: Vector2 = (pts[(i + n - 1) % n] as Vector2) - at
+		var d2: Vector2 = (pts[(i + 1) % n] as Vector2) - at
+		out.append(rad_to_deg(absf(d1.angle_to(d2))))
+	return out
+
+
+## 整数に丸めても合計が target になるように誤差を分ける(rounded_angles の一般版)
+static func rounded_sum(deg: Array, target: int) -> Array:
+	var floors: Array = []
+	var rest: Array = []
+	var total := 0
+	for i in deg.size():
+		var f := int(floor(float(deg[i])))
+		floors.append(f)
+		rest.append(float(deg[i]) - float(f))
+		total += f
+	var left := target - total
+	while left > 0:
+		var best := 0
+		var best_v := -1.0
+		for i in rest.size():
+			if float(rest[i]) > best_v:
+				best_v = float(rest[i])
+				best = i
+		floors[best] = int(floors[best]) + 1
+		rest[best] = -1.0
+		left -= 1
+	return floors
+
+
+## ブーメラン形の角 [先 A, 左 B, 右 C, へこみ P]
+static func dart_angles(p: Vector2) -> Array:
+	var at_a: float = angles_of(DART_A, DART_B, DART_C)[0]
+	var at_b := rad_to_deg(absf((DART_A - DART_B).angle_to(p - DART_B)))
+	var at_c := rad_to_deg(absf((DART_A - DART_C).angle_to(p - DART_C)))
+	var at_p := rad_to_deg(absf((DART_B - p).angle_to(DART_C - p)))
+	return [at_a, at_b, at_c, 360.0 - at_p if at_p > 180.0 else at_p]
+
+
+## 星形の 5 つのとがった角。p は動かす 1 点(円の上)
+static func star_points(p: Vector2) -> Array:
+	var out: Array = [p]
+	for i in range(1, 5):
+		var a := deg_to_rad(90.0 + 72.0 * float(i))
+		out.append(Vector2(cos(a), sin(a)) * STAR_R)
+	return out
+
+
+## 星形は 1 つ飛ばしに結ぶ。とがった角は となりの 2 点を見こむ角
+static func star_angles(p: Vector2) -> Array:
+	var pts := star_points(p)
+	var out: Array = []
+	for i in 5:
+		var at: Vector2 = pts[i]
+		var d1: Vector2 = (pts[(i + 2) % 5] as Vector2) - at
+		var d2: Vector2 = (pts[(i + 3) % 5] as Vector2) - at
+		out.append(rad_to_deg(absf(d1.angle_to(d2))))
+	return out
+
+
+## 接弦定理の章 [接線と弦の角, 反対側の円周角]。接点は円の下端
+static func tangent_chord_angles(p: Vector2) -> Array:
+	var t := Vector2(0.0, -TC_R)
+	var b := Vector2(0.0, TC_R)                    # 向こう側の点(弧の反対)
+	var tan_dir := Vector2(1.0, 0.0)               # 下端での接線は水平
+	var alpha := rad_to_deg(absf(tan_dir.angle_to(p - t)))
+	var beta := rad_to_deg(absf((t - b).angle_to(p - b)))
+	return [minf(alpha, 180.0 - alpha) if alpha > 90.0 else alpha, beta]
+
+
+## 内心の座標
+static func _incenter_of(a: Vector2, b: Vector2, c: Vector2) -> Vector2:
+	var la := b.distance_to(c)
+	var lb := c.distance_to(a)
+	var lc := a.distance_to(b)
+	return (a * la + b * lb + c * lc) / (la + lb + lc)
 
 
 ## 三角形の内側に押しこむ(重心寄りに margin の余白を残す)

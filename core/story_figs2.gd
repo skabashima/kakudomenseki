@@ -45,7 +45,8 @@ static func spec(kind: String, p: Vector2) -> Dictionary:
 			return _ceva(p)
 		"ceva_proof":
 			return _ceva_proof()
-	return {"shapes": []}
+	# 第19章から先の図は core/story_figs3.gd にある
+	return StoryFigs3.spec(kind, p)
 
 
 # ============ 第11章 水そうの深さ ============
