@@ -1,49 +1,59 @@
 extends Control
-## 【試作】相続ミステリー「遺産の地図」第一話。
+## 【試作】相続ミステリー「遺産の地図」。
 ##
-## 本編・ストーリーとは別のモード。ここでのプレイヤーの仕事は「測って答える」ではなく、
-## **遺言の条件どおりに土地を線で分ける**こと。指で線を引くだけで進み、
-## 数字を入力する場面は無い。判定は本物の幾何(面積とどちら側か)で行う。
+## ■ 何をする遊びか
+## 遺言の条項どおりに土地を分ける。ただし境界線は**自由に引けない**。
+## 使えるのは作図の道具だけ ―― 2 点を結ぶ / 平行線を引く / 中点を取る。
+## 点も自由には置けない(頂点・杭・井戸・交点・中点のみ)。
+## だから「指で揺らして面積の数字を合わせる」ができない。知っていないと引けない。
 ##
-## 話のつくり: 遺言の条項 → 相続人の言い分 → 分ける → 判定 → 手記の 1 ページ。
-## 引いた境界線は地図に残り、話が進むほど「あれの在り処」に近づいていく。
+## ■ 面積は確定するまで見せない
+## 途中で面積が見えると、当てずっぽうに正解判定がついてきてしまう。
+## 見えるのは「作図した線」だけで、正しさは自分の手順が保証する。
+##
+## 第一話は三角形(中点を取れば厳密に二等分)。道具の使い方を覚える回。
+## 第二話以降で四角形になり、等積変形(平行線)が要る本番になる。
 
 const GOLD := Color(1.0, 0.85, 0.3)
 const SKY := Color(0.55, 0.85, 1.0)
 const INK := Color(0.92, 0.95, 1.0)
 const DIM := Color(0.62, 0.72, 0.88)
-const SIS := Color(0.95, 0.72, 0.30, 0.45)     # 姉の側
-const BRO := Color(0.35, 0.60, 0.95, 0.45)     # 弟の側
+const SIS := Color(0.95, 0.72, 0.30, 0.45)
+const BRO := Color(0.35, 0.60, 0.95, 0.45)
 
-## 判定のきびしさ(面積の差の割合)
-const TOL3 := 0.02
-const TOL2 := 0.05
-const TOL1 := 0.10
+enum Tool { NONE, JOIN, PARALLEL, MIDPOINT, CUT }
 
-var land: Array = []            # 土地の頂点(図の座標)
-var well := Vector2.ZERO        # 井戸の位置
-var cut_a := Vector2.ZERO       # 引いた線の 2 点
-var cut_b := Vector2.ZERO
-var has_cut := false
-var settled := false            # 分け終わったか
-var split_t := 0.0              # 分かれるアニメ(0→1)
+## 点 {"p": Vector2, "name": String, "kind": String}
+var points: Array = []
+## 直線 {"a": Vector2, "b": Vector2, "gold": bool}
+var lines: Array = []
+var land: Array = []
+var well := Vector2.ZERO
+
+var tool: int = Tool.NONE
+var picked: Array = []          # 選択中の点/線
+var picked_line := -1
+var settled := false
+var split_t := 0.0
 var stars := 0
+var cut_line := -1
 
 var map: Control
-var talk: Label
 var speaker: Label
-var status: Label
+var talk: Label
+var hint: Label
+var tool_row: HBoxContainer
 var act_btn: Button
-var redo_btn: Button
+var hint_btn: Button
+var used_hint := false
 var step := 0
 
-## 第一話の台本。話者と台詞
 const SCRIPT := [
-	["代訟人", "測量家オルドが死んだ。生涯を土地の測量に費やし、遺言を一通だけ残していった。"],
-	["代訟人", "第一条 ―― わが土地を、姉と弟に等しく分けよ。ただし井戸は姉に。境は一本の直線とする。"],
-	["弟 ロウ", "「井戸が姉のものなら、等しくないだろう。父は姉びいきだったんだ」"],
-	["姉 セリカ", "「遺言のとおりに。……ただ、なぜ井戸を指定したのかは、私にも分からない」"],
-	["あなた", "測量士として雇われた以上、やることは一つ。条件を満たす線を、一本だけ引く。"],
+	["代訟人", "測量家オルドが死んだ。遺言は一通。土地の分け方だけが、こまごまと書かれている。"],
+	["代訟人", "第一条 ―― わが土地を、姉と弟に等しく分けよ。境は頂点 A から引いた一本の直線とする。"],
+	["弟 ロウ", "「A から引くだと? そんな指定に意味があるのか。だいたい等しいかどうか、誰が測る」"],
+	["姉 セリカ", "「測れる者を呼んだのでしょう。……父は、測れない人間には渡さないつもりだった」"],
+	["あなた", "縄も分度器も使わない。杭と定規だけで、等しい境を作図する。それが測量士の仕事だ。"],
 ]
 
 
@@ -52,79 +62,82 @@ func _ready() -> void:
 	bg.color = Color(0.10, 0.13, 0.22)
 	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
 	add_child(bg)
-	_build_land()
+	_build_case()
 
 	var ins := GameState.safe_insets()
 	var root := VBoxContainer.new()
 	root.set_anchors_preset(Control.PRESET_FULL_RECT)
-	root.offset_left = 16
-	root.offset_right = -16
-	root.offset_top = float(ins["top"]) + 10.0
-	root.offset_bottom = -float(ins["bottom"]) - 10.0
-	root.add_theme_constant_override("separation", 10)
+	root.offset_left = 14
+	root.offset_right = -14
+	root.offset_top = float(ins["top"]) + 8.0
+	root.offset_bottom = -float(ins["bottom"]) - 8.0
+	root.add_theme_constant_override("separation", 8)
 	add_child(root)
 
 	var head := HBoxContainer.new()
 	root.add_child(head)
 	var back := Button.new()
 	back.text = "←もどる"
-	back.custom_minimum_size = Vector2(0, 64)
-	back.add_theme_font_size_override("font_size", 24)
+	back.custom_minimum_size = Vector2(0, 60)
+	back.add_theme_font_size_override("font_size", 23)
 	GameState.style_button(back, Color(0.28, 0.32, 0.44))
 	back.pressed.connect(func() -> void: GameState.change_scene("res://scenes/main.tscn"))
 	head.add_child(back)
 	var title := Label.new()
 	title.text = "  遺産の地図 ・ 第一話「等しく分けよ」"
-	title.add_theme_font_size_override("font_size", 26)
+	title.add_theme_font_size_override("font_size", 25)
 	title.add_theme_color_override("font_color", GOLD)
 	head.add_child(title)
 
 	map = Control.new()
 	map.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	map.custom_minimum_size = Vector2(0, 420)
+	map.custom_minimum_size = Vector2(0, 380)
 	map.draw.connect(_draw_map)
 	map.gui_input.connect(_on_map_input)
 	root.add_child(map)
 
+	tool_row = HBoxContainer.new()
+	tool_row.add_theme_constant_override("separation", 8)
+	tool_row.visible = false
+	root.add_child(tool_row)
+	_tool_button("結ぶ", Tool.JOIN, Color(0.30, 0.42, 0.60))
+	_tool_button("平行", Tool.PARALLEL, Color(0.30, 0.42, 0.60))
+	_tool_button("中点", Tool.MIDPOINT, Color(0.30, 0.42, 0.60))
+	_tool_button("消す", Tool.NONE, Color(0.42, 0.30, 0.30))
+
+	hint_btn = Button.new()
+	hint_btn.text = "父の手記をのぞく(★ が 1 つ減る)"
+	hint_btn.custom_minimum_size = Vector2(0, 60)
+	hint_btn.add_theme_font_size_override("font_size", 22)
+	GameState.style_button(hint_btn, Color(0.40, 0.34, 0.52))
+	hint_btn.pressed.connect(_peek)
+	hint_btn.visible = false
+	root.add_child(hint_btn)
+
+	hint = Label.new()
+	hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	hint.add_theme_font_size_override("font_size", 22)
+	hint.add_theme_color_override("font_color", SKY)
+	root.add_child(hint)
+
 	speaker = Label.new()
-	speaker.add_theme_font_size_override("font_size", 24)
+	speaker.add_theme_font_size_override("font_size", 23)
 	speaker.add_theme_color_override("font_color", GOLD)
 	root.add_child(speaker)
 
 	talk = Label.new()
 	talk.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	talk.custom_minimum_size = Vector2(0, 92)
-	talk.add_theme_font_size_override("font_size", 25)
+	talk.custom_minimum_size = Vector2(0, 84)
+	talk.add_theme_font_size_override("font_size", 24)
 	talk.add_theme_color_override("font_color", INK)
 	root.add_child(talk)
 
-	status = Label.new()
-	status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	status.add_theme_font_size_override("font_size", 23)
-	status.add_theme_color_override("font_color", DIM)
-	root.add_child(status)
-
-	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation", 12)
-	root.add_child(row)
-	redo_btn = Button.new()
-	redo_btn.text = "引き直す"
-	redo_btn.custom_minimum_size = Vector2(0, 84)
-	redo_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	redo_btn.add_theme_font_size_override("font_size", 26)
-	GameState.style_button(redo_btn, Color(0.42, 0.34, 0.28))
-	redo_btn.pressed.connect(_redo)
-	redo_btn.visible = false
-	row.add_child(redo_btn)
 	act_btn = Button.new()
-	act_btn.custom_minimum_size = Vector2(0, 84)
-	act_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	act_btn.size_flags_stretch_ratio = 2.0
-	act_btn.add_theme_font_size_override("font_size", 28)
+	act_btn.custom_minimum_size = Vector2(0, 78)
+	act_btn.add_theme_font_size_override("font_size", 27)
 	GameState.style_button(act_btn, Color(0.22, 0.55, 0.35))
 	act_btn.pressed.connect(_advance)
-	row.add_child(act_btn)
-
+	root.add_child(act_btn)
 	_show_step()
 
 
@@ -134,21 +147,36 @@ func _process(delta: float) -> void:
 		map.queue_redraw()
 
 
+func _tool_button(text: String, which: int, col: Color) -> void:
+	var b := Button.new()
+	b.text = text
+	b.custom_minimum_size = Vector2(0, 72)
+	b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	b.add_theme_font_size_override("font_size", 25)
+	GameState.style_button(b, col)
+	b.pressed.connect(func() -> void: _pick_tool(which))
+	tool_row.add_child(b)
+
+
 # =========================================================
-# 土地
+# 事件(土地と点)
 # =========================================================
 
-## 不整形だが凸な土地を作る(線一本できれいに二つに分かれる形)
-func _build_land() -> void:
-	var rng := RandomNumberGenerator.new()
-	rng.seed = 20260824
-	land = []
-	var n := 6
-	for i in n:
-		var a := TAU * float(i) / float(n) + rng.randf_range(-0.16, 0.16)
-		var r := rng.randf_range(7.0, 11.0)
-		land.append(Vector2(cos(a) * r, sin(a) * r * 0.95))
-	well = Vector2(-3.4, 2.6)
+func _build_case() -> void:
+	land = [Vector2(-1.5, 8.5), Vector2(-9.0, -5.0), Vector2(9.5, -4.0)]
+	points = []
+	_add_point(land[0], "A", "頂点")
+	_add_point(land[1], "B", "頂点")
+	_add_point(land[2], "C", "頂点")
+	well = Vector2(-4.6, -1.0)
+	_add_point(well, "井戸", "井戸")
+
+
+func _add_point(p: Vector2, name: String, kind: String) -> void:
+	for q in points:
+		if (q["p"] as Vector2).distance_to(p) < 0.12:
+			return
+	points.append({"p": p, "name": name, "kind": kind})
 
 
 static func _area(poly: Array) -> float:
@@ -165,7 +193,6 @@ static func _side(p: Vector2, a: Vector2, b: Vector2) -> float:
 	return (b - a).cross(p - a)
 
 
-## 直線 ab で多角形を二つに切る [左側, 右側]
 static func _split(poly: Array, a: Vector2, b: Vector2) -> Array:
 	var left: Array = []
 	var right: Array = []
@@ -186,46 +213,32 @@ static func _split(poly: Array, a: Vector2, b: Vector2) -> Array:
 	return [left, right]
 
 
-## いまの線での [姉の側, 弟の側, 面積差の割合]
-func _pieces() -> Array:
-	var parts := _split(land, cut_a, cut_b)
-	var first: Array = parts[0]
-	var second: Array = parts[1]
-	# 井戸のある側を姉の側にする
-	if _side(well, cut_a, cut_b) < 0.0:
-		var tmp := first
-		first = second
-		second = tmp
-	var a1 := _area(first)
-	var a2 := _area(second)
-	var total := maxf(a1 + a2, 0.0001)
-	return [first, second, absf(a1 - a2) / total, a1, a2]
+static func _cross_lines(a1: Vector2, b1: Vector2, a2: Vector2, b2: Vector2) -> Array:
+	var d1 := b1 - a1
+	var d2 := b2 - a2
+	var den := d1.cross(d2)
+	if absf(den) < 0.00001:
+		return []
+	var t := (a2 - a1).cross(d2) / den
+	return [a1 + d1 * t]
 
 
 # =========================================================
-# 地図を描く
+# 地図
 # =========================================================
 
-## 図の座標 → 画面の座標
 func _to_screen(p: Vector2) -> Vector2:
 	var lo := Vector2(1e9, 1e9)
 	var hi := Vector2(-1e9, -1e9)
 	for q in land:
 		lo = lo.min(q)
 		hi = hi.max(q)
-	var pad := 24.0
-	var size := map.size
+	var pad := 46.0
 	var span := hi - lo
-	var k := minf((size.x - pad * 2.0) / maxf(span.x, 0.001),
-		(size.y - pad * 2.0) / maxf(span.y, 0.001))
+	var k := minf((map.size.x - pad * 2.0) / maxf(span.x, 0.001),
+		(map.size.y - pad * 2.0) / maxf(span.y, 0.001))
 	var center := (lo + hi) * 0.5
-	return size * 0.5 + Vector2((p.x - center.x) * k, -(p.y - center.y) * k)
-
-
-func _to_world(s: Vector2) -> Vector2:
-	var o := _to_screen(Vector2.ZERO)
-	var ux := _to_screen(Vector2(1, 0)) - o
-	return Vector2((s.x - o.x) / ux.x, -(s.y - o.y) / ux.x)
+	return map.size * 0.5 + Vector2((p.x - center.x) * k, -(p.y - center.y) * k)
 
 
 func _poly_screen(poly: Array, offset := Vector2.ZERO) -> PackedVector2Array:
@@ -233,56 +246,6 @@ func _poly_screen(poly: Array, offset := Vector2.ZERO) -> PackedVector2Array:
 	for p in poly:
 		out.append(_to_screen(p) + offset)
 	return out
-
-
-func _draw_map() -> void:
-	var c := map
-	c.draw_rect(Rect2(Vector2.ZERO, c.size), Color(0.13, 0.17, 0.27))
-	# 方眼(地図らしさ)
-	var grid := Color(1, 1, 1, 0.05)
-	var stepv := 40.0
-	var x := 0.0
-	while x < c.size.x:
-		c.draw_line(Vector2(x, 0), Vector2(x, c.size.y), grid, 1.0)
-		x += stepv
-	var y := 0.0
-	while y < c.size.y:
-		c.draw_line(Vector2(0, y), Vector2(c.size.x, y), grid, 1.0)
-		y += stepv
-
-	if has_cut:
-		var pr := _pieces()
-		var sis: Array = pr[0]
-		var bro: Array = pr[1]
-		# 二つの重心が離れる向きへ、少しだけずらして見せる
-		var dir := (_centroid(sis) - _centroid(bro)).normalized()
-		var push := (_to_screen(dir) - _to_screen(Vector2.ZERO)) * split_t * 0.35
-		c.draw_colored_polygon(_poly_screen(sis, push), SIS)
-		c.draw_colored_polygon(_poly_screen(bro, -push), BRO)
-		_outline(c, sis, GOLD, push)
-		_outline(c, bro, SKY, -push)
-		# 面積の数字
-		_area_label(c, sis, "姉  %.1f" % float(pr[3]), GOLD, push)
-		_area_label(c, bro, "弟  %.1f" % float(pr[4]), SKY, -push)
-	else:
-		c.draw_colored_polygon(_poly_screen(land), Color(0.35, 0.55, 0.9, 0.25))
-		_outline(c, land, INK, Vector2.ZERO)
-
-	# 引いている線(土地からはみ出して伸ばす)
-	if has_cut and not settled:
-		var d := (cut_b - cut_a).normalized() * 40.0
-		c.draw_line(_to_screen(cut_a - d), _to_screen(cut_b + d), GOLD, 3.0)
-
-	# 井戸
-	var w := _to_screen(well)
-	c.draw_circle(w, 11.0, Color(0.2, 0.45, 0.8))
-	c.draw_arc(w, 11.0, 0.0, TAU, 24, INK, 2.5)
-	var font := ThemeDB.fallback_font
-	c.draw_string(font, w + Vector2(16, 8), "井戸", HORIZONTAL_ALIGNMENT_LEFT, -1, 22, DIM)
-
-	if not has_cut and step >= SCRIPT.size():
-		c.draw_string(font, Vector2(20, c.size.y - 18), "地図を指でなぞって、境の線を引く",
-			HORIZONTAL_ALIGNMENT_LEFT, -1, 24, GOLD)
 
 
 static func _centroid(poly: Array) -> Vector2:
@@ -294,77 +257,241 @@ static func _centroid(poly: Array) -> Vector2:
 	return m / float(poly.size())
 
 
+func _draw_map() -> void:
+	var c := map
+	c.draw_rect(Rect2(Vector2.ZERO, c.size), Color(0.13, 0.17, 0.27))
+	var grid := Color(1, 1, 1, 0.05)
+	var x := 0.0
+	while x < c.size.x:
+		c.draw_line(Vector2(x, 0), Vector2(x, c.size.y), grid, 1.0)
+		x += 40.0
+	var y := 0.0
+	while y < c.size.y:
+		c.draw_line(Vector2(0, y), Vector2(c.size.x, y), grid, 1.0)
+		y += 40.0
+
+	var font := ThemeDB.fallback_font
+	if settled and cut_line >= 0:
+		var ln: Dictionary = lines[cut_line]
+		var parts := _split(land, ln["a"], ln["b"])
+		var sis: Array = parts[0]
+		var bro: Array = parts[1]
+		if _side(well, ln["a"], ln["b"]) < 0.0:
+			var t := sis
+			sis = bro
+			bro = t
+		var dir := (_centroid(sis) - _centroid(bro)).normalized()
+		var push := (_to_screen(dir) - _to_screen(Vector2.ZERO)) * split_t * 0.35
+		c.draw_colored_polygon(_poly_screen(sis, push), SIS)
+		c.draw_colored_polygon(_poly_screen(bro, -push), BRO)
+		_outline(c, sis, GOLD, push)
+		_outline(c, bro, SKY, -push)
+		c.draw_string(font, _to_screen(_centroid(sis)) + push + Vector2(-40, 0),
+			"姉  %.2f" % _area(sis), HORIZONTAL_ALIGNMENT_LEFT, -1, 26, GOLD)
+		c.draw_string(font, _to_screen(_centroid(bro)) - push + Vector2(-40, 0),
+			"弟  %.2f" % _area(bro), HORIZONTAL_ALIGNMENT_LEFT, -1, 26, SKY)
+	else:
+		c.draw_colored_polygon(_poly_screen(land), Color(0.35, 0.55, 0.9, 0.22))
+		_outline(c, land, INK, Vector2.ZERO)
+
+	# 作図した直線(土地の外まで伸ばす)
+	for i in lines.size():
+		var l: Dictionary = lines[i]
+		var d := ((l["b"] as Vector2) - (l["a"] as Vector2)).normalized() * 60.0
+		var col: Color = GOLD if bool(l.get("gold", false)) else Color(0.75, 0.80, 0.92)
+		if i == picked_line:
+			col = Color(1.0, 0.55, 0.4)
+		c.draw_line(_to_screen((l["a"] as Vector2) - d), _to_screen((l["b"] as Vector2) + d),
+			col, 3.0 if i == picked_line else 2.2)
+
+	# 点
+	for i in points.size():
+		var pt: Dictionary = points[i]
+		var s := _to_screen(pt["p"])
+		var kind := String(pt["kind"])
+		var col := INK
+		if kind == "井戸":
+			col = Color(0.35, 0.70, 1.0)
+		elif kind == "中点":
+			col = GOLD
+		elif kind == "交点":
+			col = Color(0.85, 0.75, 1.0)
+		if picked.has(i):
+			c.draw_circle(s, 15.0, Color(1.0, 0.55, 0.4, 0.55))
+		c.draw_circle(s, 7.0, col)
+		c.draw_string(font, s + Vector2(11, -8), String(pt["name"]),
+			HORIZONTAL_ALIGNMENT_LEFT, -1, 22, col)
+
+
 func _outline(c: Control, poly: Array, col: Color, offset: Vector2) -> void:
 	var n := poly.size()
 	for i in n:
 		c.draw_line(_to_screen(poly[i]) + offset, _to_screen(poly[(i + 1) % n]) + offset, col, 3.0)
 
 
-func _area_label(c: Control, poly: Array, text: String, col: Color, offset: Vector2) -> void:
-	if poly.is_empty():
+# =========================================================
+# 道具
+# =========================================================
+
+func _pick_tool(which: int) -> void:
+	GameState.play_sfx("tap")
+	if which == Tool.NONE:
+		if not lines.is_empty():
+			lines.remove_at(lines.size() - 1)
+		picked.clear()
+		picked_line = -1
+		tool = Tool.NONE
+		_rebuild_points()
+	else:
+		tool = which
+		picked.clear()
+		picked_line = -1
+	_update_hint()
+	map.queue_redraw()
+
+
+func _update_hint() -> void:
+	match tool:
+		Tool.JOIN:
+			hint.text = "【結ぶ】通したい点を 2 つえらぶ"
+		Tool.PARALLEL:
+			hint.text = "【平行】まず もとにする線、つぎに 通す点をえらぶ"
+		Tool.MIDPOINT:
+			hint.text = "【中点】2 つの点をえらぶと、まん中に点ができる"
+		Tool.CUT:
+			hint.text = "【境にする】分ける線をえらんで「この線で分ける」"
+		_:
+			hint.text = "道具をえらんで作図する。線は自由には引けない"
+
+
+## 交点を作り直す(線を消したときのため)
+func _rebuild_points() -> void:
+	var keep: Array = []
+	for pt in points:
+		if String(pt["kind"]) != "交点":
+			keep.append(pt)
+	points = keep
+	for i in lines.size():
+		for j in range(i + 1, lines.size()):
+			_add_cross(lines[i], lines[j])
+		for e in land.size():
+			var a: Vector2 = land[e]
+			var b: Vector2 = land[(e + 1) % land.size()]
+			_add_cross(lines[i], {"a": a, "b": b}, true)
+
+
+func _add_cross(l1: Dictionary, l2: Dictionary, on_edge := false) -> void:
+	var r := _cross_lines(l1["a"], l1["b"], l2["a"], l2["b"])
+	if r.is_empty():
 		return
-	var mid := Vector2.ZERO
-	for p in poly:
-		mid += p
-	mid /= float(poly.size())
-	c.draw_string(ThemeDB.fallback_font, _to_screen(mid) + offset + Vector2(-40, 0), text,
-		HORIZONTAL_ALIGNMENT_LEFT, -1, 26, col)
+	var p: Vector2 = r[0]
+	if on_edge:
+		# 辺の内側に落ちた交点だけ点にする
+		var a: Vector2 = l2["a"]
+		var b: Vector2 = l2["b"]
+		var t := (p - a).dot(b - a) / maxf((b - a).length_squared(), 0.0001)
+		if t < -0.02 or t > 1.02:
+			return
+	if absf(p.x) > 40.0 or absf(p.y) > 40.0:
+		return
+	_add_point(p, "", "交点")
 
 
 # =========================================================
-# 線を引く
+# 地図をさわる
 # =========================================================
 
 func _on_map_input(event: InputEvent) -> void:
 	if settled or step < SCRIPT.size():
 		return
-	if event is InputEventScreenTouch or event is InputEventMouseButton:
-		var pressed: bool = event.pressed
-		var at: Vector2 = event.position
-		if pressed:
-			cut_a = _to_world(at)
-			cut_b = cut_a + Vector2(0.01, 0)
-			has_cut = true
-			map.queue_redraw()
-		else:
-			_update_status()
-	elif (event is InputEventScreenDrag or event is InputEventMouseMotion) and has_cut:
-		var moving: bool = event is InputEventScreenDrag \
-			or (event as InputEventMouseMotion).button_mask != 0
-		if moving:
-			cut_b = _to_world(event.position)
-			if cut_a.distance_to(cut_b) > 0.4:
-				map.queue_redraw()
-				_update_status()
-
-
-func _update_status() -> void:
-	if not has_cut:
+	var is_tap := (event is InputEventScreenTouch and (event as InputEventScreenTouch).pressed) \
+		or (event is InputEventMouseButton and (event as InputEventMouseButton).pressed)
+	if not is_tap:
 		return
-	var pr := _pieces()
-	var diff := float(pr[2])
-	var ok_well := _area(pr[0]) > 0.001
-	status.text = "面積の差 %.1f%%   井戸: %s" % [
-		diff * 100.0, "姉の側" if ok_well else "―"]
-	act_btn.text = "この線で分ける"
-	act_btn.disabled = false
-	redo_btn.visible = true
-
-
-func _redo() -> void:
-	has_cut = false
-	settled = false
-	split_t = 0.0
-	status.text = ""
-	redo_btn.visible = false
-	act_btn.text = "地図に線を引く"
-	act_btn.disabled = true
-	status.text = "面積の差 2% 以内で ★★★ ／ 5% で ★★ ／ 10% で ★"
+	var at: Vector2 = event.position
+	if tool == Tool.PARALLEL and picked_line < 0:
+		var li := _line_at(at)
+		if li >= 0:
+			picked_line = li
+			hint.text = "【平行】その線に平行な線を、どの点に通す?"
+			map.queue_redraw()
+		return
+	if tool == Tool.CUT:
+		var li2 := _line_at(at)
+		if li2 >= 0:
+			picked_line = li2
+			act_btn.disabled = false
+			act_btn.text = "この線で分ける"
+			map.queue_redraw()
+		return
+	var pi := _point_at(at)
+	if pi < 0:
+		return
+	GameState.play_sfx("type")
+	if tool == Tool.PARALLEL:
+		var base: Dictionary = lines[picked_line]
+		var d: Vector2 = (base["b"] as Vector2) - (base["a"] as Vector2)
+		var p: Vector2 = points[pi]["p"]
+		_add_line(p, p + d)
+		tool = Tool.NONE
+		picked_line = -1
+		_update_hint()
+		map.queue_redraw()
+		return
+	if picked.has(pi):
+		picked.erase(pi)
+	else:
+		picked.append(pi)
+	if picked.size() == 2:
+		var p1: Vector2 = points[picked[0]]["p"]
+		var p2: Vector2 = points[picked[1]]["p"]
+		if tool == Tool.JOIN:
+			_add_line(p1, p2)
+		elif tool == Tool.MIDPOINT:
+			_add_point((p1 + p2) * 0.5, "M", "中点")
+		picked.clear()
+		tool = Tool.NONE
+		_update_hint()
 	map.queue_redraw()
 
 
+func _add_line(a: Vector2, b: Vector2) -> void:
+	if a.distance_to(b) < 0.05:
+		return
+	lines.append({"a": a, "b": b})
+	_rebuild_points()
+
+
+func _point_at(s: Vector2) -> int:
+	var best := -1
+	var best_d := 46.0
+	for i in points.size():
+		var d := _to_screen(points[i]["p"]).distance_to(s)
+		if d < best_d:
+			best_d = d
+			best = i
+	return best
+
+
+func _line_at(s: Vector2) -> int:
+	var best := -1
+	var best_d := 34.0
+	for i in lines.size():
+		var l: Dictionary = lines[i]
+		var a := _to_screen(l["a"])
+		var b := _to_screen(l["b"])
+		var dir := (b - a).normalized()
+		var far_a := a - dir * 3000.0
+		var far_b := b + dir * 3000.0
+		var d := Geometry2D.get_closest_point_to_segment(s, far_a, far_b).distance_to(s)
+		if d < best_d:
+			best_d = d
+			best = i
+	return best
+
+
 # =========================================================
-# 進行
+# 進行と判定
 # =========================================================
 
 func _show_step() -> void:
@@ -374,11 +501,23 @@ func _show_step() -> void:
 		act_btn.text = "つぎへ ▶"
 		act_btn.disabled = false
 		return
-	# 分ける場面
+	tool_row.visible = true
+	hint_btn.visible = true
 	speaker.text = "遺言 第一条"
-	talk.text = "土地を、姉と弟に等しく分けよ。ただし井戸は姉に。境は一本の直線とする。"
-	act_btn.text = "地図に線を引く"
-	act_btn.disabled = true
+	talk.text = "土地を、姉と弟に等しく分けよ。境は頂点 A から引いた一本の直線とする。井戸のある側を姉に。"
+	_update_hint()
+	act_btn.text = "境にする線をえらぶ"
+	act_btn.disabled = false
+
+
+## 手がかり。使うと ★ が 1 つ減る(知っている人と差がつく)
+func _peek() -> void:
+	GameState.play_sfx("hint")
+	used_hint = true
+	hint_btn.disabled = true
+	hint_btn.text = "手記を見た(★ は 2 つまで)"
+	speaker.text = "オルドの手記(走り書き)"
+	talk.text = "「三角の地は、底辺を半分にすれば広さも半分になる。高さが同じだからだ」"
 
 
 func _advance() -> void:
@@ -387,67 +526,82 @@ func _advance() -> void:
 		step += 1
 		_show_step()
 		return
-	if not settled:
+	if tool != Tool.CUT and picked_line < 0:
+		tool = Tool.CUT
+		picked.clear()
+		_update_hint()
+		act_btn.disabled = true
+		map.queue_redraw()
+		return
+	if picked_line >= 0 and not settled:
 		_settle()
 		return
-	GameState.change_scene("res://scenes/main.tscn")
+	if settled:
+		GameState.change_scene("res://scenes/main.tscn")
 
 
-## 引いた線で確定する
 func _settle() -> void:
-	var pr := _pieces()
-	var diff := float(pr[2])
+	var ln: Dictionary = lines[picked_line]
+	var a: Vector2 = ln["a"]
+	var b: Vector2 = ln["b"]
+	# 頂点 A を通っているか(遺言の条件)
+	var through_a := absf(_side(land[0], a, b)) < 0.05
+	var parts := _split(land, a, b)
+	var s1 := _area(parts[0])
+	var s2 := _area(parts[1])
+	var total := maxf(s1 + s2, 0.0001)
+	var diff := absf(s1 - s2) / total
+	if not through_a:
+		GameState.play_sfx("fail")
+		speaker.text = "代訟人"
+		talk.text = "「その線は頂点 A を通っていません。遺言は 一本の直線を A から と定めています」"
+		act_btn.text = "引き直す"
+		return
 	stars = 0
-	if diff <= TOL3:
+	if diff <= 0.005:
 		stars = 3
-	elif diff <= TOL2:
+	elif diff <= 0.02:
 		stars = 2
-	elif diff <= TOL1:
+	elif diff <= 0.05:
 		stars = 1
+	if used_hint:
+		stars = mini(stars, 2)
+	cut_line = picked_line
 	if stars == 0:
 		GameState.play_sfx("fail")
 		speaker.text = "弟 ロウ"
-		talk.text = "「ずいぶん大ざっぱだな。これでは受け取れない」  ―― 面積の差が %.0f%% では、誰も納得しない。" % (diff * 100.0)
-		act_btn.text = "引き直す"
-		act_btn.disabled = false
-		redo_btn.visible = false
-		act_btn.pressed.disconnect(_advance)
-		act_btn.pressed.connect(_redo_and_rewire, CONNECT_ONE_SHOT)
+		talk.text = "「ずいぶん大ざっぱだな。これでは受け取れない」  ―― 目分量では通らない。作図でぴたりと出すこと。"
+		act_btn.text = "やり直す"
+		cut_line = -1
 		return
 	settled = true
 	split_t = 0.0
-	redo_btn.visible = false
+	tool_row.visible = false
+	hint_btn.visible = false
+	hint.text = ""
 	GameState.play_sfx("clear" if stars == 3 else "correct")
-	var mark := "★".repeat(stars) + "☆".repeat(3 - stars)
-	speaker.text = "代訟人   %s" % mark
-	talk.text = "「境が定まりました」  姉の側 %.1f、弟の側 %.1f。差は %.1f%%。" % [
-		float(pr[3]), float(pr[4]), diff * 100.0]
-	status.text = "遺言のとおり、井戸は姉の側にある。"
+	speaker.text = "代訟人   %s" % ("★".repeat(stars) + "☆".repeat(3 - stars))
+	talk.text = "「境が定まりました」  差は %.2f%%。%s" % [diff * 100.0,
+		"寸分の狂いもありません。" if stars == 3 else "わずかにずれています。作図で出せば ぴたりと合うはずです。"]
 	act_btn.text = "手記を読む ▶"
 	act_btn.pressed.disconnect(_advance)
 	act_btn.pressed.connect(_show_note, CONNECT_ONE_SHOT)
 	map.queue_redraw()
 
 
-func _redo_and_rewire() -> void:
-	_redo()
-	act_btn.pressed.connect(_advance)
-
-
-## 事件の手がかり
 func _show_note() -> void:
 	GameState.play_sfx("hint")
 	speaker.text = "オルドの手記(一)"
 	talk.text = "「境界は語る。三度引けば、あれの在り処が分かる」  ―― 父の字だ。"
-	status.text = "引いた境界線が、地図に一本残った。あと二本。"
+	hint.text = "引いた境界が、地図に一本残った。あと二本。"
 	act_btn.text = "その日は終わった ▶"
 	act_btn.pressed.connect(_after_note, CONNECT_ONE_SHOT)
 
 
 func _after_note() -> void:
 	speaker.text = "弟 ロウ"
-	talk.text = "「言い忘れていたが ―― あの井戸、去年から水が出ていない」  なぜ父は、涸れた井戸を姉に指定したのか。"
-	status.text = "第二話へ続く(試作はここまで)"
+	talk.text = "「言い忘れていたが ―― あの井戸、去年から水が出ていない」  なぜ父は、涸れた井戸のある側を姉に指定したのか。"
+	hint.text = "第二話へ続く(試作はここまで)"
 	act_btn.text = "タイトルへ"
 	act_btn.pressed.connect(func() -> void:
 		GameState.change_scene("res://scenes/main.tscn"), CONNECT_ONE_SHOT)
