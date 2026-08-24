@@ -102,8 +102,8 @@ func _ready() -> void:
 			GameState.change_scene("res://scenes/story_select.tscn")))
 
 	# 【試作】相続ミステリー。指で線を引いて、遺言どおりに土地を分ける
-	vbox.add_child(_menu_button("遺産の地図(試作)",
-		"第一話「等しく分けよ」  線を引いて分ける", Color(0.52, 0.30, 0.34), func() -> void:
+	vbox.add_child(_menu_button("たからの地図(試作)",
+		"かどを ちぎって ならべよう", Color(0.52, 0.30, 0.34), func() -> void:
 			GameState.change_scene("res://scenes/estate.tscn")))
 
 	# 2 編(それぞれのテーマ色)
