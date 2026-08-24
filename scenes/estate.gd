@@ -209,14 +209,21 @@ func _pick_card(which: int) -> void:
 
 
 func _on_map_input(event: InputEvent) -> void:
-	if solved or step < SCRIPT.size() or card == Card.NONE:
+	if solved or step < SCRIPT.size():
 		return
 	var is_tap := (event is InputEventScreenTouch and (event as InputEventScreenTouch).pressed) \
 		or (event is InputEventMouseButton and (event as InputEventMouseButton).pressed)
 	if not is_tap:
 		return
+	# 黙って無視しない。押しても何も起きない、が一番わかりにくい
+	if card == Card.NONE:
+		GameState.play_sfx("fail")
+		hint.text = "先に下の定理カードをえらぶ(三角形の和 / 一直線 / 角を分ける)"
+		return
 	var name := _point_at(event.position)
 	if name == "":
+		GameState.play_sfx("fail")
+		hint.text = "点から離れている。A・B・C・D のどれかをタップ  " + _picked_text()
 		return
 	GameState.play_sfx("type")
 	if picked.has(name):
@@ -226,7 +233,7 @@ func _on_map_input(event: InputEvent) -> void:
 	var need := 3 if card == Card.TRIANGLE else 1
 	map.queue_redraw()
 	if picked.size() < need:
-		hint.text = "%s  ―― あと %d つ" % [_card_help(), need - picked.size()]
+		hint.text = "%s  ―― あと %d つ  %s" % [_card_help(), need - picked.size(), _picked_text()]
 		return
 	var target := -1
 	for i in rules.size():
@@ -255,13 +262,20 @@ func _on_map_input(event: InputEvent) -> void:
 ## タップした場所にいちばん近い点
 func _point_at(s: Vector2) -> String:
 	var best := ""
-	var best_d := 60.0
+	var best_d := 110.0
 	for name in pts.keys():
 		var d := _to_screen(pts[name]).distance_to(s)
 		if d < best_d:
 			best_d = d
 			best = String(name)
 	return best
+
+
+## いま指さしている点
+func _picked_text() -> String:
+	if picked.is_empty():
+		return ""
+	return "(えらんだ点: %s)" % " ".join(picked)
 
 
 func _card_help() -> String:
@@ -391,7 +405,9 @@ func _draw_map() -> void:
 	# 点
 	for name in pts.keys():
 		var s := _to_screen(pts[name])
-		c.draw_circle(s, 7.0, INK)
+		if card != Card.NONE:
+			c.draw_arc(s, 20.0, 0.0, TAU, 20, Color(0.75, 0.68, 1.0, 0.55), 2.0)
+		c.draw_circle(s, 10.0, INK)
 		c.draw_string(font, s + Vector2(12, -10), String(name),
 			HORIZONTAL_ALIGNMENT_LEFT, -1, 24, INK)
 
