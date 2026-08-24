@@ -1,59 +1,53 @@
 extends Control
-## 【試作】相続ミステリー「遺産の地図」。
+## 【試作】相続ミステリー「遺産の地図」第一話 ― 角の推理盤。
 ##
-## ■ 何をする遊びか
-## 遺言の条項どおりに土地を分ける。ただし境界線は**自由に引けない**。
-## 使えるのは作図の道具だけ ―― 2 点を結ぶ / 平行線を引く / 中点を取る。
-## 点も自由には置けない(頂点・杭・井戸・交点・中点のみ)。
-## だから「指で揺らして面積の数字を合わせる」ができない。知っていないと引けない。
+## ■ 遊び方の核
+## 図には「分かっている角」と「?」がある。プレイヤーは**定理をえらんで、図の場所に当てる**。
+## 当たれば、その場の角がひとつ埋まる。埋まった角を材料に次の定理を当てる ―― その連鎖で
+## 目当ての角 x にたどりつく。数字を打ちこむ場面は無く、当てずっぽうも効かない。
+## 「どの定理を、どこに、どの順で当てるか」だけが問われる。
 ##
-## ■ 面積は確定するまで見せない
-## 途中で面積が見えると、当てずっぽうに正解判定がついてきてしまう。
-## 見えるのは「作図した線」だけで、正しさは自分の手順が保証する。
-##
-## 第一話は三角形(中点を取れば厳密に二等分)。道具の使い方を覚える回。
-## 第二話以降で四角形になり、等積変形(平行線)が要る本番になる。
+## ■ 単元の進み方
+## 第一単元は 三角形の内角の和 180° と、一直線 180°、角の分割 の 3 枚。
+## 単元が進むごとに定理カードが増え(平行線・二等辺・外角・円周角…)、
+## 前の単元のカードも使い続ける。だから最初の単元から順に積み上がる。
 
 const GOLD := Color(1.0, 0.85, 0.3)
 const SKY := Color(0.55, 0.85, 1.0)
 const INK := Color(0.92, 0.95, 1.0)
 const DIM := Color(0.62, 0.72, 0.88)
-const SIS := Color(0.95, 0.72, 0.30, 0.45)
-const BRO := Color(0.35, 0.60, 0.95, 0.45)
+const DONE := Color(0.55, 0.95, 0.65)
 
-enum Tool { NONE, JOIN, PARALLEL, MIDPOINT, CUT }
+enum Card { NONE, TRIANGLE, LINE, SPLIT }
 
-## 点 {"p": Vector2, "name": String, "kind": String}
-var points: Array = []
-## 直線 {"a": Vector2, "b": Vector2, "gold": bool}
-var lines: Array = []
-var land: Array = []
-var well := Vector2.ZERO
+## 点
+var pts := {}
+## 角 {"at": 点名, "from": 点名, "to": 点名, "value": float or -1, "target": bool}
+var angles: Array = []
+## 定理をあてる場所 {"card": Card, "terms": [[角の番号, 係数]...], "rhs": float, "hit": ...}
+var rules: Array = []
 
-var tool: int = Tool.NONE
-var picked: Array = []          # 選択中の点/線
-var picked_line := -1
-var settled := false
-var split_t := 0.0
-var stars := 0
-var cut_line := -1
+var card: int = Card.NONE
+var picked: Array = []          # 指さした点の名前
+var moves := 0
+var solved := false
+var flash := -1                 # いま埋まった角(光らせる)
+var flash_t := 0.0
 
 var map: Control
 var speaker: Label
 var talk: Label
 var hint: Label
-var tool_row: HBoxContainer
+var cards_row: HBoxContainer
 var act_btn: Button
-var hint_btn: Button
-var used_hint := false
 var step := 0
 
 const SCRIPT := [
 	["代訟人", "測量家オルドが死んだ。遺言は一通。土地の分け方だけが、こまごまと書かれている。"],
-	["代訟人", "第一条 ―― わが土地を、姉と弟に等しく分けよ。境は頂点 A から引いた一本の直線とする。"],
-	["弟 ロウ", "「A から引くだと? そんな指定に意味があるのか。だいたい等しいかどうか、誰が測る」"],
-	["姉 セリカ", "「測れる者を呼んだのでしょう。……父は、測れない人間には渡さないつもりだった」"],
-	["あなた", "縄も分度器も使わない。杭と定規だけで、等しい境を作図する。それが測量士の仕事だ。"],
+	["代訟人", "第一条 ―― 姉と弟の境は、頂点 A から杭 D へ張った縄とする。その角度を記録に残せ。"],
+	["弟 ロウ", "「角度だと? 分度器を当てればいいだろう」  代訟人が首を振る。「土地は焼けました。残ったのは、この覚え書きだけです」"],
+	["姉 セリカ", "「三か所だけ角が書いてある。……父は、これだけで足りると思っていたのね」"],
+	["あなた", "縄も分度器もいらない。分かっている角から、順に埋めていけばいい。"],
 ]
 
 
@@ -84,35 +78,25 @@ func _ready() -> void:
 	back.pressed.connect(func() -> void: GameState.change_scene("res://scenes/main.tscn"))
 	head.add_child(back)
 	var title := Label.new()
-	title.text = "  遺産の地図 ・ 第一話「等しく分けよ」"
+	title.text = "  遺産の地図 ・ 第一話「覚え書きの角」"
 	title.add_theme_font_size_override("font_size", 25)
 	title.add_theme_color_override("font_color", GOLD)
 	head.add_child(title)
 
 	map = Control.new()
 	map.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	map.custom_minimum_size = Vector2(0, 380)
+	map.custom_minimum_size = Vector2(0, 360)
 	map.draw.connect(_draw_map)
 	map.gui_input.connect(_on_map_input)
 	root.add_child(map)
 
-	tool_row = HBoxContainer.new()
-	tool_row.add_theme_constant_override("separation", 8)
-	tool_row.visible = false
-	root.add_child(tool_row)
-	_tool_button("結ぶ", Tool.JOIN, Color(0.30, 0.42, 0.60))
-	_tool_button("平行", Tool.PARALLEL, Color(0.30, 0.42, 0.60))
-	_tool_button("中点", Tool.MIDPOINT, Color(0.30, 0.42, 0.60))
-	_tool_button("消す", Tool.NONE, Color(0.42, 0.30, 0.30))
-
-	hint_btn = Button.new()
-	hint_btn.text = "父の手記をのぞく(★ が 1 つ減る)"
-	hint_btn.custom_minimum_size = Vector2(0, 60)
-	hint_btn.add_theme_font_size_override("font_size", 22)
-	GameState.style_button(hint_btn, Color(0.40, 0.34, 0.52))
-	hint_btn.pressed.connect(_peek)
-	hint_btn.visible = false
-	root.add_child(hint_btn)
+	cards_row = HBoxContainer.new()
+	cards_row.add_theme_constant_override("separation", 8)
+	cards_row.visible = false
+	root.add_child(cards_row)
+	_card_button("三角形の和\n180°", Card.TRIANGLE)
+	_card_button("一直線\n180°", Card.LINE)
+	_card_button("角を分ける\nたし引き", Card.SPLIT)
 
 	hint = Label.new()
 	hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -142,98 +126,228 @@ func _ready() -> void:
 
 
 func _process(delta: float) -> void:
-	if settled and split_t < 1.0:
-		split_t = minf(split_t + delta * 2.2, 1.0)
+	if flash >= 0:
+		flash_t += delta * 2.4
+		if flash_t >= 1.0:
+			flash = -1
+			flash_t = 0.0
 		map.queue_redraw()
 
 
-func _tool_button(text: String, which: int, col: Color) -> void:
+func _card_button(text: String, which: int) -> void:
 	var b := Button.new()
 	b.text = text
-	b.custom_minimum_size = Vector2(0, 72)
+	b.custom_minimum_size = Vector2(0, 84)
 	b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	b.add_theme_font_size_override("font_size", 25)
-	GameState.style_button(b, col)
-	b.pressed.connect(func() -> void: _pick_tool(which))
-	tool_row.add_child(b)
+	b.add_theme_font_size_override("font_size", 21)
+	GameState.style_button(b, Color(0.34, 0.30, 0.52))
+	b.pressed.connect(func() -> void: _pick_card(which))
+	cards_row.add_child(b)
 
 
 # =========================================================
-# 事件(土地と点)
+# 事件(図と、当てられる定理)
 # =========================================================
 
+## 三角形 ABC。BC 上に杭 D があり、A と結ばれている。
+## 分かっているのは ∠B・∠C・∠BAD の 3 つだけ。求めるのは ∠DAC。
 func _build_case() -> void:
-	land = [Vector2(-1.5, 8.5), Vector2(-9.0, -5.0), Vector2(9.5, -4.0)]
-	points = []
-	_add_point(land[0], "A", "頂点")
-	_add_point(land[1], "B", "頂点")
-	_add_point(land[2], "C", "頂点")
-	well = Vector2(-4.6, -1.0)
-	_add_point(well, "井戸", "井戸")
+	var ang_b := 50.0
+	var ang_c := 60.0
+	var ang_bad := 35.0
+	var bc := 12.0
+	var ab := bc * sin(deg_to_rad(ang_c)) / sin(deg_to_rad(180.0 - ang_b - ang_c))
+	var b := Vector2(0, 0)
+	var c := Vector2(bc, 0)
+	var a := b + Vector2(cos(deg_to_rad(ang_b)), sin(deg_to_rad(ang_b))) * ab
+	var bd := ab * sin(deg_to_rad(ang_bad)) / sin(deg_to_rad(180.0 - ang_b - ang_bad))
+	var d := Vector2(bd, 0)
+	pts = {"A": a, "B": b, "C": c, "D": d}
 
-
-func _add_point(p: Vector2, name: String, kind: String) -> void:
-	for q in points:
-		if (q["p"] as Vector2).distance_to(p) < 0.12:
-			return
-	points.append({"p": p, "name": name, "kind": kind})
-
-
-static func _area(poly: Array) -> float:
-	var s := 0.0
-	var n := poly.size()
-	for i in n:
-		var p: Vector2 = poly[i]
-		var q: Vector2 = poly[(i + 1) % n]
-		s += p.x * q.y - q.x * p.y
-	return absf(s) * 0.5
-
-
-static func _side(p: Vector2, a: Vector2, b: Vector2) -> float:
-	return (b - a).cross(p - a)
-
-
-static func _split(poly: Array, a: Vector2, b: Vector2) -> Array:
-	var left: Array = []
-	var right: Array = []
-	var n := poly.size()
-	for i in n:
-		var p: Vector2 = poly[i]
-		var q: Vector2 = poly[(i + 1) % n]
-		var sp := _side(p, a, b)
-		var sq := _side(q, a, b)
-		if sp >= 0.0:
-			left.append(p)
-		if sp <= 0.0:
-			right.append(p)
-		if (sp > 0.0 and sq < 0.0) or (sp < 0.0 and sq > 0.0):
-			var t := sp / (sp - sq)
-			left.append(p + (q - p) * t)
-			right.append(p + (q - p) * t)
-	return [left, right]
-
-
-static func _cross_lines(a1: Vector2, b1: Vector2, a2: Vector2, b2: Vector2) -> Array:
-	var d1 := b1 - a1
-	var d2 := b2 - a2
-	var den := d1.cross(d2)
-	if absf(den) < 0.00001:
-		return []
-	var t := (a2 - a1).cross(d2) / den
-	return [a1 + d1 * t]
+	angles = [
+		{"at": "B", "from": "A", "to": "C", "value": ang_b},          # 0 ∠B
+		{"at": "C", "from": "A", "to": "B", "value": ang_c},          # 1 ∠C
+		{"at": "A", "from": "B", "to": "D", "value": ang_bad},        # 2 ∠BAD
+		{"at": "A", "from": "D", "to": "C", "value": -1.0, "target": true},   # 3 ∠DAC = x
+		{"at": "A", "from": "B", "to": "C", "value": -1.0},           # 4 ∠BAC
+		{"at": "D", "from": "A", "to": "B", "value": -1.0},           # 5 ∠ADB
+		{"at": "D", "from": "A", "to": "C", "value": -1.0},           # 6 ∠ADC
+	]
+	rules = [
+		{"card": Card.TRIANGLE, "name": "三角形 ABD",
+			"terms": [[0, 1.0], [2, 1.0], [5, 1.0]], "rhs": 180.0,
+			"verts": ["A", "B", "D"]},
+		{"card": Card.TRIANGLE, "name": "三角形 ADC",
+			"terms": [[3, 1.0], [1, 1.0], [6, 1.0]], "rhs": 180.0,
+			"verts": ["A", "D", "C"]},
+		{"card": Card.TRIANGLE, "name": "三角形 ABC",
+			"terms": [[0, 1.0], [1, 1.0], [4, 1.0]], "rhs": 180.0,
+			"verts": ["A", "B", "C"]},
+		{"card": Card.LINE, "name": "一直線 D",
+			"terms": [[5, 1.0], [6, 1.0]], "rhs": 180.0, "verts": ["D"]},
+		{"card": Card.SPLIT, "name": "角 A の分割",
+			"terms": [[2, 1.0], [3, 1.0], [4, -1.0]], "rhs": 0.0, "verts": ["A"]},
+	]
 
 
 # =========================================================
-# 地図
+# 定理を当てる
+# =========================================================
+
+func _pick_card(which: int) -> void:
+	GameState.play_sfx("tap")
+	card = which
+	picked.clear()
+	match card:
+		Card.TRIANGLE:
+			hint.text = "【三角形の和】どの三角形に当てる? 頂点を 3 つタップ"
+		Card.LINE:
+			hint.text = "【一直線】どの点で当てる? 一直線の上にある点をタップ"
+		Card.SPLIT:
+			hint.text = "【角を分ける】大きい角が 2 つに分かれている点をタップ"
+	map.queue_redraw()
+
+
+func _on_map_input(event: InputEvent) -> void:
+	if solved or step < SCRIPT.size() or card == Card.NONE:
+		return
+	var is_tap := (event is InputEventScreenTouch and (event as InputEventScreenTouch).pressed) \
+		or (event is InputEventMouseButton and (event as InputEventMouseButton).pressed)
+	if not is_tap:
+		return
+	var name := _point_at(event.position)
+	if name == "":
+		return
+	GameState.play_sfx("type")
+	if picked.has(name):
+		picked.erase(name)
+	else:
+		picked.append(name)
+	var need := 3 if card == Card.TRIANGLE else 1
+	map.queue_redraw()
+	if picked.size() < need:
+		hint.text = "%s  ―― あと %d つ" % [_card_help(), need - picked.size()]
+		return
+	var target := -1
+	for i in rules.size():
+		var r: Dictionary = rules[i]
+		if int(r["card"]) != card:
+			continue
+		var vs: Array = r["verts"]
+		var same := vs.size() == picked.size()
+		if same:
+			for v in vs:
+				if not picked.has(v):
+					same = false
+					break
+		if same:
+			target = i
+			break
+	picked.clear()
+	if target < 0:
+		GameState.play_sfx("fail")
+		hint.text = "そこには当てられない。%s" % _card_help()
+		map.queue_redraw()
+		return
+	_apply(target)
+
+
+## タップした場所にいちばん近い点
+func _point_at(s: Vector2) -> String:
+	var best := ""
+	var best_d := 60.0
+	for name in pts.keys():
+		var d := _to_screen(pts[name]).distance_to(s)
+		if d < best_d:
+			best_d = d
+			best = String(name)
+	return best
+
+
+func _card_help() -> String:
+	match card:
+		Card.TRIANGLE:
+			return "三角形の頂点を 3 つタップ"
+		Card.LINE:
+			return "一直線の上にある点をタップ"
+		_:
+			return "角が 2 つに分かれている点をタップ"
+
+
+## その定理を当てる。分からない角がちょうど 1 つなら埋まる
+func _apply(index: int) -> void:
+	var r: Dictionary = rules[index]
+	var unknown: Array = []
+	var sum := 0.0
+	for t in r["terms"]:
+		var ai: int = t[0]
+		var k: float = t[1]
+		var v: float = float(angles[ai]["value"])
+		if v < 0.0:
+			unknown.append([ai, k])
+		else:
+			sum += k * v
+	if unknown.is_empty():
+		GameState.play_sfx("fail")
+		hint.text = "%s は、もう全部わかっている" % String(r["name"])
+		return
+	if unknown.size() > 1:
+		GameState.play_sfx("fail")
+		hint.text = "%s は、まだ分からない角が %d つある。先に別のところを埋めよう" % [
+			String(r["name"]), unknown.size()]
+		return
+	var ai: int = unknown[0][0]
+	var k: float = unknown[0][1]
+	var value := (float(r["rhs"]) - sum) / k
+	angles[ai]["value"] = value
+	moves += 1
+	flash = ai
+	flash_t = 0.0
+	GameState.play_sfx("correct")
+	hint.text = "%s から、%s = %s° が決まった(%d 手目)" % [
+		String(r["name"]), _angle_name(ai), ProblemGen.fmt(value), moves]
+	card = Card.NONE
+	picked.clear()
+	if bool(angles[3].get("target", false)) and float(angles[3]["value"]) >= 0.0:
+		_solved()
+	map.queue_redraw()
+
+
+func _angle_name(i: int) -> String:
+	var a: Dictionary = angles[i]
+	return "∠%s%s%s" % [String(a["from"]), String(a["at"]), String(a["to"])]
+
+
+func _solved() -> void:
+	solved = true
+	cards_row.visible = false
+	GameState.play_sfx("clear")
+	var stars := 1
+	if moves <= 2:
+		stars = 3
+	elif moves <= 3:
+		stars = 2
+	speaker.text = "代訟人   %s" % ("★".repeat(stars) + "☆".repeat(3 - stars))
+	talk.text = "「境の角、%s度。記録しました」  ―― %d 手。%s" % [
+		ProblemGen.fmt(float(angles[3]["value"])), moves,
+		"最短だ。" if stars == 3 else "遠まわりでも、答えは同じ。"]
+	hint.text = ""
+	act_btn.text = "手記を読む ▶"
+	act_btn.pressed.disconnect(_advance)
+	act_btn.pressed.connect(_show_note, CONNECT_ONE_SHOT)
+
+
+# =========================================================
+# 図
 # =========================================================
 
 func _to_screen(p: Vector2) -> Vector2:
 	var lo := Vector2(1e9, 1e9)
 	var hi := Vector2(-1e9, -1e9)
-	for q in land:
+	for q in pts.values():
 		lo = lo.min(q)
 		hi = hi.max(q)
-	var pad := 46.0
+	var pad := 52.0
 	var span := hi - lo
 	var k := minf((map.size.x - pad * 2.0) / maxf(span.x, 0.001),
 		(map.size.y - pad * 2.0) / maxf(span.y, 0.001))
@@ -241,257 +355,111 @@ func _to_screen(p: Vector2) -> Vector2:
 	return map.size * 0.5 + Vector2((p.x - center.x) * k, -(p.y - center.y) * k)
 
 
-func _poly_screen(poly: Array, offset := Vector2.ZERO) -> PackedVector2Array:
-	var out := PackedVector2Array()
-	for p in poly:
-		out.append(_to_screen(p) + offset)
-	return out
-
-
-static func _centroid(poly: Array) -> Vector2:
-	if poly.is_empty():
-		return Vector2.ZERO
-	var m := Vector2.ZERO
-	for p in poly:
-		m += p
-	return m / float(poly.size())
+func _to_world(s: Vector2) -> Vector2:
+	var o := _to_screen(Vector2.ZERO)
+	var ux := _to_screen(Vector2(1, 0)) - o
+	return Vector2((s.x - o.x) / ux.x, -(s.y - o.y) / ux.x)
 
 
 func _draw_map() -> void:
 	var c := map
 	c.draw_rect(Rect2(Vector2.ZERO, c.size), Color(0.13, 0.17, 0.27))
-	var grid := Color(1, 1, 1, 0.05)
-	var x := 0.0
-	while x < c.size.x:
-		c.draw_line(Vector2(x, 0), Vector2(x, c.size.y), grid, 1.0)
-		x += 40.0
-	var y := 0.0
-	while y < c.size.y:
-		c.draw_line(Vector2(0, y), Vector2(c.size.x, y), grid, 1.0)
-		y += 40.0
-
 	var font := ThemeDB.fallback_font
-	if settled and cut_line >= 0:
-		var ln: Dictionary = lines[cut_line]
-		var parts := _split(land, ln["a"], ln["b"])
-		var sis: Array = parts[0]
-		var bro: Array = parts[1]
-		if _side(well, ln["a"], ln["b"]) < 0.0:
-			var t := sis
-			sis = bro
-			bro = t
-		var dir := (_centroid(sis) - _centroid(bro)).normalized()
-		var push := (_to_screen(dir) - _to_screen(Vector2.ZERO)) * split_t * 0.35
-		c.draw_colored_polygon(_poly_screen(sis, push), SIS)
-		c.draw_colored_polygon(_poly_screen(bro, -push), BRO)
-		_outline(c, sis, GOLD, push)
-		_outline(c, bro, SKY, -push)
-		c.draw_string(font, _to_screen(_centroid(sis)) + push + Vector2(-40, 0),
-			"姉  %.2f" % _area(sis), HORIZONTAL_ALIGNMENT_LEFT, -1, 26, GOLD)
-		c.draw_string(font, _to_screen(_centroid(bro)) - push + Vector2(-40, 0),
-			"弟  %.2f" % _area(bro), HORIZONTAL_ALIGNMENT_LEFT, -1, 26, SKY)
-	else:
-		c.draw_colored_polygon(_poly_screen(land), Color(0.35, 0.55, 0.9, 0.22))
-		_outline(c, land, INK, Vector2.ZERO)
 
-	# 作図した直線(土地の外まで伸ばす)
-	for i in lines.size():
-		var l: Dictionary = lines[i]
-		var d := ((l["b"] as Vector2) - (l["a"] as Vector2)).normalized() * 60.0
-		var col: Color = GOLD if bool(l.get("gold", false)) else Color(0.75, 0.80, 0.92)
-		if i == picked_line:
-			col = Color(1.0, 0.55, 0.4)
-		c.draw_line(_to_screen((l["a"] as Vector2) - d), _to_screen((l["b"] as Vector2) + d),
-			col, 3.0 if i == picked_line else 2.2)
+	# 当てられる場所をうっすら見せる(どこを押せるか分かるように)
+	if card != Card.NONE:
+		for name in pts.keys():
+			c.draw_circle(_to_screen(pts[name]), 22.0, Color(0.55, 0.45, 0.85, 0.28))
+	for name in picked:
+		c.draw_circle(_to_screen(pts[name]), 17.0, Color(1.0, 0.55, 0.4, 0.75))
+
+	# 土地(三角形 ABC)と、中の縄 AD
+	var a: Vector2 = pts["A"]
+	var b: Vector2 = pts["B"]
+	var cc: Vector2 = pts["C"]
+	var d: Vector2 = pts["D"]
+	c.draw_colored_polygon(PackedVector2Array([_to_screen(a), _to_screen(b), _to_screen(cc)]),
+		Color(0.35, 0.55, 0.9, 0.16))
+	for e in [[a, b], [b, cc], [cc, a]]:
+		c.draw_line(_to_screen(e[0]), _to_screen(e[1]), INK, 3.0)
+	c.draw_line(_to_screen(a), _to_screen(d), GOLD, 3.0)
+
+	# 角
+	for i in angles.size():
+		_draw_angle(c, font, i)
 
 	# 点
-	for i in points.size():
-		var pt: Dictionary = points[i]
-		var s := _to_screen(pt["p"])
-		var kind := String(pt["kind"])
-		var col := INK
-		if kind == "井戸":
-			col = Color(0.35, 0.70, 1.0)
-		elif kind == "中点":
-			col = GOLD
-		elif kind == "交点":
-			col = Color(0.85, 0.75, 1.0)
-		if picked.has(i):
-			c.draw_circle(s, 15.0, Color(1.0, 0.55, 0.4, 0.55))
-		c.draw_circle(s, 7.0, col)
-		c.draw_string(font, s + Vector2(11, -8), String(pt["name"]),
-			HORIZONTAL_ALIGNMENT_LEFT, -1, 22, col)
+	for name in pts.keys():
+		var s := _to_screen(pts[name])
+		c.draw_circle(s, 7.0, INK)
+		c.draw_string(font, s + Vector2(12, -10), String(name),
+			HORIZONTAL_ALIGNMENT_LEFT, -1, 24, INK)
+
+	c.draw_string(font, Vector2(16, c.size.y - 16), "手数 %d" % moves,
+		HORIZONTAL_ALIGNMENT_LEFT, -1, 24, DIM)
 
 
-func _outline(c: Control, poly: Array, col: Color, offset: Vector2) -> void:
-	var n := poly.size()
-	for i in n:
-		c.draw_line(_to_screen(poly[i]) + offset, _to_screen(poly[(i + 1) % n]) + offset, col, 3.0)
+## 同じ点に集まる角は、内側から順に弧を大きくして重ならないようにする
+## (角 A のように 3 つ重なる場所があるため)
+func _arc_radius(index: int) -> float:
+	var at := String(angles[index]["at"])
+	var mine := _angle_width(index)
+	var rank := 0
+	for j in angles.size():
+		if j == index or String(angles[j]["at"]) != at:
+			continue
+		var w := _angle_width(j)
+		if w < mine or (absf(w - mine) < 0.001 and j < index):
+			rank += 1
+	return 38.0 + 20.0 * float(rank)
 
 
-# =========================================================
-# 道具
-# =========================================================
-
-func _pick_tool(which: int) -> void:
-	GameState.play_sfx("tap")
-	if which == Tool.NONE:
-		if not lines.is_empty():
-			lines.remove_at(lines.size() - 1)
-		picked.clear()
-		picked_line = -1
-		tool = Tool.NONE
-		_rebuild_points()
-	else:
-		tool = which
-		picked.clear()
-		picked_line = -1
-	_update_hint()
-	map.queue_redraw()
+## その角の広さ(ラジアン)。図の座標から計算する
+func _angle_width(index: int) -> float:
+	var a: Dictionary = angles[index]
+	var at: Vector2 = pts[String(a["at"])]
+	var d1: Vector2 = (pts[String(a["from"])] as Vector2) - at
+	var d2: Vector2 = (pts[String(a["to"])] as Vector2) - at
+	return absf(d1.angle_to(d2))
 
 
-func _update_hint() -> void:
-	match tool:
-		Tool.JOIN:
-			hint.text = "【結ぶ】通したい点を 2 つえらぶ"
-		Tool.PARALLEL:
-			hint.text = "【平行】まず もとにする線、つぎに 通す点をえらぶ"
-		Tool.MIDPOINT:
-			hint.text = "【中点】2 つの点をえらぶと、まん中に点ができる"
-		Tool.CUT:
-			hint.text = "【境にする】分ける線をえらんで「この線で分ける」"
-		_:
-			hint.text = "道具をえらんで作図する。線は自由には引けない"
-
-
-## 交点を作り直す(線を消したときのため)
-func _rebuild_points() -> void:
-	var keep: Array = []
-	for pt in points:
-		if String(pt["kind"]) != "交点":
-			keep.append(pt)
-	points = keep
-	for i in lines.size():
-		for j in range(i + 1, lines.size()):
-			_add_cross(lines[i], lines[j])
-		for e in land.size():
-			var a: Vector2 = land[e]
-			var b: Vector2 = land[(e + 1) % land.size()]
-			_add_cross(lines[i], {"a": a, "b": b}, true)
-
-
-func _add_cross(l1: Dictionary, l2: Dictionary, on_edge := false) -> void:
-	var r := _cross_lines(l1["a"], l1["b"], l2["a"], l2["b"])
-	if r.is_empty():
-		return
-	var p: Vector2 = r[0]
-	if on_edge:
-		# 辺の内側に落ちた交点だけ点にする
-		var a: Vector2 = l2["a"]
-		var b: Vector2 = l2["b"]
-		var t := (p - a).dot(b - a) / maxf((b - a).length_squared(), 0.0001)
-		if t < -0.02 or t > 1.02:
-			return
-	if absf(p.x) > 40.0 or absf(p.y) > 40.0:
-		return
-	_add_point(p, "", "交点")
+func _draw_angle(c: Control, font: Font, i: int) -> void:
+	var a: Dictionary = angles[i]
+	var at: Vector2 = pts[String(a["at"])]
+	var p1: Vector2 = pts[String(a["from"])]
+	var p2: Vector2 = pts[String(a["to"])]
+	var v: float = float(a["value"])
+	var known := v >= 0.0
+	var is_target := bool(a.get("target", false))
+	var r := _arc_radius(i)
+	var s := _to_screen(at)
+	var d1 := (_to_screen(p1) - s).normalized()
+	var d2 := (_to_screen(p2) - s).normalized()
+	var a1 := d1.angle()
+	var a2 := d2.angle()
+	while a2 - a1 > PI:
+		a2 -= TAU
+	while a1 - a2 > PI:
+		a1 -= TAU
+	var col := DIM
+	if is_target:
+		col = GOLD
+	if known:
+		col = DONE if not is_target else GOLD
+	if i == flash:
+		col = Color(1.0, 1.0, 0.75).lerp(col, flash_t)
+	c.draw_arc(s, r, a1, a2, 24, col, 3.0)
+	var mid := s + Vector2(cos((a1 + a2) * 0.5), sin((a1 + a2) * 0.5)) * (r + 18.0)
+	var text := "?"
+	if known:
+		text = "%s°" % ProblemGen.fmt(v)
+	elif is_target:
+		text = "x"
+	c.draw_string(font, mid + Vector2(-14, 8), text, HORIZONTAL_ALIGNMENT_LEFT, -1, 26, col)
 
 
 # =========================================================
-# 地図をさわる
-# =========================================================
-
-func _on_map_input(event: InputEvent) -> void:
-	if settled or step < SCRIPT.size():
-		return
-	var is_tap := (event is InputEventScreenTouch and (event as InputEventScreenTouch).pressed) \
-		or (event is InputEventMouseButton and (event as InputEventMouseButton).pressed)
-	if not is_tap:
-		return
-	var at: Vector2 = event.position
-	if tool == Tool.PARALLEL and picked_line < 0:
-		var li := _line_at(at)
-		if li >= 0:
-			picked_line = li
-			hint.text = "【平行】その線に平行な線を、どの点に通す?"
-			map.queue_redraw()
-		return
-	if tool == Tool.CUT:
-		var li2 := _line_at(at)
-		if li2 >= 0:
-			picked_line = li2
-			act_btn.disabled = false
-			act_btn.text = "この線で分ける"
-			map.queue_redraw()
-		return
-	var pi := _point_at(at)
-	if pi < 0:
-		return
-	GameState.play_sfx("type")
-	if tool == Tool.PARALLEL:
-		var base: Dictionary = lines[picked_line]
-		var d: Vector2 = (base["b"] as Vector2) - (base["a"] as Vector2)
-		var p: Vector2 = points[pi]["p"]
-		_add_line(p, p + d)
-		tool = Tool.NONE
-		picked_line = -1
-		_update_hint()
-		map.queue_redraw()
-		return
-	if picked.has(pi):
-		picked.erase(pi)
-	else:
-		picked.append(pi)
-	if picked.size() == 2:
-		var p1: Vector2 = points[picked[0]]["p"]
-		var p2: Vector2 = points[picked[1]]["p"]
-		if tool == Tool.JOIN:
-			_add_line(p1, p2)
-		elif tool == Tool.MIDPOINT:
-			_add_point((p1 + p2) * 0.5, "M", "中点")
-		picked.clear()
-		tool = Tool.NONE
-		_update_hint()
-	map.queue_redraw()
-
-
-func _add_line(a: Vector2, b: Vector2) -> void:
-	if a.distance_to(b) < 0.05:
-		return
-	lines.append({"a": a, "b": b})
-	_rebuild_points()
-
-
-func _point_at(s: Vector2) -> int:
-	var best := -1
-	var best_d := 46.0
-	for i in points.size():
-		var d := _to_screen(points[i]["p"]).distance_to(s)
-		if d < best_d:
-			best_d = d
-			best = i
-	return best
-
-
-func _line_at(s: Vector2) -> int:
-	var best := -1
-	var best_d := 34.0
-	for i in lines.size():
-		var l: Dictionary = lines[i]
-		var a := _to_screen(l["a"])
-		var b := _to_screen(l["b"])
-		var dir := (b - a).normalized()
-		var far_a := a - dir * 3000.0
-		var far_b := b + dir * 3000.0
-		var d := Geometry2D.get_closest_point_to_segment(s, far_a, far_b).distance_to(s)
-		if d < best_d:
-			best_d = d
-			best = i
-	return best
-
-
-# =========================================================
-# 進行と判定
+# 進行
 # =========================================================
 
 func _show_step() -> void:
@@ -499,25 +467,12 @@ func _show_step() -> void:
 		speaker.text = String(SCRIPT[step][0])
 		talk.text = String(SCRIPT[step][1])
 		act_btn.text = "つぎへ ▶"
-		act_btn.disabled = false
 		return
-	tool_row.visible = true
-	hint_btn.visible = true
+	cards_row.visible = true
 	speaker.text = "遺言 第一条"
-	talk.text = "土地を、姉と弟に等しく分けよ。境は頂点 A から引いた一本の直線とする。井戸のある側を姉に。"
-	_update_hint()
-	act_btn.text = "境にする線をえらぶ"
-	act_btn.disabled = false
-
-
-## 手がかり。使うと ★ が 1 つ減る(知っている人と差がつく)
-func _peek() -> void:
-	GameState.play_sfx("hint")
-	used_hint = true
-	hint_btn.disabled = true
-	hint_btn.text = "手記を見た(★ は 2 つまで)"
-	speaker.text = "オルドの手記(走り書き)"
-	talk.text = "「三角の地は、底辺を半分にすれば広さも半分になる。高さが同じだからだ」"
+	talk.text = "境は頂点 A から杭 D へ張った縄。その角 x を記録せよ。覚え書きにある角は 3 つだけだ。"
+	hint.text = "定理カードをえらび、図の当てる場所をタップする"
+	act_btn.text = "覚え書きを見る"
 
 
 func _advance() -> void:
@@ -526,81 +481,22 @@ func _advance() -> void:
 		step += 1
 		_show_step()
 		return
-	if tool != Tool.CUT and picked_line < 0:
-		tool = Tool.CUT
-		picked.clear()
-		_update_hint()
-		act_btn.disabled = true
-		map.queue_redraw()
-		return
-	if picked_line >= 0 and not settled:
-		_settle()
-		return
-	if settled:
-		GameState.change_scene("res://scenes/main.tscn")
-
-
-func _settle() -> void:
-	var ln: Dictionary = lines[picked_line]
-	var a: Vector2 = ln["a"]
-	var b: Vector2 = ln["b"]
-	# 頂点 A を通っているか(遺言の条件)
-	var through_a := absf(_side(land[0], a, b)) < 0.05
-	var parts := _split(land, a, b)
-	var s1 := _area(parts[0])
-	var s2 := _area(parts[1])
-	var total := maxf(s1 + s2, 0.0001)
-	var diff := absf(s1 - s2) / total
-	if not through_a:
-		GameState.play_sfx("fail")
-		speaker.text = "代訟人"
-		talk.text = "「その線は頂点 A を通っていません。遺言は 一本の直線を A から と定めています」"
-		act_btn.text = "引き直す"
-		return
-	stars = 0
-	if diff <= 0.005:
-		stars = 3
-	elif diff <= 0.02:
-		stars = 2
-	elif diff <= 0.05:
-		stars = 1
-	if used_hint:
-		stars = mini(stars, 2)
-	cut_line = picked_line
-	if stars == 0:
-		GameState.play_sfx("fail")
-		speaker.text = "弟 ロウ"
-		talk.text = "「ずいぶん大ざっぱだな。これでは受け取れない」  ―― 目分量では通らない。作図でぴたりと出すこと。"
-		act_btn.text = "やり直す"
-		cut_line = -1
-		return
-	settled = true
-	split_t = 0.0
-	tool_row.visible = false
-	hint_btn.visible = false
-	hint.text = ""
-	GameState.play_sfx("clear" if stars == 3 else "correct")
-	speaker.text = "代訟人   %s" % ("★".repeat(stars) + "☆".repeat(3 - stars))
-	talk.text = "「境が定まりました」  差は %.2f%%。%s" % [diff * 100.0,
-		"寸分の狂いもありません。" if stars == 3 else "わずかにずれています。作図で出せば ぴたりと合うはずです。"]
-	act_btn.text = "手記を読む ▶"
-	act_btn.pressed.disconnect(_advance)
-	act_btn.pressed.connect(_show_note, CONNECT_ONE_SHOT)
-	map.queue_redraw()
+	speaker.text = "覚え書き"
+	talk.text = "∠B = 50°、∠C = 60°、A のところで縄が作る手前の角 ∠BAD = 35°。書いてあるのはこれだけ。"
 
 
 func _show_note() -> void:
 	GameState.play_sfx("hint")
 	speaker.text = "オルドの手記(一)"
-	talk.text = "「境界は語る。三度引けば、あれの在り処が分かる」  ―― 父の字だ。"
-	hint.text = "引いた境界が、地図に一本残った。あと二本。"
+	talk.text = "「角は語る。三度たどれば、あれの在り処が分かる」  ―― 父の字だ。"
+	hint.text = "記録した角が、一つ目の手がかりになった。あと二つ。"
 	act_btn.text = "その日は終わった ▶"
 	act_btn.pressed.connect(_after_note, CONNECT_ONE_SHOT)
 
 
 func _after_note() -> void:
 	speaker.text = "弟 ロウ"
-	talk.text = "「言い忘れていたが ―― あの井戸、去年から水が出ていない」  なぜ父は、涸れた井戸のある側を姉に指定したのか。"
+	talk.text = "「言い忘れていたが ―― その杭 D、去年まで無かったぞ」  父は死ぬ前に、杭を一本打っている。"
 	hint.text = "第二話へ続く(試作はここまで)"
 	act_btn.text = "タイトルへ"
 	act_btn.pressed.connect(func() -> void:
