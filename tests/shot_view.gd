@@ -40,6 +40,7 @@ func _ready() -> void:
 		if arg == "--quiz": quiz = true
 		if arg == "--island-quiz": island = 1
 		if arg == "--island-claim": island = 2
+		if arg == "--island-crow": island = 3
 		if arg == "--act": act = true
 		if arg.begins_with("--deg="): deg = float(arg.substr(6))
 		if arg.begins_with("--try="): tri = int(arg.substr(6))
@@ -79,6 +80,12 @@ func _ready() -> void:
 			inst._tap_post(near)
 		for i in 4:
 			await get_tree().process_frame
+		if island == 3:
+			# カラスのターンの カットイン(問題は 閉じて 盤面の 上に 出す)
+			inst.quiz.visible = false
+			inst._cut_in("laugh", "その計算、500円で売ってやろうか?")
+			for i in 8:
+				await get_tree().process_frame
 		if island == 2:
 			inst.input_text = ProblemGen.fmt(float(inst.problem["answer"]))
 			inst.keypad.answer_lbl.text = inst.input_text

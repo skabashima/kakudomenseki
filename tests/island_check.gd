@@ -50,10 +50,10 @@ func _ready() -> void:
 			inst._mark(m)
 			if inst.marked.size() == was:
 				break
-		for mm in inst.marked:
-			if not inst._touches_mine(mm):
-				failures.append("%d ターンめ: 陣地から はなれた マスが 取れてしまう" % inst.turn)
-				break
+		# 取る土地は「旗を ふくむ ひとつながり」で なければ ならない
+		if not _one_lump(inst, cv):
+			failures.append("%d ターンめ: 旗と つながっていない マスが 取れてしまう" % inst.turn)
+			break
 		if inst.marked.has(cv):
 			reached += 1
 		inst._on_act()
@@ -131,7 +131,7 @@ func _toward(inst: Node, target: Vector2i) -> Vector2i:
 			var k: int = inst.cell[y][x]
 			if k != inst.EMPTY and k != inst.SPRING and k != inst.RUIN and k != inst.CROW:
 				continue
-			if not inst._touches_mine(cv):
+			if not inst._touches_claim(cv):
 				continue
 			# のこりの マスぶんで 取れる ものだけ(カラスのマスは 2 つぶん)
 			if inst._cost_of(cv) > inst.need - inst._marked_cost():
@@ -141,6 +141,33 @@ func _toward(inst: Node, target: Vector2i) -> Vector2i:
 				best_d = d
 				best = cv
 	return best
+
+
+## 取る土地は「旗から、なぞったマスと 自分の陣地を たどって」つながること
+func _one_lump(inst: Node, flag: Vector2i) -> bool:
+	if inst.marked.is_empty():
+		return true
+	if not inst.marked.has(flag):
+		return false
+	var seen := {}
+	var stack: Array[Vector2i] = [flag]
+	while not stack.is_empty():
+		var cur: Vector2i = stack.pop_back()
+		if seen.has(cur):
+			continue
+		seen[cur] = true
+		for d in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
+			var n: Vector2i = cur + d
+			if n.x < 0 or n.x >= inst.W or n.y < 0 or n.y >= inst.H:
+				continue
+			if seen.has(n):
+				continue
+			if inst.marked.has(n) or inst.cell[n.y][n.x] == inst.MINE:
+				stack.append(n)
+	for m in inst.marked:
+		if not seen.has(m):
+			return false
+	return true
 
 
 func _wait(n: int) -> void:

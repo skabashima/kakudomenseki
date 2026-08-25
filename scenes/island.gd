@@ -39,9 +39,16 @@ var marked: Array = []         # なぞって選んだマス [Vector2i]
 var bonus := 0                 # 泉で増える ぶん
 var last_take := 4             # 前のターンに じぶんが 取った マス数(カラスの強さの目安)
 var crow_extra := 0            # 立て札を 取り逃した ぶん、カラスが 多く広げる
+var cut_text_override := ""    # 切り取りなど、特別な ひとことが あるとき
 var rng := RandomNumberGenerator.new()
 var over := false
+var _t := 0.0
 
+var bar: Control                    # 上の 帯(顔と 占有率)
+var cutin: Control                  # カラスのターンの カットイン
+var cut_t := 0.0
+var cut_mood := "calm"
+var cut_text := ""
 var board: Control
 var msg: Label
 var head_lbl: Label
@@ -94,6 +101,12 @@ func _ready() -> void:
 	head_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	head.add_child(head_lbl)
 
+	bar = Control.new()
+	bar.custom_minimum_size = Vector2(0, 112)
+	bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	bar.draw.connect(_draw_bar)
+	root.add_child(bar)
+
 	board = Control.new()
 	board.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	board.custom_minimum_size = Vector2(0, 420)
@@ -129,8 +142,14 @@ func _ready() -> void:
 	row.add_child(act_btn)
 
 	_build_quiz()
+	cutin = Control.new()
+	cutin.set_anchors_preset(Control.PRESET_FULL_RECT)
+	cutin.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	cutin.visible = false
+	cutin.draw.connect(_draw_cutin)
+	add_child(cutin)
 	_make_island()
-	msg.text = "立て札の問題を解くと、答えの数だけ土地が取れる。カラスより広く取ろう"
+	msg.text = "立て札をえらんで 問題を解くと、そこに旗が立ち、答えの数だけ土地が広がる"
 	_refresh()
 
 
@@ -354,7 +373,7 @@ func _draw_board() -> void:
 					continue
 				if _cost_of(cv) > need - _marked_cost():
 					continue
-				if not _touches_mine(cv):
+				if not _touches_claim(cv):
 					continue
 				var gr := Rect2(o + Vector2(float(x), float(y)) * s, Vector2(s, s))
 				# カラスのマスは 赤っぽく(2 マスぶん つかう)
@@ -381,16 +400,18 @@ func _draw_board() -> void:
 		var puls := 1.0 + sin(float(Time.get_ticks_msec()) * 0.004 + float(i)) * 0.08
 		c.draw_line(at + Vector2(0, s * 0.30), at + Vector2(0, -s * 0.05), Color(0.50, 0.36, 0.22),
 			maxf(s * 0.08, 3.0))
-		# 板には「ここまで 何マスで 届くか」を 書く。
-		# 遠い立て札ほど 問題は 難しく、もらえる マスも 多い ―
-		# どれに 挑むかが この遊びの 判断どころ なので、数を 読める 大きさで 出す
-		var d := _dist_to_mine(int(p["x"]), int(p["y"]))
+		# 板には 難しさ(★)を 出す。遠い立て札ほど 問題は 難しく、
+		# そのぶん もらえる 土地も 多い。どこに 旗を 立てるかが 判断どころ
+		var lv := clampi(int(p["tier"]), 0, 5)
 		var bw := s * 1.06 * puls
 		var br := Rect2(at + Vector2(-bw * 0.5, -s * 0.60), Vector2(bw, s * 0.52))
 		c.draw_rect(br, Color(0.90, 0.78, 0.50))
 		c.draw_rect(br, INK, false, 2.0)
-		c.draw_string(font, br.position + Vector2(0, s * 0.38), "%d マス" % d,
-			HORIZONTAL_ALIGNMENT_CENTER, bw, int(s * 0.32), INK)
+		var stars := ""
+		for k in lv + 1:
+			stars += "★"
+		c.draw_string(font, br.position + Vector2(0, s * 0.38), stars,
+			HORIZONTAL_ALIGNMENT_CENTER, bw, int(s * 0.26), Color(0.72, 0.30, 0.16))
 		c.draw_circle(at + Vector2(0, -s * 0.72), s * 0.16, GOLD)
 		c.draw_string(font, at + Vector2(-s * 0.16, -s * 0.64), "?",
 			HORIZONTAL_ALIGNMENT_CENTER, s * 0.32, int(s * 0.26), INK)
@@ -463,7 +484,7 @@ func _mark(cv: Vector2i) -> void:
 		return
 	if _marked_cost() + _cost_of(cv) > need:
 		return
-	if not _touches_mine(cv):
+	if not _touches_claim(cv):
 		return
 	marked.append(cv)
 	GameState.play_sfx("type")
@@ -484,17 +505,32 @@ func _markable_left() -> int:
 				continue
 			if _cost_of(cv) > left:
 				continue
-			if _touches_mine(cv):
+			if _touches_claim(cv):
 				n += 1
 	return n
 
 
-func _touches_mine(cv: Vector2i) -> bool:
+## 旗(または そこから なぞった かたまり)と つながっているか。
+## 土地は かならず 旗から 広がる ―― どこに 旗を 立てるかが、
+## そのまま「どこに 土地を 作るか」に なる
+func _touches_claim(cv: Vector2i) -> bool:
 	for d in DIRS:
 		var n := cv + d
 		if n.x < 0 or n.x >= W or n.y < 0 or n.y >= H:
 			continue
-		if cell[n.y][n.x] == MINE or marked.has(n):
+		if marked.has(n) or cell[n.y][n.x] == MINE and _mine_next_to_claim(n):
+			return true
+	return false
+
+
+## 自陣のマスでも、旗の かたまりと つながっている ものは 足場に なる
+## (旗が 自陣の となりなら、そのまま 陣地が 伸びる)
+func _mine_next_to_claim(m: Vector2i) -> bool:
+	for d in DIRS:
+		var n := m + d
+		if n.x < 0 or n.x >= W or n.y < 0 or n.y >= H:
+			continue
+		if marked.has(n):
 			return true
 	return false
 
@@ -523,7 +559,7 @@ func _on_act() -> void:
 			_finish()
 			return
 		GameState.play_sfx("fail")
-		msg.text = "立て札を タップして えらぼう。遠いほど 問題は 難しく、もらえる マスも 多い"
+		msg.text = "どの立て札に 旗を立てる? タップしてえらぼう(★が多いほど 難しく、土地は広い)"
 		return
 	if marked.is_empty() and _markable_left() == 0:
 		# まわりを ぜんぶ カラスと岩に 囲まれた。ここで 勝負あり
@@ -547,7 +583,6 @@ func _take_marked() -> void:
 	var got_spring := 0
 	var got_ruin := 0
 	last_take = marked.size()
-	var reached_post := post_cell.x >= 0 and marked.has(post_cell)
 	for m in marked:
 		if cell[m.y][m.x] == SPRING:
 			got_spring += 1
@@ -568,13 +603,6 @@ func _take_marked() -> void:
 		extra += "  泉! つぎは +%d マス" % bonus
 	if got_ruin > 0:
 		extra += "  遺跡を見つけた!"
-	# 立て札まで 届いたか ― ここが 立て札を えらぶ 意味
-	if reached_post:
-		bonus += 4
-		extra += "  立て札に とどいた! つぎは +4 マス"
-		GameState.play_sfx("clear")
-	elif post_cell.x >= 0:
-		extra += "  立て札には とどかなかった(まだ 立っている)"
 	post_cell = Vector2i(-1, -1)
 	msg.text = "土地を広げた。" + extra
 	# ここで待たせない。待つと「カラスの番」が遅れて、
@@ -636,6 +664,7 @@ func _crow_turn() -> void:
 				posts.remove_at(pi)
 				crow_extra += 2
 				msg.text = "立て札を カラスに 取られた! 早く 取りに 行こう"
+				cut_text_override = "その立て札は もらった"
 	if turn % 2 == 0:
 		_crow_cut()
 	turn += 1
@@ -645,6 +674,16 @@ func _crow_turn() -> void:
 	if posts.size() < 3:
 		_spawn_posts()
 	GameState.play_sfx("type")
+	# 何を されたのかが 分かるように、カラスを 大きく 出す
+	var mine := _count(MINE)
+	var crow := _count(CROW)
+	var mood := "calm" if crow >= mine else "panic"
+	var line := _crow_says("win" if crow >= mine else "lose")
+	if cut_text_override != "":
+		line = cut_text_override
+		mood = "angry"
+		cut_text_override = ""
+	_cut_in(mood, line)
 	_refresh()
 
 
@@ -665,6 +704,7 @@ func _crow_cut() -> void:
 			if crows >= 3:
 				cell[y][x] = CROW
 				msg.text = "カラスに 細いところを 切られた!"
+				cut_text_override = _crow_says("cut")
 				return
 
 
@@ -780,9 +820,8 @@ func _cells_for(v: float) -> int:
 func _reward_note() -> String:
 	var unit := String(problem.get("unit", ""))
 	var per := "÷ 15" if unit == "度" else "÷ 10"
-	var d := _dist_to_mine(post_cell.x, post_cell.y) if post_cell.x >= 0 else 0
 	var lost := "" if miss == 0 else "  ※ まちがえたので もらえる マスは %d 分の 1" % int(pow(2, miss))
-	return "正解すると 答え %s マス。この立て札まで %d マス%s" % [per, d, lost]
+	return "正解すると、この立て札に 旗が立って 答え %s マスぶん 土地が 広がる%s" % [per, lost]
 
 
 func _on_key(k: String) -> void:
@@ -818,6 +857,7 @@ func _submit() -> void:
 		if miss >= 3:
 			# 3 回はずすと この立て札は カラスの ものに なる
 			quiz.visible = false
+			cut_text_override = _crow_says("laugh")
 			_lose_post("3 回はずした。立て札は カラスに 取られた!")
 			return
 		q_lbl.text = "ちがう ― もらえる マスが 半分に なった(のこり %d 回)\n%s\n%s" % [
@@ -827,7 +867,14 @@ func _submit() -> void:
 	need = _cells_for(float(problem["answer"])) + bonus
 	bonus = 0
 	quiz.visible = false
-	msg.text = "正解! %d マスぶん。立て札まで とどけば 占領。カラスのマスは 2 マスぶんで 押し返せる" % need
+	# 旗を 立てる。ここから 土地が 広がる
+	marked.clear()
+	if post_cell.x >= 0 and cell[post_cell.y][post_cell.x] != MINE:
+		marked.append(post_cell)
+	if picked_post >= 0 and picked_post < posts.size():
+		posts.remove_at(picked_post)
+	picked_post = -1
+	msg.text = "旗を立てた! ここから %d マスぶん 広げよう(カラスのマスは 2 マスぶん)" % need
 	_refresh()
 
 
@@ -839,10 +886,8 @@ func _refresh() -> void:
 	var mine := _count(MINE)
 	var crow := _count(CROW)
 	var all := maxi(mine + crow + _count(EMPTY) + _count(SPRING) + _count(RUIN), 1)
-	head_lbl.text = "  %d/%d ターン   じぶん %d%%  カラス %d%%" % [
-		mini(turn, MAX_TURN), MAX_TURN,
-		int(round(100.0 * float(mine) / float(all))),
-		int(round(100.0 * float(crow) / float(all)))]
+	# 割合は 下の 帯(顔つき)に 出すので、ここは ターン数だけ
+	head_lbl.text = "  %d / %d ターン" % [mini(turn, MAX_TURN), MAX_TURN]
 	if over:
 		act_btn.text = "もどる"
 	elif need <= 0:
@@ -871,6 +916,107 @@ func _finish() -> void:
 	_refresh()
 
 
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
+	_t += delta
+	if cut_t > 0.0:
+		cut_t -= delta / 1.6
+		cutin.queue_redraw()
+		if cut_t <= 0.0:
+			cut_t = 0.0
+			cutin.visible = false
 	if not over and not quiz.visible:
 		board.queue_redraw()
+		bar.queue_redraw()
+
+
+# =========================================================
+# 登場人物(カラス と たんけんか)
+# =========================================================
+
+## カラスの ひとこと。いまの 形勢と 出来事で 変える
+const CROW_LINES := {
+	"win": [
+		"その計算、500円で売ってやろうか?",
+		"ふむ。土地の広さも 分からんとはな",
+		"わたしの島だ。もう名前も決めてある",
+	],
+	"lose": [
+		"…なぜ 合っている?",
+		"まぐれだ。つぎは そうはいかん",
+		"その公式、どこで 手に入れた!",
+	],
+	"laugh": [
+		"はずれ! だから 買えと 言ったのだ",
+		"ほら見ろ。だから 公式は 売り物なのだ",
+	],
+	"cut": [
+		"細い道は 切らせてもらう",
+		"そこは わたしの ものだ",
+	],
+}
+
+
+func _crow_says(kind: String) -> String:
+	var list: Array = CROW_LINES.get(kind, CROW_LINES["win"])
+	return String(list[rng.randi_range(0, list.size() - 1)])
+
+
+## カラスの番の カットイン。大きく出して、何をされたのか 分かるようにする
+func _cut_in(mood: String, text: String) -> void:
+	cut_mood = mood
+	cut_text = text
+	cut_t = 1.0
+	cutin.visible = true
+	cutin.queue_redraw()
+
+
+func _draw_cutin() -> void:
+	var c := cutin
+	var w := c.size.x
+	var h := c.size.y
+	# 出入りの すべり(0→1→0)
+	var e := clampf(cut_t, 0.0, 1.0)
+	var slide := (1.0 - ease(minf(e * 3.0, 1.0), 0.4)) * w * 0.9
+	var band_h := h * 0.46
+	var top := h * 0.24
+	c.draw_rect(Rect2(0, 0, w, h), Color(0.05, 0.06, 0.10, 0.55 * minf(e * 3.0, 1.0)))
+	c.draw_colored_polygon(PackedVector2Array([
+		Vector2(slide - 40.0, top), Vector2(w + slide, top - 26.0),
+		Vector2(w + slide, top + band_h - 26.0), Vector2(slide - 40.0, top + band_h)]),
+		Color(0.16, 0.14, 0.22, 0.96))
+	var foot := Vector2(w * 0.72 + slide, top + band_h - 18.0)
+	# カットインでは こちらを むく(左むき)
+	Chars.crow(c, foot, band_h * 0.92, cut_mood, _t, -1.0)
+	Chars.bubble(c, Vector2(w * 0.34 + slide, top + band_h * 0.42), Vector2(w * 0.52, 96.0),
+		cut_text, 1.0, 24)
+	c.draw_string(ThemeDB.fallback_font, Vector2(slide + 16.0, top + band_h + 34.0),
+		"カラスのターン", HORIZONTAL_ALIGNMENT_LEFT, -1, 26, GOLD)
+
+
+## 上の 帯。両はしに 顔を 出して、いま 誰と 戦っているかを 見せる
+func _draw_bar() -> void:
+	var c := bar
+	var w := c.size.x
+	var h := c.size.y
+	var mine := _count(MINE)
+	var crow := _count(CROW)
+	var all := maxi(mine + crow + _count(EMPTY) + _count(SPRING) + _count(RUIN), 1)
+	var mp := float(mine) / float(all)
+	var cp := float(crow) / float(all)
+	var x0 := 104.0
+	var x1 := w - 104.0
+	var bw := x1 - x0
+	var y := h * 0.52
+	c.draw_rect(Rect2(x0, y - 13.0, bw, 26.0), Color(0.80, 0.73, 0.56))
+	c.draw_rect(Rect2(x0, y - 13.0, bw * mp, 26.0), COL[MINE])
+	c.draw_rect(Rect2(x1 - bw * cp, y - 13.0, bw * cp, 26.0), COL[CROW].lightened(0.12))
+	c.draw_rect(Rect2(x0, y - 13.0, bw, 26.0), Color(0, 0, 0, 0.35), false, 2.0)
+	var font := ThemeDB.fallback_font
+	c.draw_string(font, Vector2(x0 + 6.0, y + 8.0), "%d%%" % int(round(mp * 100.0)),
+		HORIZONTAL_ALIGNMENT_LEFT, -1, 22, Color(1, 1, 1, 0.95))
+	c.draw_string(font, Vector2(x1 - 60.0, y + 8.0), "%d%%" % int(round(cp * 100.0)),
+		HORIZONTAL_ALIGNMENT_RIGHT, 54, 22, Color(1, 1, 1, 0.95))
+	# 顔(左=あなた、右=カラス)
+	Chars.hero(c, Vector2(46.0, h - 4.0), h * 0.94, "guts" if mp > cp else "calm", _t)
+	Chars.crow(c, Vector2(w - 44.0, h - 4.0), h * 0.94,
+		"calm" if cp >= mp else "panic", _t)
