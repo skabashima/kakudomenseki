@@ -24,6 +24,7 @@ func _ready() -> void:
 	var wait := 30
 	var quiz := false
 	var island := 0
+	var turns := 0
 	var act := false
 	var deg := -1.0
 	var tri := 0
@@ -41,6 +42,7 @@ func _ready() -> void:
 		if arg == "--island-quiz": island = 1
 		if arg == "--island-claim": island = 2
 		if arg == "--island-crow": island = 3
+		if arg.begins_with("--turns="): turns = int(arg.substr(8))
 		if arg == "--act": act = true
 		if arg.begins_with("--deg="): deg = float(arg.substr(6))
 		if arg.begins_with("--try="): tri = int(arg.substr(6))
@@ -65,6 +67,26 @@ func _ready() -> void:
 			inst._act_done()
 			await get_tree().process_frame
 			inst._advance()
+			await get_tree().process_frame
+	for tn in turns:
+		# 島取りを 何ターンか 自動で 進めた ところを 撮る
+		var near2: Vector2i = Vector2i(-1, -1)
+		var nd2 := 999
+		for pp in inst.posts:
+			var dd2: int = inst._dist_to_mine(int(pp["x"]), int(pp["y"]))
+			if dd2 < nd2:
+				nd2 = dd2
+				near2 = Vector2i(int(pp["x"]), int(pp["y"]))
+		if near2.x < 0 or inst.over or inst.auto_fill:
+			break
+		inst._tap_post(near2)
+		await get_tree().process_frame
+		inst.input_text = ProblemGen.fmt(float(inst.problem["answer"]))
+		inst._submit()
+		await get_tree().process_frame
+		inst._auto_mark()
+		inst._on_act()
+		for i in 2:
 			await get_tree().process_frame
 	if island > 0:
 		# 島取り: 立て札の問題を開く(2 なら 正解して なぞる 途中まで)

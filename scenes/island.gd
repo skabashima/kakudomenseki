@@ -732,7 +732,11 @@ func _crow_turn() -> void:
 	if _decided() and not over:
 		# もう 追いつけない。残りは 自動で 塗って 見せる
 		auto_fill = true
-		msg.text = "勝負あり ― のこりは 自動で ぬる"
+		var mine2 := _count(MINE)
+		var crow2 := _count(CROW)
+		msg.text = ("勝負あり ― カラスは もう %d マスまでしか 伸ばせない。のこりは 自動で ぬる"
+			% _potential(CROW)) if mine2 > crow2 else 			("勝負あり ― こちらは もう %d マスまでしか 伸ばせない。のこりは 自動で ぬる"
+			% _potential(MINE))
 
 
 ## 細い所を 切る。まわりが 3 方カラスの 自分のマスを 1 つ 奪う
@@ -1070,6 +1074,13 @@ func _draw_bar() -> void:
 	var bw := x1 - x0
 	var y := h * 0.52
 	c.draw_rect(Rect2(x0, y - 13.0, bw, 26.0), Color(0.80, 0.73, 0.56))
+	# うすい ところ = このまま 伸ばせば 届く ところ(行ける 空きマス)
+	var mpp := float(_potential(MINE)) / float(all)
+	var cpp := float(_potential(CROW)) / float(all)
+	c.draw_rect(Rect2(x0, y - 13.0, bw * mpp, 26.0), Color(COL[MINE].r, COL[MINE].g,
+		COL[MINE].b, 0.35))
+	c.draw_rect(Rect2(x1 - bw * cpp, y - 13.0, bw * cpp, 26.0),
+		Color(0.55, 0.52, 0.62, 0.45))
 	c.draw_rect(Rect2(x0, y - 13.0, bw * mp, 26.0), COL[MINE])
 	c.draw_rect(Rect2(x1 - bw * cp, y - 13.0, bw * cp, 26.0), COL[CROW].lightened(0.12))
 	c.draw_rect(Rect2(x0, y - 13.0, bw, 26.0), Color(0, 0, 0, 0.35), false, 2.0)
@@ -1088,10 +1099,53 @@ func _draw_bar() -> void:
 # 決着が 見えたら 自動で 塗る
 # =========================================================
 
-## 残り 全部を 取っても 追いつけない ところまで 来たら、勝負は 決まっている
+## そのがわが これから 最大 いくつまで 増やせるか。
+## 空きマスを たどって 行ける ところ だけを 数える ―― 岩や 相手の 陣地に
+## 囲まれて 出られなければ、空きマスが たくさん 残っていても もう 伸びない
+func _potential(kind: int) -> int:
+	var seen := {}
+	var stack: Array[Vector2i] = []
+	for y in H:
+		for x in W:
+			if cell[y][x] == kind:
+				stack.append(Vector2i(x, y))
+	var reach := 0
+	while not stack.is_empty():
+		var cur: Vector2i = stack.pop_back()
+		for d in DIRS:
+			var n := cur + d
+			if n.x < 0 or n.x >= W or n.y < 0 or n.y >= H:
+				continue
+			if seen.has(n):
+				continue
+			var k: int = cell[n.y][n.x]
+			if k != EMPTY and k != SPRING and k != RUIN:
+				continue
+			seen[n] = true
+			reach += 1
+			stack.append(n)
+	return _count(kind) + reach
+
+
+## 勝負が 決まったか。
+##   ・残り 全部を 取っても 追いつけない
+##   ・または、伸ばせる 先が なくなって、めいっぱい 取っても 届かない
+## 「もう 決まっているのに 続く」のは ただの 作業なので、そこで 切り上げる
 func _decided() -> bool:
+	var mine := _count(MINE)
+	var crow := _count(CROW)
 	var rest := _count(EMPTY) + _count(SPRING) + _count(RUIN)
-	return absi(_count(MINE) - _count(CROW)) > rest
+	if absi(mine - crow) > rest:
+		return true
+	# 囲まれていても、相手の陣地は 2 マスぶんで 押し返せる。
+	# 残りターンで 押し返せる 見込みぶんは 大目に 見ておく
+	# (見込みを 少なく すると、まだ 決まっていない 勝負を 打ち切って しまう)
+	var slack := maxi(MAX_TURN - turn, 0) * 3 + 2
+	if _potential(CROW) + slack < mine:
+		return true
+	if _potential(MINE) + slack < crow:
+		return true
+	return false
 
 
 ## 残りのマスを、近いほうの 陣地に 順ぐりに 塗って 終わらせる。
