@@ -32,6 +32,7 @@ var map: Control
 var big: Label
 var talk: RubyLabel
 var keypad: Keypad
+var answer_row: HBoxContainer
 var answer_btn: Button
 var act_btn: Button
 var figure: FigureView
@@ -106,14 +107,28 @@ func _ready() -> void:
 	keypad.key_pressed.connect(_on_key)
 	keypad.visible = false
 	root.add_child(keypad)
+	# ＝(計算)と こたえる を ならべる(本編 problem.gd と 同じ 使いごこち)
+	answer_row = HBoxContainer.new()
+	answer_row.add_theme_constant_override("separation", 10)
+	answer_row.visible = false
+	root.add_child(answer_row)
+	var calc_btn := Button.new()
+	calc_btn.text = "＝ 計算"
+	calc_btn.custom_minimum_size = Vector2(0, 88)
+	calc_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	calc_btn.add_theme_font_size_override("font_size", 28)
+	GameState.style_button(calc_btn, Color(0.24, 0.42, 0.72))
+	calc_btn.pressed.connect(_calc_in_place)
+	answer_row.add_child(calc_btn)
 	answer_btn = Button.new()
 	answer_btn.text = "こたえる"
 	answer_btn.custom_minimum_size = Vector2(0, 88)
+	answer_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	answer_btn.size_flags_stretch_ratio = 1.6
 	answer_btn.add_theme_font_size_override("font_size", 30)
 	GameState.style_button(answer_btn, Color(0.22, 0.55, 0.35))
 	answer_btn.pressed.connect(_submit)
-	answer_btn.visible = false
-	root.add_child(answer_btn)
+	answer_row.add_child(answer_btn)
 
 	act_btn = Button.new()
 	act_btn.custom_minimum_size = Vector2(0, 88)
@@ -200,7 +215,7 @@ func _start_quiz() -> void:
 	keypad.answer_lbl.text = " "
 	keypad.unit_lbl.text = String(problem.get("unit", ""))
 	keypad.visible = true
-	answer_btn.visible = true
+	answer_row.visible = true
 	act_btn.visible = false
 	big.text = ""
 	talk.set_ruby_text("地図の しるし。" + _short(String(problem["q"])), true)
@@ -218,6 +233,21 @@ func _on_key(k: String) -> void:
 	keypad.answer_lbl.text = input_text if input_text != "" else " "
 
 
+## ＝キー: 式をその場で計算して、答え欄を計算結果に置きかえる(本編と同じ)
+func _calc_in_place() -> void:
+	if input_text == "":
+		return
+	var res: Dictionary = ExprEval.eval(input_text)
+	if not bool(res["ok"]):
+		GameState.play_sfx("fail")
+		big.text = String(res["err"])
+		return
+	GameState.play_sfx("type")
+	big.text = ""
+	input_text = ExprEval.fmt(float(res["value"]))
+	keypad.answer_lbl.text = input_text
+
+
 func _submit() -> void:
 	var v := Keypad.value_of(input_text)
 	if is_nan(v):
@@ -229,7 +259,7 @@ func _submit() -> void:
 		big.text = "あたり！"
 		talk.set_ruby_text("しるしが とけた。%s" % String(unit["found"]), true)
 		keypad.visible = false
-		answer_btn.visible = false
+		answer_row.visible = false
 		act_btn.visible = true
 		act_btn.text = "もどる"
 		phase = 3
