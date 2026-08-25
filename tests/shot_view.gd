@@ -12,6 +12,8 @@ extends Node
 ##   --act --try=1              小学生の単元の さわる場面(何回めか)
 ##   --deg=210                  時計の 針を そこまで まわした ところ
 ##   --quiz                     小学生の単元を しるし(問題)まで 進める
+##   --island-quiz              島取りの 問題画面
+##   --island-claim             島取りで 正解して なぞっている ところ
 ##   --wait=40                  撮るまでに 待つ フレーム数
 func _ready() -> void:
 	await get_tree().process_frame
@@ -21,6 +23,7 @@ func _ready() -> void:
 	var sclear := 0
 	var wait := 30
 	var quiz := false
+	var island := 0
 	var act := false
 	var deg := -1.0
 	var tri := 0
@@ -35,6 +38,8 @@ func _ready() -> void:
 		if arg.begins_with("--sclear="): sclear = int(arg.substr(9))
 		if arg.begins_with("--wait="): wait = int(arg.substr(7))
 		if arg == "--quiz": quiz = true
+		if arg == "--island-quiz": island = 1
+		if arg == "--island-claim": island = 2
 		if arg == "--act": act = true
 		if arg.begins_with("--deg="): deg = float(arg.substr(6))
 		if arg.begins_with("--try="): tri = int(arg.substr(6))
@@ -60,6 +65,28 @@ func _ready() -> void:
 			await get_tree().process_frame
 			inst._advance()
 			await get_tree().process_frame
+	if island > 0:
+		# 島取り: 立て札の問題を開く(2 なら 正解して なぞる 途中まで)
+		inst._on_act()
+		for i in 4:
+			await get_tree().process_frame
+		if island == 2:
+			inst.input_text = ProblemGen.fmt(float(inst.problem["answer"]))
+			inst.keypad.answer_lbl.text = inst.input_text
+			inst._submit()
+			for i in 4:
+				await get_tree().process_frame
+			for t in 4:
+				for y in inst.H:
+					for x in inst.W:
+						var cv := Vector2i(x, y)
+						if not inst.marked.has(cv) and inst._touches_mine(cv) 								and inst.cell[y][x] == inst.EMPTY:
+							inst._mark(cv)
+							break
+					if inst.marked.size() > t:
+						break
+			for i in 2:
+				await get_tree().process_frame
 	if act and deg >= 0.0:
 		# 時計を まわした とちゅうを 見る
 		inst.st["deg"] = deg

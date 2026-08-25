@@ -338,6 +338,7 @@ scenes/
   story_map.gd/.tscn        ストーリーの章えらび。一覧ではなく 1 枚の図
                             (中学生 = 測量野帳の街道図 / 高校生 = 星図)
   story_art.gd              会話につける挿絵(その場で図形として描く)
+  island.gd/.tscn           島取り(ためし)。解いた答えの数だけ土地が増える陣取り
   kid_map.gd/.tscn          ストーリー(小学生)の「たからのちず」。23 歩すすんで宝へ
   kid_unit.gd/.tscn         地図の 1 歩(さわって見つける → 電卓で 1 問)
   store.gd/.tscn            解放画面(買い切り 1 商品・購入の復元)
@@ -368,6 +369,8 @@ tests/
   kid_check.tscn         ストーリー(小学生)の全単元を最後まで通す (--headless 可)
   kid_touch.tscn         同じ 23 単元を「指の動き」で通す。押しても反応しない
                          当たり判定のずれを見つける (--headless 可)
+  island_check.tscn      島取りを 1 局最後まで通す(取った土地が陣地とつながって
+                         いるか・囲まれても詰まらないか) (--headless 可)
   shot_view.tscn         好きな画面を 1 枚だけ撮る(要描画環境)
   story_check.gd         ストーリーの章データと角度の丸めの検証 (--headless 可)
   ruby_check.gd          小学生むけの文が「小 1 の漢字 + ふりがな」だけかを検証 (--headless 可)

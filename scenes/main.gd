@@ -133,6 +133,11 @@ func _ready() -> void:
 		Icons.chart(52.0, Color(1, 1, 1, 0.92)), func() -> void:
 			GameState.change_scene("res://scenes/records.tscn")))
 
+	# ためし中の 遊び。解いた答えの ぶんだけ 島の土地が 増える
+	vbox.add_child(_small_card("島取り", Color(0.24, 0.46, 0.40),
+		Icons.flag(52.0, Color(1, 1, 1, 0.92)), func() -> void:
+			GameState.change_scene("res://scenes/island.tscn"), "ためし"))
+
 	# 未購入のときだけ解放の入口を出す(買い切り 1 商品・広告なし)
 	if not GameState.premium:
 		vbox.add_child(_spacer(10))

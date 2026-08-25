@@ -24,6 +24,7 @@ func _run() -> void:
 	await _open("res://scenes/records.tscn")
 	await _open("res://scenes/store.tscn")
 	await _open("res://scenes/story_map.tscn")
+	await _open("res://scenes/island.tscn")
 	await _open("res://scenes/story.tscn")
 	await _open("res://scenes/kid_map.tscn")
 	await _open("res://scenes/kid_unit.tscn")
@@ -68,6 +69,13 @@ func _open(path: String) -> void:
 	# _ready と数フレームの _process を回す
 	for i in 5:
 		await get_tree().process_frame
-	checks.append([path, true])
+	# スクリプトがパースエラーだと、シーンは読めてもスクリプトが外れた
+	# ただの Control になる(それでも「読めた」と数えていて見逃していた)
+	if inst.get_script() == null:
+		checks.append([path + " (script が付いていない ― パースエラーの疑い)", false])
+	elif inst.get_child_count() == 0:
+		checks.append([path + " (_ready が中身を作っていない)", false])
+	else:
+		checks.append([path, true])
 	inst.queue_free()
 	await get_tree().process_frame
