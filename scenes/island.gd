@@ -968,7 +968,7 @@ func _finish() -> void:
 func _process(delta: float) -> void:
 	_t += delta
 	if cut_t > 0.0:
-		cut_t -= delta / 1.25
+		cut_t -= delta / 2.6
 		cutin.queue_redraw()
 		if cut_t <= 0.0:
 			cut_t = 0.0
@@ -1027,7 +1027,7 @@ func _cut_in(mood: String, text: String) -> void:
 func _draw_cutin() -> void:
 	# 盤面は 見えたまま。うっすら 暗くする だけに する
 	var e := clampf(cut_t, 0.0, 1.0)
-	var fade := minf(e * 4.0, 1.0)
+	var fade := minf(e * 6.0, 1.0)
 	cutin.draw_rect(Rect2(Vector2.ZERO, cutin.size), Color(0.04, 0.05, 0.09, 0.22 * fade))
 	# 帯は 盤面の 下ぞろえ(指を 置く ところを ふさがない)
 	var bh := minf(cutin.size.y * 0.30, 268.0)
@@ -1042,16 +1042,17 @@ func _draw_cut_band() -> void:
 	var w := c.size.x
 	var h := c.size.y
 	var e := clampf(cut_t, 0.0, 1.0)
-	var slide := (1.0 - ease(minf(e * 4.0, 1.0), 0.4)) * w
-	# 帯の 地
-	c.draw_rect(Rect2(slide, 0, w, h), Color(0.13, 0.12, 0.20, 0.96))
-	c.draw_line(Vector2(slide, 0), Vector2(w + slide, 0), GOLD, 3.0)
+	var slide := (1.0 - ease(minf(e * 6.0, 1.0), 0.4)) * w
+	# 帯の 地は 明るく する(黒い カラスを 黒地に 出すと 見えない)
+	c.draw_rect(Rect2(slide, 0, w, h), Color(0.93, 0.88, 0.78, 0.98))
+	c.draw_rect(Rect2(slide, 0, w, h), Color(0.42, 0.32, 0.22), false, 3.0)
+	c.draw_line(Vector2(slide, 0), Vector2(w + slide, 0), GOLD, 5.0)
 	# カラスは 胸から 上だけ(足もとは 帯の 下に かくれる)
 	Chars.crow(c, Vector2(w * 0.78 + slide, h * 1.55), h * 1.3, cut_mood, _t, -1.0)
 	Chars.bubble(c, Vector2(w * 0.31 + slide, h * 0.80), Vector2(w * 0.54, h * 0.52),
 		cut_text, 1.0, 23)
-	c.draw_string(ThemeDB.fallback_font, Vector2(slide + 14.0, h - 12.0),
-		"カラスのターン", HORIZONTAL_ALIGNMENT_LEFT, -1, 22, GOLD)
+	c.draw_string(ThemeDB.fallback_font, Vector2(slide + 16.0, h - 14.0),
+		"カラスのターン", HORIZONTAL_ALIGNMENT_LEFT, -1, 24, Color(0.55, 0.22, 0.14))
 
 
 ## 上の 帯。両はしに 顔を 出して、いま 誰と 戦っているかを 見せる
