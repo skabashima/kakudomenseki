@@ -96,7 +96,7 @@ func _ready() -> void:
 				for y in inst.H:
 					for x in inst.W:
 						var cv := Vector2i(x, y)
-						if not inst.marked.has(cv) and inst._touches_mine(cv) 								and inst.cell[y][x] == inst.EMPTY:
+						if not inst.marked.has(cv) and inst._touches_claim(cv) 								and inst.cell[y][x] == inst.EMPTY:
 							inst._mark(cv)
 							break
 					if inst.marked.size() > t:

@@ -27,6 +27,13 @@ func _ready() -> void:
 	var reached := 0
 	while not inst.over and guard < 60:
 		guard += 1
+		if inst.auto_fill:
+			# 決着が 見えたので 自動で 塗っている。終わるまで 待つ
+			var wait_guard := 0
+			while inst.auto_fill and not inst.over and wait_guard < 600:
+				wait_guard += 1
+				await _wait(1)
+			continue
 		var cv: Vector2i = _near_post(inst)
 		if cv.x < 0:
 			break
@@ -222,6 +229,13 @@ func _check_drag(inst: Node) -> void:
 	await _wait(1)
 	if inst.marked.size() <= before:
 		failures.append("指で なぞっても マスが 取れない(タップでしか 取れない)")
+
+	# 「おまかせ」で 残りが 自動で 埋まること
+	inst._auto_mark()
+	await _wait(1)
+	if inst._marked_cost() < inst.need and inst._markable_left() > 0:
+		failures.append("おまかせを 押しても 最後まで 埋まらない(%d/%d)" % [
+			inst._marked_cost(), inst.need])
 
 
 func _cell_center(inst: Node, cv: Vector2i) -> Vector2:

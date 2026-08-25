@@ -43,10 +43,13 @@ var crow_extra := 0            # 立て札を 取り逃した ぶん、カラス
 var cut_text_override := ""    # 切り取りなど、特別な ひとことが あるとき
 var rng := RandomNumberGenerator.new()
 var over := false
+var auto_fill := false         # 決着が 見えたので 残りを 自動で 塗っている
+var auto_t := 0.0
 var _t := 0.0
 
 var bar: Control                    # 上の 帯(顔と 占有率)
 var cutin: Control                  # カラスのターンの カットイン
+var cut_band: Control               # その中の 帯(ここだけに 絵を 描く)
 var cut_t := 0.0
 var cut_mood := "calm"
 var cut_text := ""
@@ -55,6 +58,7 @@ var msg: Label
 var head_lbl: Label
 var act_btn: Button
 var redo_btn: Button
+var auto_btn: Button
 var quiz: Control              # 問題の重ね画面
 var figure: FigureView
 var keypad: Keypad
@@ -133,6 +137,15 @@ func _ready() -> void:
 	GameState.style_button(redo_btn, Color(0.42, 0.34, 0.30))
 	redo_btn.pressed.connect(_clear_marks)
 	row.add_child(redo_btn)
+	auto_btn = Button.new()
+	auto_btn.text = "おまかせ"
+	auto_btn.custom_minimum_size = Vector2(0, 84)
+	auto_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	auto_btn.add_theme_font_size_override("font_size", 26)
+	GameState.style_button(auto_btn, Color(0.30, 0.40, 0.56))
+	auto_btn.pressed.connect(_auto_mark)
+	row.add_child(auto_btn)
+
 	act_btn = Button.new()
 	act_btn.custom_minimum_size = Vector2(0, 84)
 	act_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -149,6 +162,12 @@ func _ready() -> void:
 	cutin.visible = false
 	cutin.draw.connect(_draw_cutin)
 	add_child(cutin)
+	# カラスは 帯の 中だけに 描く(全身を 出すと 盤面が 見えなくなる)
+	cut_band = Control.new()
+	cut_band.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	cut_band.clip_contents = true
+	cut_band.draw.connect(_draw_cut_band)
+	cutin.add_child(cut_band)
 	_make_island()
 	msg.text = "立て札をえらんで 問題を解くと、そこに旗が立ち、答えの数だけ土地が広がる"
 	_refresh()
@@ -423,7 +442,7 @@ func _draw_board() -> void:
 # =========================================================
 
 func _on_board_input(event: InputEvent) -> void:
-	if over or quiz.visible:
+	if over or quiz.visible or auto_fill:
 		return
 	var pressed := false
 	var at := Vector2.ZERO
@@ -571,6 +590,8 @@ func _clear_marks() -> void:
 # =========================================================
 
 func _on_act() -> void:
+	if auto_fill:
+		return
 	if over:
 		GameState.change_scene("res://scenes/main.tscn")
 		return
@@ -708,6 +729,10 @@ func _crow_turn() -> void:
 		cut_text_override = ""
 	_cut_in(mood, line)
 	_refresh()
+	if _decided() and not over:
+		# もう 追いつけない。残りは 自動で 塗って 見せる
+		auto_fill = true
+		msg.text = "勝負あり ― のこりは 自動で ぬる"
 
 
 ## 細い所を 切る。まわりが 3 方カラスの 自分のマスを 1 つ 奪う
@@ -922,6 +947,7 @@ func _refresh() -> void:
 		if _marked_cost() < need and _markable_left() == 0 and not marked.is_empty():
 			act_btn.text = "ここまでで 決める(%d/%d)" % [_marked_cost(), need]
 	redo_btn.disabled = marked.is_empty()
+	auto_btn.disabled = need <= 0 or _markable_left() <= 0
 	board.queue_redraw()
 
 
@@ -942,11 +968,16 @@ func _finish() -> void:
 func _process(delta: float) -> void:
 	_t += delta
 	if cut_t > 0.0:
-		cut_t -= delta / 1.6
+		cut_t -= delta / 1.25
 		cutin.queue_redraw()
 		if cut_t <= 0.0:
 			cut_t = 0.0
 			cutin.visible = false
+	if auto_fill and cut_t <= 0.0:
+		auto_t += delta
+		while auto_t > 0.045:
+			auto_t -= 0.045
+			_auto_fill_step()
 	if not over and not quiz.visible:
 		board.queue_redraw()
 		bar.queue_redraw()
@@ -994,26 +1025,33 @@ func _cut_in(mood: String, text: String) -> void:
 
 
 func _draw_cutin() -> void:
-	var c := cutin
+	# 盤面は 見えたまま。うっすら 暗くする だけに する
+	var e := clampf(cut_t, 0.0, 1.0)
+	var fade := minf(e * 4.0, 1.0)
+	cutin.draw_rect(Rect2(Vector2.ZERO, cutin.size), Color(0.04, 0.05, 0.09, 0.22 * fade))
+	# 帯は 盤面の 下ぞろえ(指を 置く ところを ふさがない)
+	var bh := minf(cutin.size.y * 0.30, 268.0)
+	var top := board.global_position.y + board.size.y - bh
+	cut_band.position = Vector2(0, top)
+	cut_band.size = Vector2(cutin.size.x, bh)
+	cut_band.queue_redraw()
+
+
+func _draw_cut_band() -> void:
+	var c := cut_band
 	var w := c.size.x
 	var h := c.size.y
-	# 出入りの すべり(0→1→0)
 	var e := clampf(cut_t, 0.0, 1.0)
-	var slide := (1.0 - ease(minf(e * 3.0, 1.0), 0.4)) * w * 0.9
-	var band_h := h * 0.46
-	var top := h * 0.24
-	c.draw_rect(Rect2(0, 0, w, h), Color(0.05, 0.06, 0.10, 0.55 * minf(e * 3.0, 1.0)))
-	c.draw_colored_polygon(PackedVector2Array([
-		Vector2(slide - 40.0, top), Vector2(w + slide, top - 26.0),
-		Vector2(w + slide, top + band_h - 26.0), Vector2(slide - 40.0, top + band_h)]),
-		Color(0.16, 0.14, 0.22, 0.96))
-	var foot := Vector2(w * 0.72 + slide, top + band_h - 18.0)
-	# カットインでは こちらを むく(左むき)
-	Chars.crow(c, foot, band_h * 0.92, cut_mood, _t, -1.0)
-	Chars.bubble(c, Vector2(w * 0.34 + slide, top + band_h * 0.42), Vector2(w * 0.52, 96.0),
-		cut_text, 1.0, 24)
-	c.draw_string(ThemeDB.fallback_font, Vector2(slide + 16.0, top + band_h + 34.0),
-		"カラスのターン", HORIZONTAL_ALIGNMENT_LEFT, -1, 26, GOLD)
+	var slide := (1.0 - ease(minf(e * 4.0, 1.0), 0.4)) * w
+	# 帯の 地
+	c.draw_rect(Rect2(slide, 0, w, h), Color(0.13, 0.12, 0.20, 0.96))
+	c.draw_line(Vector2(slide, 0), Vector2(w + slide, 0), GOLD, 3.0)
+	# カラスは 胸から 上だけ(足もとは 帯の 下に かくれる)
+	Chars.crow(c, Vector2(w * 0.78 + slide, h * 1.55), h * 1.3, cut_mood, _t, -1.0)
+	Chars.bubble(c, Vector2(w * 0.31 + slide, h * 0.80), Vector2(w * 0.54, h * 0.52),
+		cut_text, 1.0, 23)
+	c.draw_string(ThemeDB.fallback_font, Vector2(slide + 14.0, h - 12.0),
+		"カラスのターン", HORIZONTAL_ALIGNMENT_LEFT, -1, 22, GOLD)
 
 
 ## 上の 帯。両はしに 顔を 出して、いま 誰と 戦っているかを 見せる
@@ -1043,3 +1081,92 @@ func _draw_bar() -> void:
 	Chars.hero(c, Vector2(46.0, h - 4.0), h * 0.94, "guts" if mp > cp else "calm", _t)
 	Chars.crow(c, Vector2(w - 44.0, h - 4.0), h * 0.94,
 		"calm" if cp >= mp else "panic", _t)
+
+
+# =========================================================
+# 決着が 見えたら 自動で 塗る
+# =========================================================
+
+## 残り 全部を 取っても 追いつけない ところまで 来たら、勝負は 決まっている
+func _decided() -> bool:
+	var rest := _count(EMPTY) + _count(SPRING) + _count(RUIN)
+	return absi(_count(MINE) - _count(CROW)) > rest
+
+
+## 残りのマスを、近いほうの 陣地に 順ぐりに 塗って 終わらせる。
+## 決まった 勝負を なぞり続けるのは ただの 作業なので、そこは 見せるだけにする
+func _auto_fill_step() -> void:
+	var best := Vector2i(-1, -1)
+	var best_kind := EMPTY
+	var best_d := 999
+	for y in H:
+		for x in W:
+			var k: int = cell[y][x]
+			if k != EMPTY and k != SPRING and k != RUIN:
+				continue
+			var dm := _dist_to(Vector2i(x, y), MINE)
+			var dc := _dist_to(Vector2i(x, y), CROW)
+			var d := mini(dm, dc)
+			if d < best_d:
+				best_d = d
+				best = Vector2i(x, y)
+				best_kind = MINE if dm <= dc else CROW
+	if best.x < 0:
+		auto_fill = false
+		_finish()
+		return
+	cell[best.y][best.x] = best_kind
+	GameState.play_sfx("type")
+	board.queue_redraw()
+	bar.queue_redraw()
+
+
+func _dist_to(cv: Vector2i, kind: int) -> int:
+	var best := 999
+	for y in H:
+		for x in W:
+			if cell[y][x] == kind:
+				best = mini(best, absi(x - cv.x) + absi(y - cv.y))
+	return best
+
+
+## いま 取れる マスの 中から、それらしい ところを 自動で えらぶ。
+## 泉と遺跡 → カラスと 接する ところ → 旗の 近く の 順
+func _auto_mark() -> void:
+	var guard := 0
+	while _marked_cost() < need and guard < 200:
+		guard += 1
+		var best := Vector2i(-1, -1)
+		var best_score := -9999
+		var left := need - _marked_cost()
+		for y in H:
+			for x in W:
+				var cv := Vector2i(x, y)
+				if marked.has(cv):
+					continue
+				var k: int = cell[y][x]
+				if k != EMPTY and k != SPRING and k != RUIN and k != CROW:
+					continue
+				if _cost_of(cv) > left:
+					continue
+				if not _touches_claim(cv):
+					continue
+				var score := 0
+				if k == SPRING:
+					score += 60
+				elif k == RUIN:
+					score += 40
+				elif k == CROW:
+					score += 10           # 押し返しは 2 マスぶん つかうので ほどほどに
+				if _touches(cv, CROW):
+					score += 12           # 前線を 広げると 切られにくい
+				if post_cell.x >= 0:
+					score -= absi(x - post_cell.x) + absi(y - post_cell.y)
+				if score > best_score:
+					best_score = score
+					best = cv
+		if best.x < 0:
+			break
+		_mark(best)
+	GameState.play_sfx("tap")
+	_refresh()
