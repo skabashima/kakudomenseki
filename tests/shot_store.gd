@@ -48,18 +48,22 @@ func _run() -> void:
 	await _calc("men", 4, "(8−1)×(11−1)", "05_calc.png", 2, 7003)
 	# 6) 「解き方」アニメ(ヒポクラテスの月。補助線と色ぬりが出たところ)
 	await _walkthrough("men", 14, 3, "06_walkthrough.png", 2, 7004)
-	# 7) チャレンジ選択(自己ベストつき)
-	await _scene("res://scenes/challenge_select.tscn", "07_challenge.png")
-	# 8) 記録(段位・コース別・自己ベスト)
-	await _scene("res://scenes/records.tscn", "08_records.png")
-	# 9) ステージ一覧(面積編)。大学受験レベルまで下げて撮る
+	# 7) ストーリー(小学生)の単元えらび
+	await _scene("res://scenes/kid_select.tscn", "07_kid_select.png")
+	# 8) ストーリー(小学生)の さわる場面(かどを ちぎって ならべたところ)
+	await _kid_unit("k1", "08_kid_tear.png")
+	# 9) ストーリー(高校生)の 測る場面(惑星の基地。表に数が並ぶ)
+	await _story_scene("hs", "ch17", 1, "09_story_hs.png")
+	# 10) 記録(段位・コース別・自己ベスト)
+	await _scene("res://scenes/records.tscn", "10_records.png")
+	# 11) ステージ一覧(面積編)。大学受験レベルまで下げて撮る
 	# (方べき・チェバ・円の方程式・回転体まで入っていることが、ここで伝わる)
 	GameState.current_course = "men"
-	await _scene("res://scenes/stage_select.tscn", "09_stage_select_men.png", "大学受験レベル")
-	# 10) 解放画面(App Store の課金審査用スクショにも使う)
+	await _scene("res://scenes/stage_select.tscn", "11_stage_select_men.png", "大学受験レベル")
+	# 12) 解放画面(App Store の課金審査用スクショにも使う)
 	GameState.premium = false
 	GameState.debug_unlock_all = false
-	await _store_shot("10_store_iap.png")
+	await _store_shot("12_store_iap.png")
 
 	_clear_progress()
 	print("SHOT STORE DONE")
@@ -119,6 +123,56 @@ func _clear_progress() -> void:
 ## scroll_to が空でなければ、その文字が出ている見出しが上に来るまでスクロールしてから撮る
 ## (ステージ一覧は長いので、大学受験レベルを見せたいときに使う。
 ##  ステージが増えても位置がずれないよう、数値ではなく文字で指定する)
+## ストーリー(小学生)の 1 単元。かどを 2 つ ならべた ところで撮る
+func _kid_unit(uid: String, out_name: String) -> void:
+	GameState.kid_unit = uid
+	var inst: Node = (load("res://scenes/kid_unit.tscn") as PackedScene).instantiate()
+	sub.add_child(inst)
+	for f in 12:
+		await get_tree().process_frame
+	for i in (inst.unit["intro"] as Array).size():
+		inst._advance()
+		await get_tree().process_frame
+	# 3 つのうち 2 つを ならべた状態にする(遊び方が 一目で分かる)
+	var placed: Array = inst.st["placed"]
+	placed[0] = true
+	placed[1] = true
+	inst.map.queue_redraw()
+	for f in 6:
+		await get_tree().process_frame
+	await _save(out_name)
+	inst.queue_free()
+	await get_tree().process_frame
+
+
+## ストーリー(中学生 / 高校生)の指定の場面
+func _story_scene(mode: String, chapter: String, scene_index: int, out_name: String) -> void:
+	GameState.story_mode = mode
+	GameState.story_chapter = chapter
+	GameState.story_scene = scene_index
+	var inst: Node = (load("res://scenes/story.tscn") as PackedScene).instantiate()
+	sub.add_child(inst)
+	for f in 14:
+		await get_tree().process_frame
+	if scene_index == 1:
+		# 予想を済ませ、2 回ぶん記録した状態にする
+		inst._do_guess(1)
+		for f in 3:
+			await get_tree().process_frame
+		for t in 2:
+			var kind := String(inst.scene_data["fig"])
+			var start: Vector2 = StoryDefs.start_of(kind)
+			inst._on_dragged(0, StoryDefs.clamp_of(kind, start * (1.0 + 0.25 * float(t))))
+			await get_tree().process_frame
+			inst._record()
+			await get_tree().process_frame
+	for f in 6:
+		await get_tree().process_frame
+	await _save(out_name)
+	inst.queue_free()
+	await get_tree().process_frame
+
+
 func _scene(path: String, out_name: String, scroll_to := "") -> void:
 	var inst: Node = (load(path) as PackedScene).instantiate()
 	sub.add_child(inst)

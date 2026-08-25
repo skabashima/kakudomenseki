@@ -45,8 +45,8 @@ DELIVERY = [
 
 # 掲載する順(Google Play は 8 枚まで)。最初の 3 枚で「何のアプリか」が伝わる並びにする
 PICKS = [
-    "01_title", "03_problem_angle", "06_walkthrough", "05_calc",
-    "04_problem_leaf", "02_stage_select", "08_records", "10_store_iap",
+    "01_title", "08_kid_tear", "03_problem_angle", "05_calc",
+    "06_walkthrough", "09_story_hs", "11_stage_select_men", "12_store_iap",
 ]
 
 # 画面ごとの: 素材 / 見出し / 補足 / 背景色(濃い→薄い)
@@ -57,10 +57,10 @@ PLUM = ((44, 24, 52), (116, 66, 132))
 TEAL = ((16, 48, 46), (40, 116, 108))
 
 SHOTS = [
-    ("01_title.png", "角度と面積を、\n数字で撃ち落とせ。",
-     "中学受験・高校受験・大学受験の図形 65ステージ", NAVY),
-    ("02_stage_select.png", "中学受験から\n大学受験まで一本道",
-     "前をクリアすると次が開く。★とスコアが積み上がる", GOLD),
+    ("01_title.png", "中学受験から\n大学受験まで",
+     "角度と面積だけを集めた 65 ステージ。学年が上がっても同じアプリで", NAVY),
+    ("02_stage_select.png", "一本道で\n積み上がる",
+     "前をクリアすると次が開く。小学生の範囲はふりがな付き", GOLD),
     ("03_problem_angle.png", "図で出る。\n数字で答える。",
      "星形・時計の針・円周角…同じ問題でも値は毎回ちがう", NAVY),
     ("04_problem_leaf.png", "中学受験の名物問題も\nそのまま",
@@ -69,14 +69,18 @@ SHOTS = [
      "√ × ÷ が使える電卓つき。途中計算もその場で", TEAL),
     ("06_walkthrough.png", "わからなければ\n「解き方」をアニメで",
      "補助線がスッと引かれ、1ステップずつ進む", GOLD),
-    ("07_challenge.png", "3分タイムアタックと\nサバイバル",
-     "すきま時間に腕試し。自己ベストが残る", PLUM),
-    ("08_records.png", "段位と★が\n積み上がる",
+    ("07_kid_select.png", "小学生は\nストーリーから",
+     "中学受験の全 23 単元に、さわって見つける回が 1 つずつ", PLUM),
+    ("08_kid_tear.png", "かどを ちぎって\nならべると 180°",
+     "公式を読む前に、指で動かして自分で見つける", GOLD),
+    ("09_story_hs.png", "高校生は\n別の物語で",
+     "惑星の基地で、方べき・余弦定理・積分を実際に使う", TEAL),
+    ("10_records.png", "段位と★が\n積み上がる",
      "見習いから図形仙人まで。コンボで点が伸びる", NAVY),
-    ("09_stage_select_men.png", "面積編は45ステージ。\n三平方から積分まで",
+    ("11_stage_select_men.png", "面積編は 45 ステージ。\n三平方から積分まで",
      "方べき・チェバ・円の方程式・空間図形・回転体もカバー", BLUE),
-    ("10_store_iap.png", "買い切り。\n広告も追加課金もなし",
-     "各編の最初の4ステージは無料でためせる", NAVY),
+    ("12_store_iap.png", "買い切り。\n広告も追加課金もなし",
+     "各編の最初の 4 ステージは無料でためせる", NAVY),
 ]
 
 # 掲載順にリネームするときの短い名前(01_ の数字は PICKS の並び)
@@ -87,10 +91,12 @@ NICE_NAME = {
     "04_problem_leaf": "area",
     "05_calc": "calc",
     "06_walkthrough": "howto",
-    "07_challenge": "challenge",
-    "08_records": "records",
-    "09_stage_select_men": "stages_area",
-    "10_store_iap": "unlock",
+    "07_kid_select": "story_kids",
+    "08_kid_tear": "kids_tear",
+    "09_story_hs": "story_hs",
+    "10_records": "records",
+    "11_stage_select_men": "stages_area",
+    "12_store_iap": "unlock",
 }
 
 

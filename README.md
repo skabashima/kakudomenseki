@@ -182,7 +182,7 @@ godot --path "<このフォルダ>"
   動かしても一定か**(1 章あたり 300 通り)、そして**依頼が毎回ちゃんと
   作れるか**(文・答え・図がそろい、本編と同じ教科書調の語尾で終わっていないか)を
   検証する
-- `tests/story_play.tscn` が**全30章を実際に最後まで通してプレイする**。各場面で
+- `tests/story_play.tscn` が**中学生モードと高校生モードの全章を通してプレイする**。各場面で
   「つぎへ」が出ることを確かめる ― 依頼(`core/story_tasks.gd`)は本編の問題と
   持っている項目が違うので、無い項目をうっかり読むとそこで関数が止まり、
   ボタンが出ないまま**進めなくなる**(実際に起きた)。データ検証だけでは
@@ -334,7 +334,7 @@ scenes/
   challenge_select.gd/.tscn チャレンジ選択
   records.gd/.tscn          記録(段位・コース別・チャレンジ自己ベスト)
   story.gd/.tscn            ストーリー本編(図を動かして不変量を見つける)
-  story_select.gd/.tscn     ストーリーの章えらび(全30章・前の章で解放)
+  story_select.gd/.tscn     ストーリーの章えらび(中学生21章 / 高校生9章・前の章で解放)
   story_art.gd              会話につける挿絵(その場で図形として描く)
   store.gd/.tscn            解放画面(買い切り 1 商品・購入の復元)
 addons/
@@ -363,7 +363,7 @@ tests/
   kid_check.tscn         ストーリー(小学生)の全単元を最後まで通す (--headless 可)
   story_check.gd         ストーリーの章データと角度の丸めの検証 (--headless 可)
   ruby_check.gd          小学生むけの文が「小 1 の漢字 + ふりがな」だけかを検証 (--headless 可)
-  story_play.tscn        ストーリー全30章を実際に最後まで通す (--headless 可)
+  story_play.tscn        ストーリーを両モードとも最後まで通す (--headless 可)
   font_check.gd          画面に出る文字が同梱フォントにあるか検証 (--headless 可)
   variation_report.tscn  ステージごとの問題バリエーション数を実測 (--headless 可)
   shots.tscn             全画面のスクリーンショット撮影(要描画環境)
