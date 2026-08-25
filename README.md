@@ -347,6 +347,7 @@ addons/
 store/
   make_store_images.py   撮った素材に見出しを合成してストア規定サイズで書き出す
   check_store_images.py  入稿画像の寸法・枚数・容量の検品
+  check_store_text.py    掲載文の検品(絵文字などストアが弾く字・字数の上限)
   check_aab.py           AAB の中身の検品(16KBページ・targetSdk・BILLING 権限)
   ストア掲載情報.md       両ストアの掲載文・キーワード・レーティング
   課金登録情報.md         両ストアの商品登録・審査メモ・プライバシー申告
