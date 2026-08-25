@@ -132,13 +132,13 @@ func _card(index: int, ch: Dictionary) -> Control:
 	hbox.add_child(mid)
 	var t := Label.new()
 	# 章の名前は開いていなくても見せる(何が待っているか分かるほうが進めたくなる)
-	t.text = String(ch["title"])
+	t.text = _kids(ch, String(ch["title"]))
 	t.add_theme_font_size_override("font_size", 28)
 	t.add_theme_color_override("font_color",
 		Color.WHITE if unlocked else Color(0.78, 0.82, 0.9))
 	mid.add_child(t)
 	var d := Label.new()
-	d.text = String(ch["found"]) if cleared else String(ch["place"])
+	d.text = _kids(ch, String(ch["found"]) if cleared else String(ch["place"]))
 	d.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	d.add_theme_font_size_override("font_size", 19)
 	d.add_theme_color_override("font_color",
@@ -159,3 +159,10 @@ func _card(index: int, ch: Dictionary) -> Control:
 		right.add_child(ok)
 	row.add_child(btn)
 	return row
+
+
+## 小学生が読む章(中学受験レベル)なら、漢字によみを付ける
+func _kids(ch: Dictionary, text: String) -> String:
+	if String(ch.get("level", "")) == "中学受験":
+		return Ruby.apply(text)
+	return text

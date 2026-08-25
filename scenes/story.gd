@@ -70,8 +70,8 @@ func _build_frame() -> void:
 		GameState.change_scene("res://scenes/story_select.tscn"))
 	head.add_child(back)
 	var title := Label.new()
-	title.text = "第%d章 %s" % [
-		StoryDefs.chapter_index(String(chapter["id"])) + 1, String(chapter["title"])]
+	title.text = _kids("第%d章 %s" % [
+		StoryDefs.chapter_index(String(chapter["id"])) + 1, String(chapter["title"])])
 	title.add_theme_font_size_override("font_size", 32)
 	title.add_theme_color_override("font_color", HEAD)
 	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -82,7 +82,7 @@ func _build_frame() -> void:
 	head.add_child(status_lbl)
 
 	var place := Label.new()
-	place.text = "%s ・ %s" % [String(chapter["place"]), String(chapter["level"])]
+	place.text = "%s ・ %s" % [_kids(String(chapter["place"])), _kids(String(chapter["level"]))]
 	place.add_theme_font_size_override("font_size", 20)
 	place.add_theme_color_override("font_color", Color(0.7, 0.78, 0.92))
 	root.add_child(place)
@@ -138,7 +138,7 @@ func _show_scene() -> void:
 	var scenes: Array = chapter["scenes"]
 	scene_data = scenes[idx]
 	status_lbl.text = "%d / %d" % [idx + 1, scenes.size()]
-	_add_label(String(scene_data["title"]), 30, HEAD)
+	_add_label(_kids(String(scene_data["title"])), 30, HEAD)
 	match String(scene_data["type"]):
 		"talk":
 			_build_talk()
@@ -172,7 +172,7 @@ func _build_measure() -> void:
 	_refresh_figure()
 	if guess < 0:
 		# 測る前に賭けさせる。当たっても外れても、そのあとの表の見え方が変わる
-		_add_label("測る前に予想しよう。" + String(scene_data["question"]), 24, HEAD)
+		_add_label(_kids("測る前に予想しよう。" + String(scene_data["question"])), 24, HEAD)
 		var gb := VBoxContainer.new()
 		gb.add_theme_constant_override("separation", 10)
 		body.add_child(gb)
@@ -297,7 +297,7 @@ func _refresh_table() -> void:
 	if not choice_box.get_children().is_empty():
 		return
 	var q := Label.new()
-	q.text = String(scene_data["question"])
+	q.text = _kids(String(scene_data["question"]))
 	q.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	q.add_theme_font_size_override("font_size", 25)
 	q.add_theme_color_override("font_color", HEAD)
@@ -326,7 +326,7 @@ func _choose(pick: int) -> void:
 		_add_label("予想的中! 測る前から見抜いていた。", 24, HEAD)
 	elif guess >= 0:
 		_add_label("予想ははずれ。だが記録が正しい答えを教えてくれた。", 23, Color(0.85, 0.9, 1.0))
-	_add_label(String(scene_data.get("after", "")), 24, Color(0.7, 1.0, 0.8))
+	_add_label(_kids(String(scene_data.get("after", ""))), 24, Color(0.7, 1.0, 0.8))
 	for b in choice_box.get_children():
 		if b is Button:
 			(b as Button).disabled = true
@@ -339,7 +339,7 @@ func _pick_answer(v: float, ans: float) -> void:
 	if absf(v - ans) > float(problem.get("tol", 0.01)):
 		GameState.play_sfx("fail")
 		# 章ごとに見つけたことを言い直す(ここを決め打ちにすると別の章で嘘になる)
-		_add_label("ちがう。%s ― もう一度。" % String(chapter.get("found", "")),
+		_add_label(_kids("ちがう。%s ― もう一度。" % String(chapter.get("found", ""))),
 			23, Color(1.0, 0.7, 0.6))
 		return
 	answered = true
@@ -347,8 +347,8 @@ func _pick_answer(v: float, ans: float) -> void:
 	# 依頼(story_tasks)は本編の problem とちがって解説を持たない。
 	# ここで問題の辞書に無い鍵を読むと関数がそこで止まり、
 	# 「つぎへ」が出ないまま進めなくなる(実際にそうなっていた)
-	_add_label("答え %s%s ― %s" % [ProblemGen.fmt(ans), String(problem.get("unit", "")),
-		String(chapter.get("found", ""))], 23, Color(0.85, 0.92, 1.0))
+	_add_label(_kids("答え %s%s ― %s" % [ProblemGen.fmt(ans), String(problem.get("unit", "")),
+		String(chapter.get("found", ""))]), 23, Color(0.85, 0.92, 1.0))
 	_add_label(String(scene_data.get("after", "")), 24, Color(0.7, 1.0, 0.8))
 	for b in choice_box.get_children():
 		if b is Button:
@@ -399,8 +399,8 @@ func _finish() -> void:
 	for c in body.get_children():
 		c.queue_free()
 	fig_panel.visible = false
-	_add_label("%s ― 章クリア!" % String(chapter["title"]), 34, HEAD)
-	_add_label("見つけたこと: " + String(chapter.get("found", "")), 24, Color(0.7, 1.0, 0.8))
+	_add_label(_kids("%s ― 章クリア!" % String(chapter["title"])), 34, HEAD)
+	_add_label(_kids("見つけたこと: " + String(chapter.get("found", ""))), 24, Color(0.7, 1.0, 0.8))
 	var next_i := StoryDefs.chapter_index(String(chapter["id"])) + 1
 	if next_i < StoryDefs.CHAPTERS.size():
 		var nb := Button.new()
