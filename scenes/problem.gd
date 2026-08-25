@@ -42,8 +42,8 @@ var score_lbl: Label
 var combo_lbl: Label
 var progress_lbl: Label
 var figure: FigureView
-var question_lbl: Label
-var hint_lbl: Label
+var question_lbl: RubyLabel
+var hint_lbl: RubyLabel
 var answer_lbl: Label
 var unit_lbl: Label
 var hint_btn: Button
@@ -204,18 +204,20 @@ func _build_ui() -> void:
 	figure.add_child(pen_btn)
 
 	# --- 問題文 ---
-	question_lbl = Label.new()
-	question_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	question_lbl.add_theme_font_size_override("font_size", 30)
-	question_lbl.custom_minimum_size = Vector2(0, 116)
+	question_lbl = RubyLabel.new()
+	question_lbl.font_size = 32
+	question_lbl.ruby_size = 17
+	question_lbl.custom_minimum_size = Vector2(0, 120)
+	question_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	root.add_child(question_lbl)
 
 	# --- ヒント表示欄 ---
-	hint_lbl = Label.new()
-	hint_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	hint_lbl.add_theme_font_size_override("font_size", 23)
-	hint_lbl.add_theme_color_override("font_color", Color(0.65, 0.9, 1.0))
-	hint_lbl.custom_minimum_size = Vector2(0, 60)
+	hint_lbl = RubyLabel.new()
+	hint_lbl.font_size = 26
+	hint_lbl.ruby_size = 15
+	hint_lbl.color = Color(0.65, 0.9, 1.0)
+	hint_lbl.custom_minimum_size = Vector2(0, 64)
+	hint_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	root.add_child(hint_lbl)
 
 	# --- 解答欄とキーパッド(電卓つき: 式を組んでそのまま答えられる) ---
@@ -298,14 +300,14 @@ func _unhandled_key_input(event: InputEvent) -> void:
 # ---------------------------------------------------------
 
 ## 小学生むけのステージなら、漢字によみを付ける
-func _kids(text: String) -> String:
+## 小学生には言い回しも短く(ふりがなは RubyLabel が漢字の上に付ける)
+func _short(text: String) -> String:
 	if not Ruby.needed(stage_id):
 		return text
-	# 小学生には言い回しも短く。「〜を求めなさい。」→「〜は?」
 	var t := text.replace("を求めなさい。", "は?")
 	t = t.replace("は何度ですか。", "は何度?")
 	t = t.replace("ですか。", "?")
-	return Ruby.apply(t)
+	return t
 
 
 func _next_question(first := false) -> void:
@@ -334,10 +336,11 @@ func _next_question(first := false) -> void:
 		tier = rng.randi_range(0, mini(2 + int(ramp * 7.0), 9))
 	problem = ProblemGen.generate(sid, rng, tier)
 	figure.set_spec(problem["fig"])
-	question_lbl.text = _kids(String(problem["q"]))
+	question_lbl.set_ruby_text(_short(String(problem["q"])), Ruby.needed(stage_id))
 	# 電卓と補助線の存在をそっと知らせる(ヒントを出すと上書きされる)
-	hint_lbl.text = "式のまま答えてOK(例: 12×8÷2)。図は指でなぞって書ける(「補助線」でまっすぐな線)"
-	hint_lbl.add_theme_color_override("font_color", Color(0.55, 0.62, 0.75, 0.8))
+	hint_lbl.color = Color(0.55, 0.62, 0.75, 0.8)
+	hint_lbl.set_ruby_text(
+		"式のまま答えてOK(例: 12×8÷2)。図は指でなぞって書ける(「補助線」でまっすぐな線)", false)
 	unit_lbl.text = String(problem["unit"])
 	if not _stage_based():
 		title_lbl.text = ("タイムアタック  " if GameState.mode == "time" else "サバイバル  ") \
@@ -441,9 +444,9 @@ func _show_hint() -> void:
 		return
 	GameState.play_sfx("hint")
 	hints_used += 1
-	var text := _kids(String(problem["hint1"]) if hints_used == 1 else String(problem["hint2"]))
-	hint_lbl.text = "ヒント%d: %s" % [hints_used, text]
-	hint_lbl.add_theme_color_override("font_color", Color(0.65, 0.9, 1.0))
+	var text := _short(String(problem["hint1"]) if hints_used == 1 else String(problem["hint2"]))
+	hint_lbl.color = Color(0.65, 0.9, 1.0)
+	hint_lbl.set_ruby_text("ヒント%d: %s" % [hints_used, text], Ruby.needed(stage_id))
 	if hints_used >= 2:
 		hint_btn.disabled = true
 
@@ -469,7 +472,8 @@ func _on_walkthrough() -> void:
 	if wt_idx >= wt_steps.size():
 		return
 	var step: Dictionary = wt_steps[wt_idx]
-	hint_lbl.text = "解き方 %d/%d: %s" % [wt_idx + 1, wt_steps.size(), String(step.get("say", ""))]
+	hint_lbl.set_ruby_text("解き方 %d/%d: %s" % [wt_idx + 1, wt_steps.size(),
+		_short(String(step.get("say", "")))], Ruby.needed(stage_id))
 	hint_lbl.add_theme_color_override("font_color", Color(1.0, 0.85, 0.5))
 	if step.has("add"):
 		figure.add_overlay(step["add"])
@@ -493,14 +497,14 @@ func _generic_steps() -> Array:
 	var mark := _outline_shapes()
 	var head := "図の光っているところに注目。" if not mark.is_empty() else "図をよく見てみよう。"
 	if hints_used < 1:
-		head += _kids(String(problem["hint1"]))
+		head += _short(String(problem["hint1"]))
 	var first := {"say": head}
 	if not mark.is_empty():
 		first["add"] = mark
 	steps.append(first)
 	if hints_used < 2:
 		steps.append({"say": String(problem["hint2"])})
-	for part in _split_expl(_kids(String(problem["expl"]))):
+	for part in _split_expl(_short(String(problem["expl"]))):
 		steps.append({"say": part})
 	steps.append({"say": "解き方はここまで。答えを入力してつぎへ進もう(この問題は0点)"})
 	return steps
@@ -730,8 +734,13 @@ func _fail_stage() -> void:
 		_add_label(v, "ハートがなくなった…", 44, Color(1.0, 0.55, 0.55))
 	_add_label(v, "正解は %s%s" % [ProblemGen.fmt(float(problem["answer"])), String(problem["unit"])],
 		34, Color(1.0, 0.9, 0.5))
-	var expl := _add_label(v, _kids(String(problem["expl"])), 24, Color(0.85, 0.9, 1.0))
-	expl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	var expl := RubyLabel.new()
+	expl.font_size = 26
+	expl.ruby_size = 15
+	expl.color = Color(0.85, 0.9, 1.0)
+	expl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	expl.set_ruby_text(_short(String(problem["expl"])), Ruby.needed(stage_id))
+	v.add_child(expl)
 	expl.custom_minimum_size = Vector2(640, 0)
 	_add_button(v, "リトライ(べつの数値で)", Color(0.2, 0.55, 0.35), func() -> void:
 		GameState.change_scene("res://scenes/problem.tscn"))

@@ -198,6 +198,40 @@ static func apply(text: String) -> String:
 	return out
 
 
+## 文を「そのまま出す部分」と「よみ を付ける部分」に分ける。
+## ui/ruby_label.gd が、漢字の上に よみ を乗せて描くのに使う。
+## 戻り値: [{"s": 文字, "r": よみ(無ければ "")}, ...]
+static func parts(text: String) -> Array:
+	var out: Array = []
+	if text == "":
+		return out
+	var sorted: Array = WORDS.duplicate()
+	sorted.sort_custom(func(a, b): return String(a[0]).length() > String(b[0]).length())
+	var plain := ""
+	var i := 0
+	while i < text.length():
+		var hit := ""
+		var yomi := ""
+		for w in sorted:
+			var word := String(w[0])
+			if text.substr(i, word.length()) == word:
+				hit = word
+				yomi = String(w[1])
+				break
+		if hit == "" or _all_plain(hit):
+			plain += text.substr(i, maxi(hit.length(), 1))
+			i += maxi(hit.length(), 1)
+			continue
+		if plain != "":
+			out.append({"s": plain, "r": ""})
+			plain = ""
+		out.append({"s": hit, "r": yomi})
+		i += hit.length()
+	if plain != "":
+		out.append({"s": plain, "r": ""})
+	return out
+
+
 ## その語が 小 1 の漢字だけでできているか
 static func _all_plain(word: String) -> bool:
 	for i in word.length():
