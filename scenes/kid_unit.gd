@@ -32,6 +32,7 @@ var map: Control
 var big: Label
 var talk: RubyLabel
 var keypad: Keypad
+var answer_row: HBoxContainer
 var answer_btn: Button
 var act_btn: Button
 var figure: FigureView
@@ -106,14 +107,28 @@ func _ready() -> void:
 	keypad.key_pressed.connect(_on_key)
 	keypad.visible = false
 	root.add_child(keypad)
+	# ＝(計算)と こたえる を ならべる(本編 problem.gd と 同じ 使いごこち)
+	answer_row = HBoxContainer.new()
+	answer_row.add_theme_constant_override("separation", 10)
+	answer_row.visible = false
+	root.add_child(answer_row)
+	var calc_btn := Button.new()
+	calc_btn.text = "＝ 計算"
+	calc_btn.custom_minimum_size = Vector2(0, 88)
+	calc_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	calc_btn.add_theme_font_size_override("font_size", 28)
+	GameState.style_button(calc_btn, Color(0.24, 0.42, 0.72))
+	calc_btn.pressed.connect(_calc_in_place)
+	answer_row.add_child(calc_btn)
 	answer_btn = Button.new()
 	answer_btn.text = "こたえる"
 	answer_btn.custom_minimum_size = Vector2(0, 88)
+	answer_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	answer_btn.size_flags_stretch_ratio = 1.6
 	answer_btn.add_theme_font_size_override("font_size", 30)
 	GameState.style_button(answer_btn, Color(0.22, 0.55, 0.35))
 	answer_btn.pressed.connect(_submit)
-	answer_btn.visible = false
-	root.add_child(answer_btn)
+	answer_row.add_child(answer_btn)
 
 	act_btn = Button.new()
 	act_btn.custom_minimum_size = Vector2(0, 88)
@@ -200,7 +215,7 @@ func _start_quiz() -> void:
 	keypad.answer_lbl.text = " "
 	keypad.unit_lbl.text = String(problem.get("unit", ""))
 	keypad.visible = true
-	answer_btn.visible = true
+	answer_row.visible = true
 	act_btn.visible = false
 	big.text = ""
 	talk.set_ruby_text("地図の しるし。" + _short(String(problem["q"])), true)
@@ -218,6 +233,21 @@ func _on_key(k: String) -> void:
 	keypad.answer_lbl.text = input_text if input_text != "" else " "
 
 
+## ＝キー: 式をその場で計算して、答え欄を計算結果に置きかえる(本編と同じ)
+func _calc_in_place() -> void:
+	if input_text == "":
+		return
+	var res: Dictionary = ExprEval.eval(input_text)
+	if not bool(res["ok"]):
+		GameState.play_sfx("fail")
+		big.text = String(res["err"])
+		return
+	GameState.play_sfx("type")
+	big.text = ""
+	input_text = ExprEval.fmt(float(res["value"]))
+	keypad.answer_lbl.text = input_text
+
+
 func _submit() -> void:
 	var v := Keypad.value_of(input_text)
 	if is_nan(v):
@@ -229,7 +259,7 @@ func _submit() -> void:
 		big.text = "あたり！"
 		talk.set_ruby_text("しるしが とけた。%s" % String(unit["found"]), true)
 		keypad.visible = false
-		answer_btn.visible = false
+		answer_row.visible = false
 		act_btn.visible = true
 		act_btn.text = "もどる"
 		phase = 3
@@ -421,7 +451,26 @@ func _reset_act() -> void:
 func _to_screen(p: Vector2) -> Vector2:
 	# ちぎった かど(半径 74)のぶんも 入るように、少し小さめに置く
 	var k := minf(map.size.x / 16.0, map.size.y / 26.0)
-	return Vector2(map.size.x * 0.5 + p.x * k, map.size.y * 0.46 - p.y * k)
+	var ox := map.size.x * 0.5
+	var oy := map.size.y * 0.46
+	if st.has("poly"):
+		# 細長い 三角形は 決めうちの 倍率だと 図の上端が map の外に 出てしまい、
+		# 外に出た かどは タッチが 届かず つかめない。図の 外わくに あわせて
+		# 倍率と 置き場所を 直し、かならず map の 中に おさめる
+		var lo := Vector2(INF, INF)
+		var hi := Vector2(-INF, -INF)
+		for q in st["poly"]:
+			lo = lo.min(q)
+			hi = hi.max(q)
+		var top := 24.0
+		# _release の「ならべた」判定(_line_y() - 170 より下)に かからない ところまで
+		var bottom := _line_y() - 210.0
+		var side := 30.0
+		k = minf(k, (map.size.x - side * 2.0) / maxf(hi.x - lo.x, 0.001))
+		k = minf(k, (bottom - top) / maxf(hi.y - lo.y, 0.001))
+		oy = clampf(oy, top + hi.y * k, bottom + lo.y * k)
+		ox = clampf(ox, side - lo.x * k, map.size.x - side - hi.x * k)
+	return Vector2(ox + p.x * k, oy - p.y * k)
 
 
 func _line_y() -> float:
@@ -550,12 +599,16 @@ func _draw_tear(c: Control) -> void:
 func _slide_points() -> Array:
 	var y_top := map.size.y * 0.30
 	var y_bottom := map.size.y * 0.64
-	var dir := Vector2(cos(deg_to_rad(float(st["slope"]))), sin(deg_to_rad(float(st["slope"]))))
+	# ゆるい かたむきだと 左端(90)から 引いても 下の交点が 右へ はみ出す。
+	# 画面の はばに 入る かたむきまで 立ててから 使う
+	var slope := maxf(float(st["slope"]),
+		rad_to_deg(atan((y_bottom - y_top) / maxf(map.size.x - 220.0, 1.0))))
+	var dir := Vector2(cos(deg_to_rad(slope)), sin(deg_to_rad(slope)))
 	# 下の交点が 右へ はみ出さない ところから 引く
-	var dx := (y_bottom - y_top) / maxf(tan(deg_to_rad(float(st["slope"]))), 0.05)
+	var dx := (y_bottom - y_top) / maxf(tan(deg_to_rad(slope)), 0.05)
 	var p_top := Vector2(clampf(map.size.x - 130.0 - dx, 90.0, map.size.x * 0.34), y_top)
 	var p_bottom := p_top + dir * ((y_bottom - y_top) / maxf(dir.y, 0.05))
-	return [p_top, p_bottom, dir, y_top, y_bottom]
+	return [p_top, p_bottom, dir, y_top, y_bottom, slope]
 
 
 func _draw_slide(c: Control) -> void:
@@ -578,7 +631,8 @@ func _draw_slide(c: Control) -> void:
 	var here: Vector2 = p_bottom if bool(st["moved"]) else p_top
 	if dragging >= 0:
 		here = st["drag_pos"]
-	var slope: float = st["slope"]
+	# かどの 大きさも、実際に 引いた 線の かたむきに あわせる
+	var slope: float = pts[5]
 	_draw_piece(c, here, deg_to_rad(-slope), slope, PIECE_COL[0], 82.0)
 	if bool(st["moved"]):
 		# くらべる ため、上の かども うすく のこす

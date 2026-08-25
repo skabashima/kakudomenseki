@@ -352,12 +352,31 @@ static func _e5(rng: RandomNumberGenerator, tier: int) -> Dictionary:
 			ProblemGen.side_label(Vector2(0, 0), Vector2(a, 0), "%dcm" % a, 1.0),
 			ProblemGen.label(Vector2(sk - 1.3, h * 0.5), "%dcm" % h),
 		]}
+		# 解き方: 左の三角形を切って右へ運ぶと、同じ広さの長方形になる
+		var pink := Color(1.0, 0.6, 0.68)
+		var cut := [Vector2(0, 0), Vector2(sk, 0), Vector2(sk, h)]
+		var steps := [
+			{"say": "ななめのままでは数えにくい。黄色い高さの線で、左の三角形を切り取ろう!",
+				"add": [ProblemGen.animated(ProblemGen.poly(cut, Color(1.0, 0.6, 0.68, 0.45), pink, 3.0),
+					{"dur": 700.0})]},
+			{"say": "切った三角形を、そのまま右へすーっと運ぶ!",
+				"add": [ProblemGen.animated(ProblemGen.arrow(Vector2(sk * 0.7, h * 0.45),
+						Vector2(a + sk * 0.7, h * 0.45), Color(0.45, 1.0, 0.6, 0.9)), {"dur": 600.0}),
+					ProblemGen.animated(ProblemGen.poly([Vector2(a, 0), Vector2(a + sk, 0), Vector2(a + sk, h)],
+						Color(1.0, 0.6, 0.68, 0.45), pink, 3.0),
+						{"from_p": cut, "dur": 1000.0, "delay": 250.0})]},
+			{"say": "たて %dcm・よこ %dcm の長方形にへんしん! 広さは変わっていないよ。" % [h, a],
+				"add": [ProblemGen.animated(ProblemGen.poly([Vector2(sk, 0), Vector2(a + sk, 0), Vector2(a + sk, h), Vector2(sk, h)],
+					null, Color(0.45, 1.0, 0.6, 0.9), 3.0), {"dur": 800.0})]},
+			{"say": "だから 平行四辺形の面積 = 底辺 × 高さ = %d × %d = %d cm²。答えを入力しよう!" % [a, h, a * h]},
+		]
 		return {
 			"q": "底辺 %dcm、高さ %dcm の平行四辺形の面積は何 cm² ですか。" % [a, h],
 			"answer": float(a * h), "unit": "cm²",
 			"hint1": "平行四辺形の面積 = 底辺 × 高さ。÷2 はいらないよ。",
 			"hint2": "%d × %d を計算しよう。" % [a, h],
 			"expl": "平行四辺形の面積 = 底辺 × 高さ = %d × %d = %d cm² です。" % [a, h, a * h],
+			"steps": steps,
 			"fig": fig,
 		}
 	elif kind == 1:
@@ -374,12 +393,33 @@ static func _e5(rng: RandomNumberGenerator, tier: int) -> Dictionary:
 			ProblemGen.side_label(Vector2(0, 0), Vector2(b, 0), "%dcm" % b, 1.0),
 			ProblemGen.label(Vector2(off + a * 0.5 + 1.4, h * 0.5), "%dcm" % h),
 		]}
+		# 解き方: さかさまにした同じ台形を右にくっつけると、
+		# 底辺 (上底+下底) の平行四辺形になる。台形はその半分。
+		# from_p は 180° 回した先の対応する頂点 ―― 元の台形から めくれて 裏返る動きになる
+		var copy := [Vector2(b, 0), Vector2(float(a + b), 0), Vector2(b + off + a, h), Vector2(off + a, h)]
+		var copy_from := [Vector2(off + a, h), Vector2(off, h), Vector2(0, 0), Vector2(b, 0)]
+		var green := Color(0.45, 1.0, 0.6, 0.9)
+		var steps := [
+			{"say": "同じ台形をもう 1 つ用意して、くるっとさかさまにして右にぴったりくっつける!",
+				"add": [ProblemGen.animated(ProblemGen.poly(copy, ProblemGen.FILL_ACCENT, ProblemGen.COL_YELLOW, 3.0),
+					{"from_p": copy_from, "dur": 1200.0}),
+					ProblemGen.animated(ProblemGen.label(Vector2((a + 2 * b) * 0.5, h * 0.5), "さかさまの同じ台形", null, 24),
+						{"delay": 900.0, "dur": 400.0})]},
+			{"say": "2 つあわせると大きな平行四辺形! 底辺は 上底+下底 = %d+%d = %dcm、高さは %dcm。" % [a, b, a + b, h],
+				"add": [ProblemGen.animated(ProblemGen.poly([Vector2(0, 0), Vector2(float(a + b), 0), Vector2(b + off + a, h), Vector2(off, h)],
+					null, green, 3.0), {"dur": 900.0}),
+					ProblemGen.animated(ProblemGen.side_label(Vector2(0, 0), Vector2(float(a + b), 0), "(%d+%d)cm" % [a, b], 1.0, 1.8),
+						{"delay": 600.0, "dur": 400.0})]},
+			{"say": "平行四辺形の面積 = 底辺 × 高さ = %d × %d = %d cm²。でもこれは台形 2 つ分!" % [a + b, h, (a + b) * h]},
+			{"say": "1 つ分にもどすため ÷2。(%d+%d)×%d÷2 = %d cm²。答えを入力しよう!" % [a, b, h, (a + b) * h / 2]},
+		]
 		return {
 			"q": "上底 %dcm、下底 %dcm、高さ %dcm の台形の面積は何 cm² ですか。" % [a, b, h],
 			"answer": float((a + b) * h / 2), "unit": "cm²",
 			"hint1": "台形の面積 = (上底 + 下底) × 高さ ÷ 2 だよ。",
 			"hint2": "(%d + %d) × %d ÷ 2 を計算しよう。" % [a, b, h],
 			"expl": "台形の面積 = (上底+下底)×高さ÷2 = (%d+%d)×%d÷2 = %d cm² です。" % [a, b, h, (a + b) * h / 2],
+			"steps": steps,
 			"fig": fig,
 		}
 	else:
@@ -1181,12 +1221,33 @@ static func _e8_hard(rng: RandomNumberGenerator) -> Dictionary:
 			Vector2(cos(deg_to_rad(float(th))), sin(deg_to_rad(float(th)))) * r, "%d°" % th, 0.0, true),
 		ProblemGen.label(Vector2(r * 0.6, -0.9), "%dcm" % r),
 	]}
+	# 解き方: 円ぜんぶをうすく見せて「弧 = 円周の一部」を示し、半径 2 本をたす
+	var sky := Color(0.55, 0.85, 1.0)
+	var p2 := Vector2(cos(deg_to_rad(float(th))), sin(deg_to_rad(float(th)))) * r
+	var steps := [
+		{"say": "まわりの長さは「弧(曲線)」と「半径 2 本」でできている。まず弧から。",
+			"add": [ProblemGen.animated(ProblemGen.arc(Vector2.ZERO, float(r), 0.0, float(th), ProblemGen.COL_YELLOW, 6.0),
+				{"dur": 800.0})]},
+		{"say": "円のつづきをうすくかくと…弧は、円周まるごとの %d/360 の長さ!" % th,
+			"add": [ProblemGen.animated(ProblemGen.arc(Vector2.ZERO, float(r), float(th), 360.0, ProblemGen.COL_DIM, 2.0),
+				{"dur": 900.0})]},
+		{"say": "円周まるごと = 2 × 3.14 × %d = %s cm。その %d/360 で、弧 = %s cm。" % [
+			r, ProblemGen.fmt(2.0 * 3.14 * r), th, ProblemGen.fmt(arc)]},
+		{"say": "わすれものに注意! まっすぐな半径 2 本、%d × 2 = %d cm もまわりの一部。" % [r, 2 * r],
+			"add": [ProblemGen.animated(ProblemGen.seg(Vector2.ZERO, Vector2(float(r), 0), sky, 6.0),
+				{"dur": 500.0}),
+				ProblemGen.animated(ProblemGen.seg(Vector2.ZERO, p2, sky, 6.0),
+					{"dur": 500.0, "delay": 350.0})]},
+		{"say": "弧 %s + 半径 2 本 %d = %s cm。答えを入力しよう!" % [
+			ProblemGen.fmt(arc), 2 * r, ProblemGen.fmt(ans)]},
+	]
 	return {
 		"q": "半径 %dcm、中心角 %d° のおうぎ形の、まわりの長さ(弧と半径 2 本ぜんぶ)は何 cm ですか。円周率は 3.14 とします。" % [r, th],
 		"answer": ans, "unit": "cm", "tol": 0.02,
 		"hint1": "まわりの長さ = 弧の長さ + 半径 × 2。半径をわすれずに!",
 		"hint2": "2 × 3.14 × %d × %d/360 + %d × 2" % [r, th, r],
 		"expl": "弧 = %s cm、半径 2 本 = %d cm。合わせて %s cm です。" % [ProblemGen.fmt(arc), 2 * r, ProblemGen.fmt(ans)],
+		"steps": steps,
 		"fig": fig,
 	}
 
@@ -1612,12 +1673,29 @@ static func _e8_semi_perim(rng: RandomNumberGenerator) -> Dictionary:
 		ProblemGen.sector(Vector2.ZERO, float(r), 0.0, 180.0, ProblemGen.FILL_MAIN, Color.WHITE),
 		ProblemGen.label(Vector2(0, -1.0), "半径 %dcm" % r),
 	]}
+	# 解き方: 円ののこり半分をうすく見せて「曲線 = 円周の半分」を示し、直径をたす
+	var steps := [
+		{"say": "まわりの長さは「曲線」と「まっすぐな直径」の 2 つ分。まず曲線から。",
+			"add": [ProblemGen.animated(ProblemGen.arc(Vector2.ZERO, float(r), 0.0, 180.0, ProblemGen.COL_YELLOW, 6.0),
+				{"dur": 800.0})]},
+		{"say": "円ののこり半分をうすくかくと…曲線は、ちょうど円周の半分!",
+			"add": [ProblemGen.animated(ProblemGen.arc(Vector2.ZERO, float(r), 180.0, 360.0, ProblemGen.COL_DIM, 2.0),
+				{"dur": 900.0})]},
+		{"say": "円周まるごと = 直径 × 3.14 = %d × 3.14 = %s cm。半分だから曲線 = %s cm。" % [
+			2 * r, ProblemGen.fmt(2 * r * 3.14), ProblemGen.fmt(3.14 * r)]},
+		{"say": "わすれものに注意! まっすぐな直径 %dcm もまわりの一部。" % (2 * r),
+			"add": [ProblemGen.animated(ProblemGen.seg(Vector2(-float(r), 0), Vector2(float(r), 0), Color(0.55, 0.85, 1.0), 6.0),
+				{"dur": 600.0})]},
+		{"say": "曲線 %s + 直径 %d = %s cm。答えを入力しよう!" % [
+			ProblemGen.fmt(3.14 * r), 2 * r, ProblemGen.fmt(ans)]},
+	]
 	return {
 		"q": "半径 %dcm の半円の、まわりの長さ(曲線と直径ぜんぶ)は何 cm ですか。円周率は 3.14 とします。" % r,
 		"answer": ans, "unit": "cm", "tol": 0.02,
 		"hint1": "曲線部分は円周の半分。まっすぐな直径の分をたし忘れないでね。",
 		"hint2": "%d × 2 × 3.14 ÷ 2 + %d" % [r, 2 * r],
 		"expl": "曲線 %s + 直径 %d = %s cm です。" % [ProblemGen.fmt(3.14 * r), 2 * r, ProblemGen.fmt(ans)],
+		"steps": steps,
 		"fig": fig,
 	}
 

@@ -41,8 +41,11 @@ var _omul := 1.0
 
 func add_overlay(shapes: Array) -> void:
 	var now := Time.get_ticks_msec()
+	# 同じステップの形は 少しずつ 時間差で 出す(形に delay があれば そちらが 勝つ)
+	var stagger := 0.0
 	for sh in shapes:
-		overlay_shapes.append({"sh": sh, "born": now})
+		overlay_shapes.append({"sh": sh, "born": now, "stagger": stagger})
+		stagger += 160.0
 	set_process(true)
 	queue_redraw()
 
@@ -247,7 +250,12 @@ func _collect_bounds() -> Rect2:
 	var lo := Vector2(INF, INF)
 	var hi := Vector2(-INF, -INF)
 	var pts: Array = []
-	for sh in spec.get("shapes", []):
+	# 解き方アニメで 図の外に 形を たす台本(台形を もう 1 つ ならべる 等)も
+	# 入るように、オーバーレイも 縮尺の 計算に 含める(出た時点で 引きで 収まる)
+	var shapes: Array = spec.get("shapes", []).duplicate()
+	for e in overlay_shapes:
+		shapes.append(e["sh"])
+	for sh in shapes:
 		match String(sh["t"]):
 			"poly", "curve":
 				for p in sh["p"]:
@@ -312,15 +320,22 @@ func _draw() -> void:
 	for sh in spec.get("shapes", []):
 		_draw_one(sh)
 
-	# --- 解き方アニメのオーバーレイ(フェードインしながら重なる)---
+	# --- 解き方アニメのオーバーレイ ---
+	# 線や弧は「端からすっと引かれ」、多角形は「輪郭をなぞってから塗られ」、
+	# from_p つきの形は「元の場所から動いて」現れる(ease in-out)
 	var now := Time.get_ticks_msec()
 	var animating := false
 	for e in overlay_shapes:
-		var al := clampf((now - int(e["born"])) / 450.0, 0.06, 1.0)
-		if al < 1.0:
+		var sh: Dictionary = e["sh"]
+		var delay := float(sh["delay"]) if sh.has("delay") else float(e.get("stagger", 0.0))
+		var el := float(now - int(e["born"])) - delay
+		if el <= 0.0:
 			animating = true
-		_omul = al
-		_draw_one(e["sh"])
+			continue
+		var t := clampf(el / float(sh.get("dur", 450.0)), 0.0, 1.0)
+		if t < 1.0:
+			animating = true
+		_draw_overlay_shape(sh, t)
 	_omul = 1.0
 	if not animating:
 		set_process(false)
@@ -395,6 +410,105 @@ func _draw_one(sh: Dictionary) -> void:
 			_draw_leaf(sh)
 		"lune":
 			_draw_lune(sh)
+
+
+## オーバーレイ 1 つ分を、進みぐあい t(0..1)に合わせて描く。
+## anim 指定が無くても、線・矢印・弧は「引かれていく」動きにする
+func _draw_overlay_shape(sh: Dictionary, t: float) -> void:
+	var k := t * t * (3.0 - 2.0 * t)      # ease in-out
+	var kind := String(sh["t"])
+	var anim := String(sh.get("anim", ""))
+	if sh.has("from_p") or sh.has("from_at"):
+		anim = "morph"
+	elif anim == "":
+		anim = "draw" if kind in ["seg", "arrow", "arc", "sector", "poly", "angle"] else "fade"
+	match anim:
+		"draw":
+			_omul = 1.0
+			match kind:
+				"seg", "arrow":
+					var d := sh.duplicate()
+					d["b"] = (sh["a"] as Vector2).lerp(sh["b"], k)
+					_draw_one(d)
+				"arc", "sector":
+					# 弧・おうぎ形は 中心角が ひらいていく
+					var d2 := sh.duplicate()
+					d2["a1"] = lerpf(float(sh["a0"]), float(sh["a1"]), k)
+					if absf(float(d2["a1"]) - float(sh["a0"])) > 0.5:
+						_draw_one(d2)
+				"angle":
+					# 角の印は 弧が ひらいてから、ラベルが ふわっと 出る
+					var d5 := sh.duplicate()
+					d5["sweep_k"] = k
+					_draw_one(d5)
+				"poly":
+					_draw_poly_partial(sh, t, k)
+				_:
+					_omul = maxf(k, 0.06)
+					_draw_one(sh)
+		"morph":
+			# 元の場所(from_p / from_at)から本来の場所へ動かしながら描く
+			_omul = minf(t * 4.0 + 0.1, 1.0)
+			var d3 := sh.duplicate()
+			if kind == "poly" and sh.has("from_p"):
+				var from: Array = sh["from_p"]
+				var to: Array = sh["p"]
+				var pts: Array = []
+				var spread := 0.0
+				for i in to.size():
+					var p: Vector2 = (from[i % from.size()] as Vector2).lerp(to[i], k)
+					pts.append(p)
+					spread = maxf(spread, p.distance_to(pts[0]))
+				# 点対称の移動(さかさま くっつけ 等)は 中間で 1 点に つぶれる。
+				# その瞬間だけ 描かない(裏返る カードフリップに 見える)
+				if spread < 0.05:
+					return
+				d3["p"] = pts
+			elif kind == "text" and sh.has("from_at"):
+				d3["at"] = (sh["from_at"] as Vector2).lerp(sh["at"], k)
+			_draw_one(d3)
+		_:
+			_omul = maxf(k, 0.06)
+			_draw_one(sh)
+
+
+## 多角形の「なぞり描き」: 輪郭を一筆書きで引いてから、塗りをふわっと入れる
+func _draw_poly_partial(sh: Dictionary, t: float, k: float) -> void:
+	var pts := _pts_px(sh["p"])
+	if pts.size() < 2:
+		return
+	var closed := pts.duplicate()
+	closed.append(pts[0])
+	var total := 0.0
+	for i in closed.size() - 1:
+		total += closed[i].distance_to(closed[i + 1])
+	if sh.has("fill"):
+		var fill: Color = sh["fill"]
+		fill.a *= clampf((t - 0.55) / 0.45, 0.0, 1.0) * _omul
+		if fill.a > 0.004:
+			var tmp := sh.duplicate()
+			tmp["w"] = 0.0
+			tmp["fill"] = fill
+			var keep := _omul
+			_omul = 1.0
+			_draw_one(tmp)
+			_omul = keep
+	var w: float = sh.get("w", 4.0)
+	if w <= 0.0 or total <= 0.0:
+		return
+	var stroke: Color = sh.get("stroke", COL_LINE) if sh.get("stroke") != null else COL_LINE
+	stroke.a *= _omul
+	var left := total * k
+	var out := PackedVector2Array([closed[0]])
+	for i in closed.size() - 1:
+		var seg_len := closed[i].distance_to(closed[i + 1])
+		if seg_len >= left:
+			out.append(closed[i].lerp(closed[i + 1], left / maxf(seg_len, 0.001)))
+			break
+		out.append(closed[i + 1])
+		left -= seg_len
+	if out.size() >= 2:
+		draw_polyline(out, stroke, w, true)
 
 
 func _pts_px(arr: Array) -> PackedVector2Array:
@@ -502,11 +616,17 @@ func _draw_angle(sh: Dictionary) -> void:
 	if sweep < deg_to_rad(35.0):
 		r_px *= 1.35
 	var c := _px(at)
-	draw_arc(c, r_px, -a1, -(a1 + sweep), 32, _c(col), 3.5, true)
-	# ラベルは二等分線方向の少し外側
+	# 解き方アニメ用: sweep_k(0..1)で 弧が ひらいていき、ラベルは 終わりぎわに 出る
+	var kmul := clampf(float(sh.get("sweep_k", 1.0)), 0.0, 1.0)
+	# ラベルは 最終の 二等分線の 位置に 固定(動きながら 読ませない)
 	var bis := a1 + sweep * 0.5
-	var pos := c + Vector2(cos(bis), -sin(bis)) * (r_px + 30.0)
-	_draw_text_at(pos, label, col, 30 if not unknown else 34)
+	if kmul > 0.01:
+		draw_arc(c, r_px, -a1, -(a1 + sweep * kmul), 32, _c(col), 3.5, true)
+	var lcol := col
+	lcol.a *= clampf((kmul - 0.7) / 0.3, 0.0, 1.0)
+	if lcol.a > 0.004:
+		var pos := c + Vector2(cos(bis), -sin(bis)) * (r_px + 30.0)
+		_draw_text_at(pos, label, lcol, 30 if not unknown else 34)
 
 
 func _draw_right(sh: Dictionary) -> void:
