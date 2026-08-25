@@ -45,8 +45,8 @@ DELIVERY = [
 
 # 掲載する順(Google Play は 8 枚まで)。最初の 3 枚で「何のアプリか」が伝わる並びにする
 PICKS = [
-    "01_title", "07_kid_map", "08_kid_tear", "03_problem_angle", "05_calc",
-    "09_story_hs", "11_stage_select_men", "12_store_iap",
+    "01_title", "07_kid_map", "08_kid_tear", "14_story_map_hs", "03_problem_angle",
+    "05_calc", "11_stage_select_men", "12_store_iap",
 ]
 
 # 画面ごとの: 素材 / 見出し / 補足 / 背景色(濃い→薄い)
@@ -81,6 +81,10 @@ SHOTS = [
      "方べき・チェバ・円の方程式・空間図形・回転体もカバー", BLUE),
     ("12_store_iap.png", "買い切り。\n広告も追加課金もなし",
      "各編の最初の 4 ステージは無料でためせる", NAVY),
+    ("13_story_map_jhs.png", "中学生は\n測量の旅に出る",
+     "街道図を三角点づたいに進み、21 章で国じゅうを測り終える", PLUM),
+    ("14_story_map_hs.png", "高校生は\n星図をたどる",
+     "探査機を飛ばしながら、方べき・余弦定理・積分で軌道を決める", BLUE),
 ]
 
 # 掲載順にリネームするときの短い名前(01_ の数字は PICKS の並び)
@@ -97,6 +101,8 @@ NICE_NAME = {
     "10_records": "records",
     "11_stage_select_men": "stages_area",
     "12_store_iap": "unlock",
+    "13_story_map_jhs": "story_jhs",
+    "14_story_map_hs": "story_hs_map",
 }
 
 
@@ -308,7 +314,9 @@ def build_delivery():
         dest = os.path.join(root, dest_name)
         os.makedirs(dest, exist_ok=True)
         for old in os.listdir(dest):
-            if old.lower().endswith(".png"):
+            # .import は Godot が勝手に作る取り込み情報。名前を変えると
+            # 前の名前のものが残ってしまうので、いっしょに片づける
+            if old.lower().endswith((".png", ".import")):
                 os.remove(os.path.join(dest, old))
         for i, base in enumerate(PICKS, start=1):
             src = os.path.join(OUT, folder, base + ".png")

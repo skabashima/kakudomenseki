@@ -54,7 +54,13 @@ func _run() -> void:
 	await _kid_unit("k1", "08_kid_tear.png")
 	# 9) ストーリー(高校生)の 測る場面(惑星の基地。表に数が並ぶ)
 	await _story_scene("hs", "ch17", 1, "09_story_hs.png")
-	# 10) 記録(段位・コース別・自己ベスト)
+	# 10) ストーリー(中学生)の図 ― 測量野帳の街道図
+	GameState.story_mode = "jhs"
+	await _scene("res://scenes/story_map.tscn", "13_story_map_jhs.png")
+	# 11) ストーリー(高校生)の図 ― 星図
+	GameState.story_mode = "hs"
+	await _scene("res://scenes/story_map.tscn", "14_story_map_hs.png")
+	# 12) 記録(段位・コース別・自己ベスト)
 	await _scene("res://scenes/records.tscn", "10_records.png")
 	# 11) ステージ一覧(面積編)。大学受験レベルまで下げて撮る
 	# (方べき・チェバ・円の方程式・回転体まで入っていることが、ここで伝わる)
@@ -89,6 +95,12 @@ func _fill_progress() -> void:
 	GameState.kid_clear = {}
 	for i in 9:
 		GameState.kid_clear[String(KidDefs.UNITS[i]["id"])] = true
+	# 中学生の図は 8 章、高校生の図は 3 章まで 進んだ ところ
+	GameState.story_clear = {}
+	for i in 8:
+		GameState.story_clear[String(StoryDefs.chapters_of("jhs")[i]["id"])] = true
+	for i in 3:
+		GameState.story_clear[String(StoryDefs.chapters_of("hs")[i]["id"])] = true
 
 
 ## その文字をふくむ Label を探す
@@ -120,6 +132,7 @@ func _clear_progress() -> void:
 	GameState.challenge_best = {}
 	GameState.stats = {}
 	GameState.kid_clear = {}
+	GameState.story_clear = {}
 	GameState.best_combo = 0
 	GameState.debug_unlock_all = false
 	GameState.premium = false
