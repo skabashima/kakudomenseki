@@ -421,7 +421,26 @@ func _reset_act() -> void:
 func _to_screen(p: Vector2) -> Vector2:
 	# ちぎった かど(半径 74)のぶんも 入るように、少し小さめに置く
 	var k := minf(map.size.x / 16.0, map.size.y / 26.0)
-	return Vector2(map.size.x * 0.5 + p.x * k, map.size.y * 0.46 - p.y * k)
+	var ox := map.size.x * 0.5
+	var oy := map.size.y * 0.46
+	if st.has("poly"):
+		# 細長い 三角形は 決めうちの 倍率だと 図の上端が map の外に 出てしまい、
+		# 外に出た かどは タッチが 届かず つかめない。図の 外わくに あわせて
+		# 倍率と 置き場所を 直し、かならず map の 中に おさめる
+		var lo := Vector2(INF, INF)
+		var hi := Vector2(-INF, -INF)
+		for q in st["poly"]:
+			lo = lo.min(q)
+			hi = hi.max(q)
+		var top := 24.0
+		# _release の「ならべた」判定(_line_y() - 170 より下)に かからない ところまで
+		var bottom := _line_y() - 210.0
+		var side := 30.0
+		k = minf(k, (map.size.x - side * 2.0) / maxf(hi.x - lo.x, 0.001))
+		k = minf(k, (bottom - top) / maxf(hi.y - lo.y, 0.001))
+		oy = clampf(oy, top + hi.y * k, bottom + lo.y * k)
+		ox = clampf(ox, side - lo.x * k, map.size.x - side - hi.x * k)
+	return Vector2(ox + p.x * k, oy - p.y * k)
 
 
 func _line_y() -> float:
