@@ -33,7 +33,10 @@ var problem: Dictionary = {}
 
 
 func _ready() -> void:
-	chapter = StoryDefs.chapter_by_id(GameState.story_chapter)
+	# そのモードの並びから取り出す(高校生モードは文が差し替わっている)
+	var list: Array = StoryDefs.chapters_of(GameState.story_mode)
+	chapter = StoryDefs.chapter_in(list, GameState.story_chapter)
+	GameState.story_chapter = String(chapter["id"])
 	idx = clampi(GameState.story_scene, 0, (chapter["scenes"] as Array).size() - 1)
 	_build_frame()
 	_show_scene()
@@ -71,7 +74,8 @@ func _build_frame() -> void:
 	head.add_child(back)
 	var title := Label.new()
 	title.text = _kids("第%d章 %s" % [
-		StoryDefs.chapter_index(String(chapter["id"])) + 1, String(chapter["title"])])
+		StoryDefs.chapter_index_in(StoryDefs.chapters_of(GameState.story_mode), String(chapter["id"])) + 1,
+		String(chapter["title"])])
 	title.add_theme_font_size_override("font_size", 32)
 	title.add_theme_color_override("font_color", HEAD)
 	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -401,16 +405,17 @@ func _finish() -> void:
 	fig_panel.visible = false
 	_add_label(_kids("%s ― 章クリア!" % String(chapter["title"])), 34, HEAD)
 	_add_label(_kids("見つけたこと: " + String(chapter.get("found", ""))), 24, Color(0.7, 1.0, 0.8))
-	var next_i := StoryDefs.chapter_index(String(chapter["id"])) + 1
-	if next_i < StoryDefs.CHAPTERS.size():
+	var chapters: Array = StoryDefs.chapters_of(GameState.story_mode)
+	var next_i := StoryDefs.chapter_index_in(chapters, String(chapter["id"])) + 1
+	if next_i < chapters.size():
 		var nb := Button.new()
-		nb.text = "第%d章 %s へ" % [next_i + 1, String(StoryDefs.CHAPTERS[next_i]["title"])]
+		nb.text = "第%d章 %s へ" % [next_i + 1, String(chapters[next_i]["title"])]
 		nb.custom_minimum_size = Vector2(0, 84)
 		nb.add_theme_font_size_override("font_size", 26)
 		GameState.style_button(nb, Color(0.2, 0.55, 0.35))
 		nb.pressed.connect(func() -> void:
 			GameState.play_sfx("tap")
-			GameState.story_chapter = String(StoryDefs.CHAPTERS[next_i]["id"])
+			GameState.story_chapter = String(chapters[next_i]["id"])
 			GameState.story_scene = 0
 			GameState.save_game()
 			GameState.change_scene("res://scenes/story.tscn"))

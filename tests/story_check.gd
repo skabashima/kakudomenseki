@@ -15,11 +15,13 @@ var bad: Array = []
 
 
 func _init() -> void:
-	for ch in StoryDefs.CHAPTERS:
-		_check_chapter(ch)
+	for mode in ["jhs", "hs"]:
+		for ch in StoryDefs.chapters_of(mode):
+			_check_chapter(ch)
 	if bad.is_empty():
-		print("STORY CHECK OK: %d 章 / %d シーン" % [
-			StoryDefs.CHAPTERS.size(), _scene_count()])
+		print("STORY CHECK OK: %d 章 / %d シーン(中学生 + 高校生)" % [
+			StoryDefs.chapters_of("jhs").size() + StoryDefs.chapters_of("hs").size(),
+			_scene_count()])
 		quit(0)
 	else:
 		for b in bad:
@@ -30,8 +32,9 @@ func _init() -> void:
 
 func _scene_count() -> int:
 	var n := 0
-	for ch in StoryDefs.CHAPTERS:
-		n += (ch["scenes"] as Array).size()
+	for mode in ["jhs", "hs"]:
+		for ch in StoryDefs.chapters_of(mode):
+			n += (ch["scenes"] as Array).size()
 	return n
 
 

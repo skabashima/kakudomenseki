@@ -110,6 +110,8 @@ func question_score(tries: int, hints: int, seconds: float, combo_at: int) -> in
 var story_clear: Dictionary = {}
 ## いま読んでいる章と、その中の何番目のシーンか(途中でやめても続きから)
 var story_chapter: String = "ch1"
+## いま遊んでいるストーリーのモード("jhs" = 中学生 / "hs" = 高校生)
+var story_mode: String = "jhs"
 var story_scene: int = 0
 
 

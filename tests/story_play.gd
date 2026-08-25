@@ -20,8 +20,10 @@ func _ready() -> void:
 	var keep_scene := GameState.story_scene
 	GameState.story_clear = {}
 
-	for ch in StoryDefs.CHAPTERS:
-		await _play(ch)
+	for mode in ["jhs", "hs"]:
+		GameState.story_mode = mode
+		for ch in StoryDefs.chapters_of(mode):
+			await _play(ch)
 
 	GameState.story_clear = keep_clear
 	GameState.story_chapter = keep_chapter
@@ -31,7 +33,8 @@ func _ready() -> void:
 	GameState.save_game()
 
 	if failures.is_empty():
-		print("STORY PLAY OK: %d 章を最後まで通した" % StoryDefs.CHAPTERS.size())
+		print("STORY PLAY OK: %d 章を最後まで通した(中学生 + 高校生)" % [
+			StoryDefs.chapters_of("jhs").size() + StoryDefs.chapters_of("hs").size()])
 		get_tree().quit(0)
 	else:
 		for f in failures:

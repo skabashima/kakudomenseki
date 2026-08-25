@@ -35,13 +35,13 @@ func _ready() -> void:
 		GameState.change_scene("res://scenes/main.tscn"))
 	head.add_child(back)
 	var title := Label.new()
-	title.text = "ストーリー"
+	title.text = "ストーリー(高校生)" if GameState.story_mode == "hs" else "ストーリー(中学生)"
 	title.add_theme_font_size_override("font_size", 38)
 	title.add_theme_color_override("font_color", HEAD)
 	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	head.add_child(title)
 	var done := Label.new()
-	done.text = "%d / %d 章" % [_cleared_count(), StoryDefs.CHAPTERS.size()]
+	done.text = "%d / %d 章" % [_cleared_count(), StoryDefs.chapters_of(GameState.story_mode).size()]
 	done.add_theme_font_size_override("font_size", 24)
 	done.add_theme_color_override("font_color", Color(0.8, 0.87, 1.0))
 	head.add_child(done)
@@ -64,8 +64,9 @@ func _ready() -> void:
 	scroll.add_child(list)
 
 	var last_level := ""
-	for i in StoryDefs.CHAPTERS.size():
-		var ch: Dictionary = StoryDefs.CHAPTERS[i]
+	var chapters: Array = StoryDefs.chapters_of(GameState.story_mode)
+	for i in chapters.size():
+		var ch: Dictionary = chapters[i]
 		var lv := String(ch["level"])
 		if lv != last_level:
 			last_level = lv
@@ -80,7 +81,7 @@ func _ready() -> void:
 
 func _cleared_count() -> int:
 	var n := 0
-	for ch in StoryDefs.CHAPTERS:
+	for ch in StoryDefs.chapters_of(GameState.story_mode):
 		if GameState.story_clear.has(String(ch["id"])):
 			n += 1
 	return n
@@ -89,7 +90,8 @@ func _cleared_count() -> int:
 func _card(index: int, ch: Dictionary) -> Control:
 	var id := String(ch["id"])
 	var cleared: bool = GameState.story_clear.has(id)
-	var unlocked: bool = StoryDefs.is_unlocked(id, GameState.story_clear) or GameState.debug_unlock_all
+	var unlocked: bool = StoryDefs.is_unlocked_in(StoryDefs.chapters_of(GameState.story_mode), id,
+		GameState.story_clear) or GameState.debug_unlock_all
 
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 10)

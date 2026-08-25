@@ -105,16 +105,29 @@ func _ready() -> void:
 	row.add_child(_small_card("ストーリー
 中学生", Color(0.45, 0.35, 0.62),
 		Icons.book(52.0, Color(1, 1, 1, 0.92)), func() -> void:
+			GameState.story_mode = "jhs"
+			GameState.story_chapter = "ch1"
+			GameState.story_scene = 0
 			GameState.change_scene("res://scenes/story_select.tscn")))
 	var row2 := HBoxContainer.new()
 	row2.add_theme_constant_override("separation", 10)
 	vbox.add_child(row2)
-	row2.add_child(_small_card("チャレンジ", SECONDARY,
+	row2.add_child(_small_card("ストーリー
+高校生", Color(0.24, 0.42, 0.58),
 		Icons.timer(52.0, Color(1, 1, 1, 0.92)), func() -> void:
-			GameState.change_scene("res://scenes/challenge_select.tscn")))
+			GameState.story_mode = "hs"
+			GameState.story_chapter = "ch17"
+			GameState.story_scene = 0
+			GameState.change_scene("res://scenes/story_select.tscn")))
 	row2.add_child(_small_card("きろく", SECONDARY,
 		Icons.chart(52.0, Color(1, 1, 1, 0.92)), func() -> void:
 			GameState.change_scene("res://scenes/records.tscn")))
+	var row3 := HBoxContainer.new()
+	row3.add_theme_constant_override("separation", 10)
+	vbox.add_child(row3)
+	row3.add_child(_small_card("チャレンジ", SECONDARY,
+		Icons.timer(52.0, Color(1, 1, 1, 0.92)), func() -> void:
+			GameState.change_scene("res://scenes/challenge_select.tscn")))
 
 	# 未購入のときだけ解放の入口を出す(買い切り 1 商品・広告なし)
 	if not GameState.premium:

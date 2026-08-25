@@ -1132,11 +1132,40 @@ static func level_label(level: String) -> String:
 			return "高校の内容"
 
 
+## いま読んでいるモードの章。
+##   "jhs" … 中学生(小学校の復習 + 中学の内容)
+##   "hs"  … 高校生(高校の内容だけ。テーマは別で core/story_hs.gd)
+static func chapters_of(mode: String) -> Array:
+	if mode == "hs":
+		return StoryHS.chapters()
+	var out: Array = []
+	for ch in CHAPTERS:
+		if String(ch["level"]) != "大学受験":
+			out.append(ch)
+	return out
+
+
 static func chapter_by_id(id: String) -> Dictionary:
 	for c in CHAPTERS:
 		if String(c["id"]) == id:
 			return c
 	return CHAPTERS[0]
+
+
+## その並びの中から章を取り出す(高校生モードは文が差し替わっているので、
+## いつもの CHAPTERS ではなく、そのモードの並びから取らないといけない)
+static func chapter_in(list: Array, id: String) -> Dictionary:
+	for ch in list:
+		if String(ch["id"]) == id:
+			return ch
+	return list[0] if not list.is_empty() else {}
+
+
+static func chapter_index_in(list: Array, id: String) -> int:
+	for i in list.size():
+		if String(list[i]["id"]) == id:
+			return i
+	return 0
 
 
 static func chapter_index(id: String) -> int:
@@ -1149,6 +1178,13 @@ static func chapter_index(id: String) -> int:
 ## その章を開いてよいか(前の章をクリアしていれば開く)。
 ## 一度クリアした章は、あとからその前に章を足しても開いたまま
 ## (更新でいきなり読めなくなると、進めていた人が困る)
+static func is_unlocked_in(list: Array, id: String, cleared: Dictionary) -> bool:
+	var i := chapter_index_in(list, id)
+	if i <= 0 or cleared.has(id):
+		return true
+	return cleared.has(String(list[i - 1]["id"]))
+
+
 static func is_unlocked(id: String, cleared: Dictionary) -> bool:
 	var i := chapter_index(id)
 	if i <= 0:
