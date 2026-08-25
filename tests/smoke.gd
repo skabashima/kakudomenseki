@@ -25,7 +25,8 @@ func _run() -> void:
 	await _open("res://scenes/store.tscn")
 	await _open("res://scenes/story_select.tscn")
 	await _open("res://scenes/story.tscn")
-	await _open("res://scenes/estate.tscn")
+	await _open("res://scenes/kid_select.tscn")
+	await _open("res://scenes/kid_unit.tscn")
 	# コースごとのステージ一覧と問題シーン(各コースの最初と最後のステージ)
 	for course in ProblemGen.COURSES:
 		var cid := String(course["id"])

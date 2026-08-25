@@ -98,12 +98,14 @@ func _ready() -> void:
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 10)
 	vbox.add_child(row)
-	row.add_child(_small_card("ものがたり", Color(0.45, 0.35, 0.62),
+	row.add_child(_small_card("ストーリー
+小学生", Color(0.52, 0.30, 0.34),
+		Icons.flag(52.0, Color(1, 1, 1, 0.92)), func() -> void:
+			GameState.change_scene("res://scenes/kid_select.tscn")))
+	row.add_child(_small_card("ストーリー
+中学生", Color(0.45, 0.35, 0.62),
 		Icons.book(52.0, Color(1, 1, 1, 0.92)), func() -> void:
 			GameState.change_scene("res://scenes/story_select.tscn")))
-	row.add_child(_small_card("たからの地図", Color(0.52, 0.30, 0.34),
-		Icons.flag(52.0, Color(1, 1, 1, 0.92)), func() -> void:
-			GameState.change_scene("res://scenes/estate.tscn")))
 	var row2 := HBoxContainer.new()
 	row2.add_theme_constant_override("separation", 10)
 	vbox.add_child(row2)

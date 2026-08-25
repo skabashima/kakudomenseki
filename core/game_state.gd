@@ -113,6 +113,20 @@ var story_chapter: String = "ch1"
 var story_scene: int = 0
 
 
+## クリアした「たからの地図」の単元 id(小学生むけ)
+var kid_clear: Dictionary = {}
+var kid_unit: String = "k1"
+
+
+## 単元をクリアした。はじめてなら true
+func record_kid_clear(id: String) -> bool:
+	if kid_clear.has(id):
+		return false
+	kid_clear[id] = true
+	save_game()
+	return true
+
+
 ## 章をクリアした。はじめてなら true
 func record_story_clear(id: String) -> bool:
 	if story_clear.has(id):
@@ -476,6 +490,8 @@ func save_game() -> void:
 		"debug_unlock_all": debug_unlock_all,
 		"premium": premium,
 		"story_clear": story_clear,
+		"kid_clear": kid_clear,
+		"kid_unit": kid_unit,
 		"story_chapter": story_chapter,
 		"story_scene": story_scene,
 	}
@@ -502,5 +518,7 @@ func load_game() -> void:
 	debug_unlock_all = bool(data.get("debug_unlock_all", false))
 	premium = bool(data.get("premium", false))
 	story_clear = data.get("story_clear", {})
+	kid_clear = data.get("kid_clear", {})
+	kid_unit = String(data.get("kid_unit", "k1"))
 	story_chapter = String(data.get("story_chapter", "ch1"))
 	story_scene = int(data.get("story_scene", 0))
