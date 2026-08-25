@@ -41,8 +41,11 @@ var _omul := 1.0
 
 func add_overlay(shapes: Array) -> void:
 	var now := Time.get_ticks_msec()
+	# 同じステップの形は 少しずつ 時間差で 出す(形に delay があれば そちらが 勝つ)
+	var stagger := 0.0
 	for sh in shapes:
-		overlay_shapes.append({"sh": sh, "born": now})
+		overlay_shapes.append({"sh": sh, "born": now, "stagger": stagger})
+		stagger += 160.0
 	set_process(true)
 	queue_redraw()
 
@@ -324,7 +327,8 @@ func _draw() -> void:
 	var animating := false
 	for e in overlay_shapes:
 		var sh: Dictionary = e["sh"]
-		var el := float(now - int(e["born"])) - float(sh.get("delay", 0.0))
+		var delay := float(sh["delay"]) if sh.has("delay") else float(e.get("stagger", 0.0))
+		var el := float(now - int(e["born"])) - delay
 		if el <= 0.0:
 			animating = true
 			continue
@@ -417,7 +421,7 @@ func _draw_overlay_shape(sh: Dictionary, t: float) -> void:
 	if sh.has("from_p") or sh.has("from_at"):
 		anim = "morph"
 	elif anim == "":
-		anim = "draw" if kind in ["seg", "arrow", "arc", "poly"] else "fade"
+		anim = "draw" if kind in ["seg", "arrow", "arc", "sector", "poly", "angle"] else "fade"
 	match anim:
 		"draw":
 			_omul = 1.0
@@ -426,11 +430,17 @@ func _draw_overlay_shape(sh: Dictionary, t: float) -> void:
 					var d := sh.duplicate()
 					d["b"] = (sh["a"] as Vector2).lerp(sh["b"], k)
 					_draw_one(d)
-				"arc":
+				"arc", "sector":
+					# 弧・おうぎ形は 中心角が ひらいていく
 					var d2 := sh.duplicate()
 					d2["a1"] = lerpf(float(sh["a0"]), float(sh["a1"]), k)
 					if absf(float(d2["a1"]) - float(sh["a0"])) > 0.5:
 						_draw_one(d2)
+				"angle":
+					# 角の印は 弧が ひらいてから、ラベルが ふわっと 出る
+					var d5 := sh.duplicate()
+					d5["sweep_k"] = k
+					_draw_one(d5)
 				"poly":
 					_draw_poly_partial(sh, t, k)
 				_:
@@ -606,11 +616,17 @@ func _draw_angle(sh: Dictionary) -> void:
 	if sweep < deg_to_rad(35.0):
 		r_px *= 1.35
 	var c := _px(at)
-	draw_arc(c, r_px, -a1, -(a1 + sweep), 32, _c(col), 3.5, true)
-	# ラベルは二等分線方向の少し外側
+	# 解き方アニメ用: sweep_k(0..1)で 弧が ひらいていき、ラベルは 終わりぎわに 出る
+	var kmul := clampf(float(sh.get("sweep_k", 1.0)), 0.0, 1.0)
+	# ラベルは 最終の 二等分線の 位置に 固定(動きながら 読ませない)
 	var bis := a1 + sweep * 0.5
-	var pos := c + Vector2(cos(bis), -sin(bis)) * (r_px + 30.0)
-	_draw_text_at(pos, label, col, 30 if not unknown else 34)
+	if kmul > 0.01:
+		draw_arc(c, r_px, -a1, -(a1 + sweep * kmul), 32, _c(col), 3.5, true)
+	var lcol := col
+	lcol.a *= clampf((kmul - 0.7) / 0.3, 0.0, 1.0)
+	if lcol.a > 0.004:
+		var pos := c + Vector2(cos(bis), -sin(bis)) * (r_px + 30.0)
+		_draw_text_at(pos, label, lcol, 30 if not unknown else 34)
 
 
 func _draw_right(sh: Dictionary) -> void:
