@@ -36,6 +36,7 @@ var posts: Array = []          # 立て札 {"x","y","tier"}
 var turn := 1
 var need := 0                  # いま取れるマス数(0 なら問題を解く番)
 var marked: Array = []         # なぞって選んだマス [Vector2i]
+var last_drag := Vector2i(-1, -1)   # 直前に 指が あった マス(あいだを 埋めるため)
 var bonus := 0                 # 泉で増える ぶん
 var last_take := 4             # 前のターンに じぶんが 取った マス数(カラスの強さの目安)
 var crow_extra := 0            # 立て札を 取り逃した ぶん、カラスが 多く広げる
@@ -428,6 +429,7 @@ func _on_board_input(event: InputEvent) -> void:
 	var at := Vector2.ZERO
 	if event is InputEventMouseButton or event is InputEventScreenTouch:
 		if not event.pressed:
+			last_drag = Vector2i(-1, -1)
 			return
 		pressed = true
 		at = event.position
@@ -443,8 +445,19 @@ func _on_board_input(event: InputEvent) -> void:
 	if need <= 0:
 		if pressed:
 			_tap_post(cv)
+		last_drag = Vector2i(-1, -1)
 		return
-	_mark(cv)
+	if pressed or last_drag.x < 0:
+		last_drag = cv
+		_mark(cv)
+		return
+	# 速く なぞると 点と点の 間の マスが 飛ぶ。あいだを 埋めながら 取る
+	while last_drag != cv:
+		var step := Vector2i(signi(cv.x - last_drag.x), 0)
+		if step.x == 0:
+			step = Vector2i(0, signi(cv.y - last_drag.y))
+		last_drag += step
+		_mark(last_drag)
 
 
 ## 立て札を たたく → 問題
@@ -518,7 +531,12 @@ func _touches_claim(cv: Vector2i) -> bool:
 		var n := cv + d
 		if n.x < 0 or n.x >= W or n.y < 0 or n.y >= H:
 			continue
-		if marked.has(n) or cell[n.y][n.x] == MINE and _mine_next_to_claim(n):
+		if marked.has(n):
+			return true
+		if cell[n.y][n.x] != MINE:
+			continue
+		# 旗が まだ 無いとき(旗が 自陣の 上だった など)は、自陣の となりから 伸ばせる
+		if marked.is_empty() or _mine_next_to_claim(n):
 			return true
 	return false
 
@@ -535,11 +553,16 @@ func _mine_next_to_claim(m: Vector2i) -> bool:
 	return false
 
 
+## なぞり直し。旗は 残す ― 旗まで 消すと 伸ばす 起点が 無くなり、
+## どこも なぞれなくなって しまう(実際に そうなった)
 func _clear_marks() -> void:
 	if marked.is_empty():
 		return
 	GameState.play_sfx("tap")
 	marked.clear()
+	if need > 0 and post_cell.x >= 0 and cell[post_cell.y][post_cell.x] != MINE:
+		marked.append(post_cell)
+	msg.text = "旗は そのまま。もう一度 なぞろう"
 	_refresh()
 
 

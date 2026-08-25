@@ -7,6 +7,7 @@ extends Node
 ##   ・取ったマスが かならず 自分の陣地と つながっているか
 ##   ・3 回まちがえると 立て札を失って ターンが 進むか(何度でも 答えられない)
 ##   ・立て札まで とどくと 次のターンの ぶんが 増えるか
+##   ・指で なぞって 取れるか / なぞり直しても 旗が 残るか
 ##   ・囲まれても 詰まらず、決着して 占有率が 出るか
 
 var failures: Array = []
@@ -19,6 +20,7 @@ func _ready() -> void:
 	for i in 8:
 		await get_tree().process_frame
 
+	await _check_drag(inst)
 	await _check_miss(inst)
 
 	var guard := 0
@@ -173,3 +175,78 @@ func _one_lump(inst: Node, flag: Vector2i) -> bool:
 func _wait(n: int) -> void:
 	for i in n:
 		await get_tree().process_frame
+
+
+# =========================================================
+# 指の 道すじ(本物の 入口を 通す)
+# =========================================================
+
+## なぞって 取れるか、なぞり直しても 詰まらないかを 見る。
+## _mark() を 直に 呼ぶだけでは、
+##   ・なぞり直しで 旗まで 消えて どこも なぞれなくなる
+##   ・速く なぞると 通ったマスが 飛ぶ
+## という 指でしか 起きない 不具合を 見つけられない(実際に 両方 起きた)。
+func _check_drag(inst: Node) -> void:
+	var cv: Vector2i = _near_post(inst)
+	if cv.x < 0:
+		failures.append("立て札が 1 本も 立っていない")
+		return
+	inst._tap_post(cv)
+	await _wait(2)
+	inst.input_text = ProblemGen.fmt(float(inst.problem["answer"]))
+	inst._submit()
+	await _wait(2)
+	if not inst.marked.has(cv):
+		failures.append("正解しても 立て札の ところに 旗が 立たない")
+		return
+
+	# なぞり直し ― 旗は 残り、また なぞれること
+	inst._clear_marks()
+	await _wait(1)
+	if not inst.marked.has(cv):
+		failures.append("なぞり直すと 旗まで 消える(伸ばす 起点が なくなる)")
+		return
+	if inst._markable_left() <= 0:
+		failures.append("なぞり直したあと どこも なぞれない")
+		return
+
+	# 指を すべらせる。とちゅうの マスを 飛ばして 動かしても、
+	# 通り道の マスが ぜんぶ 取れること
+	var before: int = inst.marked.size()
+	_press_at(inst, cv)
+	var far := Vector2i(cv.x, cv.y)
+	for i in 3:
+		far.y = mini(far.y + 1, inst.H - 1)
+	_move_at(inst, far)          # 3 マス先へ 一気に
+	_release_at(inst, far)
+	await _wait(1)
+	if inst.marked.size() <= before:
+		failures.append("指で なぞっても マスが 取れない(タップでしか 取れない)")
+
+
+func _cell_center(inst: Node, cv: Vector2i) -> Vector2:
+	var s: float = inst._cell_size()
+	return inst._origin() + (Vector2(float(cv.x), float(cv.y)) + Vector2(0.5, 0.5)) * s
+
+
+func _press_at(inst: Node, cv: Vector2i) -> void:
+	var e := InputEventMouseButton.new()
+	e.button_index = MOUSE_BUTTON_LEFT
+	e.pressed = true
+	e.position = _cell_center(inst, cv)
+	inst._on_board_input(e)
+
+
+func _move_at(inst: Node, cv: Vector2i) -> void:
+	var e := InputEventMouseMotion.new()
+	e.button_mask = MOUSE_BUTTON_MASK_LEFT
+	e.position = _cell_center(inst, cv)
+	inst._on_board_input(e)
+
+
+func _release_at(inst: Node, cv: Vector2i) -> void:
+	var e := InputEventMouseButton.new()
+	e.button_index = MOUSE_BUTTON_LEFT
+	e.pressed = false
+	e.position = _cell_center(inst, cv)
+	inst._on_board_input(e)
