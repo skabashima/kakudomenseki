@@ -48,8 +48,8 @@ func _run() -> void:
 	await _calc("men", 4, "(8−1)×(11−1)", "05_calc.png", 2, 7003)
 	# 6) 「解き方」アニメ(ヒポクラテスの月。補助線と色ぬりが出たところ)
 	await _walkthrough("men", 14, 3, "06_walkthrough.png", 2, 7004)
-	# 7) ストーリー(小学生)の単元えらび
-	await _scene("res://scenes/kid_select.tscn", "07_kid_select.png")
+	# 7) ストーリー(小学生)の たからのちず(9 歩ぶん 進んだところ)
+	await _scene("res://scenes/kid_map.tscn", "07_kid_map.png")
 	# 8) ストーリー(小学生)の さわる場面(かどを ちぎって ならべたところ)
 	await _kid_unit("k1", "08_kid_tear.png")
 	# 9) ストーリー(高校生)の 測る場面(惑星の基地。表に数が並ぶ)
@@ -85,6 +85,10 @@ func _fill_progress() -> void:
 	GameState.best_combo = 9
 	GameState.stats = {"correct": 326, "clear": 16, "gauntlet_clear": 3}
 	GameState.combo = 0
+	# たからのちず は 9 歩ぶん 進んだ ところ(旗と きり の 両方が 写る)
+	GameState.kid_clear = {}
+	for i in 9:
+		GameState.kid_clear[String(KidDefs.UNITS[i]["id"])] = true
 
 
 ## その文字をふくむ Label を探す
@@ -115,6 +119,7 @@ func _clear_progress() -> void:
 	GameState.gauntlet_best = {}
 	GameState.challenge_best = {}
 	GameState.stats = {}
+	GameState.kid_clear = {}
 	GameState.best_combo = 0
 	GameState.debug_unlock_all = false
 	GameState.premium = false

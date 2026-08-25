@@ -45,8 +45,8 @@ DELIVERY = [
 
 # 掲載する順(Google Play は 8 枚まで)。最初の 3 枚で「何のアプリか」が伝わる並びにする
 PICKS = [
-    "01_title", "08_kid_tear", "03_problem_angle", "05_calc",
-    "06_walkthrough", "09_story_hs", "11_stage_select_men", "12_store_iap",
+    "01_title", "07_kid_map", "08_kid_tear", "03_problem_angle", "05_calc",
+    "09_story_hs", "11_stage_select_men", "12_store_iap",
 ]
 
 # 画面ごとの: 素材 / 見出し / 補足 / 背景色(濃い→薄い)
@@ -69,8 +69,8 @@ SHOTS = [
      "√ × ÷ が使える電卓つき。途中計算もその場で", TEAL),
     ("06_walkthrough.png", "わからなければ\n「解き方」をアニメで",
      "補助線がスッと引かれ、1ステップずつ進む", GOLD),
-    ("07_kid_select.png", "小学生は\nストーリーから",
-     "中学受験の全 23 単元に、さわって見つける回が 1 つずつ", PLUM),
+    ("07_kid_map.png", "小学生は たからのちずを\n進んで いく",
+     "23 の 単元が 地図の 1 歩。さわって見つける回が 1 つずつ", PLUM),
     ("08_kid_tear.png", "かどを ちぎって\nならべると 180°",
      "公式を読む前に、指で動かして自分で見つける", GOLD),
     ("09_story_hs.png", "高校生は\n別の物語で",
@@ -91,7 +91,7 @@ NICE_NAME = {
     "04_problem_leaf": "area",
     "05_calc": "calc",
     "06_walkthrough": "howto",
-    "07_kid_select": "story_kids",
+    "07_kid_map": "story_kids",
     "08_kid_tear": "kids_tear",
     "09_story_hs": "story_hs",
     "10_records": "records",
@@ -261,7 +261,7 @@ def make_iap_images():
     """
     iap = os.path.join(OUT, "iap_review")
     os.makedirs(iap, exist_ok=True)
-    src = os.path.join(RAW, "10_store_iap.png")
+    src = os.path.join(RAW, "12_store_iap.png")
     if not os.path.exists(src):
         print("  素材なし:", src)
         return

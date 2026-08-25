@@ -65,7 +65,7 @@ func _ready() -> void:
 	back.add_theme_font_size_override("font_size", 26)
 	GameState.style_button(back, Color(0.28, 0.32, 0.44))
 	back.pressed.connect(func() -> void:
-		GameState.change_scene("res://scenes/kid_select.tscn"))
+		GameState.change_scene("res://scenes/kid_map.tscn"))
 	head.add_child(back)
 	var title := RubyLabel.new()
 	title.font_size = 30
@@ -185,7 +185,7 @@ func _advance() -> void:
 		map.queue_redraw()
 		return
 	if phase == 3:
-		GameState.change_scene("res://scenes/kid_select.tscn")
+		GameState.change_scene("res://scenes/kid_map.tscn")
 
 
 ## 3 回できた
@@ -263,7 +263,8 @@ func _submit() -> void:
 		act_btn.visible = true
 		act_btn.text = "もどる"
 		phase = 3
-		GameState.record_kid_clear(String(unit["id"]))
+		if GameState.record_kid_clear(String(unit["id"])):
+			GameState.kid_walk_from = String(unit["id"])
 	else:
 		GameState.play_sfx("fail")
 		big.text = "ちがうみたい"

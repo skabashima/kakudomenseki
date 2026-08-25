@@ -73,13 +73,42 @@ func _ready() -> void:
 	rank.add_theme_color_override("font_color", Color(1.0, 0.82, 0.35))
 	vbox.add_child(rank)
 
-	vbox.add_child(_spacer(10))
-	# ■ 2 編は絵で見せる。ことばを減らして、どちらを押すか一目で分かるように
+	vbox.add_child(_spacer(6))
+	# ■ 主役は 3 つの ストーリー。学年で えらぶ
+	vbox.add_child(_band("― ストーリー ―"))
+	var kid_done := 0
+	for u in KidDefs.UNITS:
+		if GameState.kid_clear.has(String(u["id"])):
+			kid_done += 1
+	vbox.add_child(_story_card("たからのちず", "小学生",
+		"%d / %d" % [kid_done, KidDefs.UNITS.size()], Color(0.52, 0.30, 0.34),
+		Icons.flag(64.0, Color(1, 1, 1, 0.95)), func() -> void:
+			GameState.change_scene("res://scenes/kid_map.tscn")))
+	var jhs: Array = StoryDefs.chapters_of("jhs")
+	vbox.add_child(_story_card("はかる旅", "中学生",
+		"%d / %d 章" % [_story_done(jhs), jhs.size()], Color(0.45, 0.35, 0.62),
+		Icons.book(64.0, Color(1, 1, 1, 0.95)), func() -> void:
+			GameState.story_mode = "jhs"
+			GameState.story_chapter = "ch1"
+			GameState.story_scene = 0
+			GameState.change_scene("res://scenes/story_select.tscn")))
+	var hs: Array = StoryDefs.chapters_of("hs")
+	vbox.add_child(_story_card("軌道計算室", "高校生",
+		"%d / %d 章" % [_story_done(hs), hs.size()], Color(0.24, 0.42, 0.58),
+		Icons.timer(64.0, Color(1, 1, 1, 0.95)), func() -> void:
+			GameState.story_mode = "hs"
+			GameState.story_chapter = "ch17"
+			GameState.story_scene = 0
+			GameState.change_scene("res://scenes/story_select.tscn")))
+
+	# ■ その下に「問題にチャレンジ」(2 編・チャレンジ・きろく)
+	vbox.add_child(_spacer(6))
+	vbox.add_child(_band("― 問題にチャレンジ ―"))
 	var pair := HBoxContainer.new()
-	pair.add_theme_constant_override("separation", 14)
+	pair.add_theme_constant_override("separation", 12)
 	vbox.add_child(pair)
-	var icon_of := {"kaku": Icons.angle_mark(96.0, Color(1, 1, 1, 0.95)),
-		"men": Icons.area_mark(96.0, Color(1, 1, 1, 0.95))}
+	var icon_of := {"kaku": Icons.angle_mark(72.0, Color(1, 1, 1, 0.95)),
+		"men": Icons.area_mark(72.0, Color(1, 1, 1, 0.95))}
 	for c in ProblemGen.COURSES:
 		var cid := String(c["id"])
 		var stages: Array = c["stages"]
@@ -93,38 +122,15 @@ func _ready() -> void:
 				GameState.mode = "normal"
 				GameState.change_scene("res://scenes/stage_select.tscn")))
 
-	# ■ そのほかは小さく、名前だけ
-	vbox.add_child(_spacer(8))
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 10)
 	vbox.add_child(row)
-	row.add_child(_small_card("ストーリー", Color(0.52, 0.30, 0.34),
-		Icons.flag(52.0, Color(1, 1, 1, 0.92)), func() -> void:
-			GameState.change_scene("res://scenes/kid_select.tscn"), "小学生"))
-	row.add_child(_small_card("ストーリー", Color(0.45, 0.35, 0.62),
-		Icons.book(52.0, Color(1, 1, 1, 0.92)), func() -> void:
-			GameState.story_mode = "jhs"
-			GameState.story_chapter = "ch1"
-			GameState.story_scene = 0
-			GameState.change_scene("res://scenes/story_select.tscn"), "中学生"))
-	var row2 := HBoxContainer.new()
-	row2.add_theme_constant_override("separation", 10)
-	vbox.add_child(row2)
-	row2.add_child(_small_card("ストーリー", Color(0.24, 0.42, 0.58),
-		Icons.book(52.0, Color(1, 1, 1, 0.92)), func() -> void:
-			GameState.story_mode = "hs"
-			GameState.story_chapter = "ch17"
-			GameState.story_scene = 0
-			GameState.change_scene("res://scenes/story_select.tscn"), "高校生"))
-	row2.add_child(_small_card("きろく", SECONDARY,
-		Icons.chart(52.0, Color(1, 1, 1, 0.92)), func() -> void:
-			GameState.change_scene("res://scenes/records.tscn")))
-	var row3 := HBoxContainer.new()
-	row3.add_theme_constant_override("separation", 10)
-	vbox.add_child(row3)
-	row3.add_child(_small_card("チャレンジ", SECONDARY,
+	row.add_child(_small_card("チャレンジ", SECONDARY,
 		Icons.timer(52.0, Color(1, 1, 1, 0.92)), func() -> void:
 			GameState.change_scene("res://scenes/challenge_select.tscn")))
+	row.add_child(_small_card("きろく", SECONDARY,
+		Icons.chart(52.0, Color(1, 1, 1, 0.92)), func() -> void:
+			GameState.change_scene("res://scenes/records.tscn")))
 
 	# 未購入のときだけ解放の入口を出す(買い切り 1 商品・広告なし)
 	if not GameState.premium:
@@ -165,6 +171,64 @@ func _update_debug_btn() -> void:
 	else:
 		debug_btn.text = "デバッグ: 全ステージ解放 OFF"
 		GameState.style_button(debug_btn, SECONDARY.darkened(0.25))
+
+
+## 見出しの帯
+func _band(text: String) -> Label:
+	var l := Label.new()
+	l.text = text
+	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	l.add_theme_font_size_override("font_size", 24)
+	l.add_theme_color_override("font_color", Color(0.72, 0.79, 0.92))
+	return l
+
+
+## クリアした章の数
+func _story_done(list: Array) -> int:
+	var n := 0
+	for ch in list:
+		if GameState.story_clear.has(String(ch["id"])):
+			n += 1
+	return n
+
+
+## ストーリーのカード(絵 + 題名 + 学年 + すすみぐあい)
+func _story_card(name: String, grade: String, progress_text: String, color: Color,
+		icon: Control, callback: Callable) -> Button:
+	var btn := Button.new()
+	btn.custom_minimum_size = Vector2(0, 136)
+	btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	GameState.style_button(btn, color)
+	btn.pressed.connect(func() -> void:
+		GameState.play_sfx("tap")
+		callback.call())
+	var h := HBoxContainer.new()
+	h.set_anchors_preset(Control.PRESET_FULL_RECT)
+	h.offset_left = 28
+	h.offset_right = -28
+	h.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	h.add_theme_constant_override("separation", 20)
+	btn.add_child(h)
+	var holder := CenterContainer.new()
+	holder.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	holder.add_child(icon)
+	h.add_child(holder)
+	var v := VBoxContainer.new()
+	v.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	v.alignment = BoxContainer.ALIGNMENT_CENTER
+	v.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	v.add_theme_constant_override("separation", 2)
+	h.add_child(v)
+	var t := Label.new()
+	t.text = name
+	t.add_theme_font_size_override("font_size", 38)
+	v.add_child(t)
+	var g := Label.new()
+	g.text = "%s   %s" % [grade, progress_text]
+	g.add_theme_font_size_override("font_size", 24)
+	g.add_theme_color_override("font_color", Color(1, 1, 1, 0.8))
+	v.add_child(g)
+	return btn
 
 
 ## 2 編のカード(絵 + 名前 + すすみぐあい)。ことばは 2 語だけ

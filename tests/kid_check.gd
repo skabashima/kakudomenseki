@@ -11,8 +11,16 @@ var failures: Array = []
 
 func _ready() -> void:
 	await get_tree().process_frame
+	# 通しプレイの途中でクリアが保存されるので、終わったら元に戻して書き戻す
+	# (そうしないと、遊んでいない単元がクリア済みとして残る)
+	var keep: Dictionary = GameState.kid_clear.duplicate(true)
+	var keep_unit := GameState.kid_unit
+	GameState.kid_clear = {}
 	for u in KidDefs.UNITS:
 		await _play(u)
+	GameState.kid_clear = keep
+	GameState.kid_unit = keep_unit
+	GameState.save_game()
 	if failures.is_empty():
 		print("KID OK: %d 単元 すべて 進めた" % KidDefs.UNITS.size())
 	else:

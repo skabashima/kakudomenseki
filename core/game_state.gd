@@ -119,6 +119,10 @@ var story_scene: int = 0
 var kid_clear: Dictionary = {}
 var kid_unit: String = "k1"
 
+## クリアした 直後だけ 入る 単元 id。地図で「つぎの ばしょまで 歩く」ために使う
+## (進みぐあいそのものではないので 保存しない)
+var kid_walk_from: String = ""
+
 
 ## 単元をクリアした。はじめてなら true
 func record_kid_clear(id: String) -> bool:
