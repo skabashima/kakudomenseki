@@ -67,7 +67,16 @@ func _ready() -> void:
 			await get_tree().process_frame
 	if island > 0:
 		# 島取り: 立て札の問題を開く(2 なら 正解して なぞる 途中まで)
-		inst._on_act()
+		# 立て札は タップして えらぶ(いちばん 近いものを 開く)
+		var near: Vector2i = Vector2i(-1, -1)
+		var nd := 999
+		for pp in inst.posts:
+			var dd: int = inst._dist_to_mine(int(pp["x"]), int(pp["y"]))
+			if dd < nd:
+				nd = dd
+				near = Vector2i(int(pp["x"]), int(pp["y"]))
+		if near.x >= 0:
+			inst._tap_post(near)
 		for i in 4:
 			await get_tree().process_frame
 		if island == 2:

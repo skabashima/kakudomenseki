@@ -1,12 +1,13 @@
 extends Node
-## 島取りを 最後まで 1 局 通す(--headless 可)。
+## 島取りを 1 局 最後まで 通す(--headless 可)。
 ##   godot --headless --path . res://tests/island_check.tscn
 ##
 ## 見るところ:
-##   ・立て札 → 問題 → 正解 → なぞって取る → カラスの番、が回るか
+##   ・立て札をタップ → 問題 → 正解 → なぞって取る → カラスの番、が回るか
 ##   ・取ったマスが かならず 自分の陣地と つながっているか
-##   ・囲まれて 置けなくなっても 詰まらずに 進むか
-##   ・15 ターン以内に 終わって 占有率が出るか
+##   ・3 回まちがえると 立て札を失って ターンが 進むか(何度でも 答えられない)
+##   ・立て札まで とどくと 次のターンの ぶんが 増えるか
+##   ・囲まれても 詰まらず、決着して 占有率が 出るか
 
 var failures: Array = []
 
@@ -18,13 +19,19 @@ func _ready() -> void:
 	for i in 8:
 		await get_tree().process_frame
 
+	await _check_miss(inst)
+
 	var guard := 0
+	var reached := 0
 	while not inst.over and guard < 60:
 		guard += 1
-		inst._on_act()                      # 立て札の問題を開く
+		var cv: Vector2i = _near_post(inst)
+		if cv.x < 0:
+			break
+		inst._tap_post(cv)
 		await _wait(2)
 		if not inst.quiz.visible:
-			failures.append("%d ターンめ: 問題が開かない" % inst.turn)
+			failures.append("%d ターンめ: 立て札をタップしても 問題が 出ない" % inst.turn)
 			break
 		inst.input_text = ProblemGen.fmt(float(inst.problem["answer"]))
 		inst.keypad.answer_lbl.text = inst.input_text
@@ -33,29 +40,39 @@ func _ready() -> void:
 		if inst.need <= 0:
 			failures.append("%d ターンめ: 正解しても 取れるマスが 決まらない" % inst.turn)
 			break
-		# ふちを なぞる(実際の指の道すじと同じ入口を通す)
-		var before: int = inst._count(inst.MINE)
-		var put := 0
-		while put < inst.need:
-			var cv: Vector2i = _next_cell(inst)
-			if cv.x < 0:
+		var turn_now: int = inst.turn
+		# コストで 数える(カラスのマスは 2 マスぶん)
+		while inst._marked_cost() < inst.need:
+			var m: Vector2i = _toward(inst, cv)
+			if m.x < 0:
 				break
-			inst._mark(cv)
-			put += 1
-		if put > 0 and not _all_connected(inst):
-			failures.append("%d ターンめ: 陣地から はなれた マスが 取れてしまう" % inst.turn)
-			break
-		inst._on_act()                      # ここに決める → カラスの番
-		await _wait(6)
-		if inst._count(inst.MINE) <= before and not inst.over:
-			failures.append("%d ターンめ: 決めても 陣地が 増えない" % inst.turn)
+			var was: int = inst.marked.size()
+			inst._mark(m)
+			if inst.marked.size() == was:
+				break
+		for mm in inst.marked:
+			if not inst._touches_mine(mm):
+				failures.append("%d ターンめ: 陣地から はなれた マスが 取れてしまう" % inst.turn)
+				break
+		if inst.marked.has(cv):
+			reached += 1
+		inst._on_act()
+		await _wait(4)
+		# カラスに 切り返されて 減ることも あるので、マス数ではなく
+		# 「ターンが 進んだか」を 見る
+		if inst.turn <= turn_now and not inst.over:
+			failures.append("%d ターンめ: 決めても ターンが 進まない(need %d / なぞった %d / まだ置ける %d)" % [inst.turn, inst.need, inst.marked.size(), inst._markable_left()])
 			break
 
 	if not inst.over and failures.is_empty():
 		failures.append("60 手 まわしても 終わらない(ターンが 進んでいない)")
+	if reached == 0 and failures.is_empty():
+		failures.append("一度も 立て札に とどかない(近い立て札でも 届かないなら 数が おかしい)")
 	if failures.is_empty():
-		print("ISLAND OK: %d ターンで 決着(じぶん %d マス / カラス %d マス)" % [
-			inst.turn, inst._count(inst.MINE), inst._count(inst.CROW)])
+		print("ISLAND OK: %d ターンで 決着(じぶん %d マス / カラス %d マス・立て札 %d 本 占領・空き %d マス)" % [
+			inst.turn, inst._count(inst.MINE), inst._count(inst.CROW), reached,
+			inst._count(inst.EMPTY)])
+		print("  おわり方: " + inst.msg.text)
 	else:
 		for f in failures:
 			print("FAIL: " + str(f))
@@ -64,27 +81,66 @@ func _ready() -> void:
 	get_tree().quit(0 if failures.is_empty() else 1)
 
 
-## いま なぞれる マスを 1 つ返す
-func _next_cell(inst: Node) -> Vector2i:
+## 3 回まちがえたら 立て札を失って ターンが 進む(何度でも 答えられない)
+func _check_miss(inst: Node) -> void:
+	var cv: Vector2i = _near_post(inst)
+	if cv.x < 0:
+		failures.append("立て札が 1 本も 立っていない")
+		return
+	var turn_before: int = inst.turn
+	inst._tap_post(cv)
+	await _wait(2)
+	for i in 3:
+		inst.input_text = "-1"
+		inst._submit()
+		await _wait(2)
+	if inst.quiz.visible:
+		failures.append("3 回まちがえても 問題が 閉じない(何度でも 答えられる)")
+	var still := false
+	for p in inst.posts:
+		if int(p["x"]) == cv.x and int(p["y"]) == cv.y:
+			still = true
+	if still:
+		failures.append("3 回まちがえても その立て札が 残っている")
+	if inst.turn <= turn_before:
+		failures.append("3 回まちがえても ターンが 進まない")
+	if inst.need > 0:
+		failures.append("3 回まちがえたのに 土地が もらえている")
+
+
+func _near_post(inst: Node) -> Vector2i:
+	var best := Vector2i(-1, -1)
+	var best_d := 999
+	for p in inst.posts:
+		var d: int = inst._dist_to_mine(int(p["x"]), int(p["y"]))
+		if d < best_d:
+			best_d = d
+			best = Vector2i(int(p["x"]), int(p["y"]))
+	return best
+
+
+## 立て札に 近づく マスを 1 つ選ぶ
+func _toward(inst: Node, target: Vector2i) -> Vector2i:
+	var best := Vector2i(-1, -1)
+	var best_d := 999
 	for y in inst.H:
 		for x in inst.W:
 			var cv := Vector2i(x, y)
 			if inst.marked.has(cv):
 				continue
 			var k: int = inst.cell[y][x]
-			if k != inst.EMPTY and k != inst.SPRING and k != inst.RUIN:
+			if k != inst.EMPTY and k != inst.SPRING and k != inst.RUIN and k != inst.CROW:
 				continue
-			if inst._touches_mine(cv):
-				return cv
-	return Vector2i(-1, -1)
-
-
-## 選んだマスが すべて 陣地と つながっているか
-func _all_connected(inst: Node) -> bool:
-	for m in inst.marked:
-		if not inst._touches_mine(m):
-			return false
-	return true
+			if not inst._touches_mine(cv):
+				continue
+			# のこりの マスぶんで 取れる ものだけ(カラスのマスは 2 つぶん)
+			if inst._cost_of(cv) > inst.need - inst._marked_cost():
+				continue
+			var d := absi(x - target.x) + absi(y - target.y)
+			if d < best_d:
+				best_d = d
+				best = cv
+	return best
 
 
 func _wait(n: int) -> void:

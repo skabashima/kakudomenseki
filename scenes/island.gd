@@ -38,6 +38,7 @@ var need := 0                  # いま取れるマス数(0 なら問題を解�
 var marked: Array = []         # なぞって選んだマス [Vector2i]
 var bonus := 0                 # 泉で増える ぶん
 var last_take := 4             # 前のターンに じぶんが 取った マス数(カラスの強さの目安)
+var crow_extra := 0            # 立て札を 取り逃した ぶん、カラスが 多く広げる
 var rng := RandomNumberGenerator.new()
 var over := false
 
@@ -53,6 +54,8 @@ var q_lbl: Label
 var problem: Dictionary = {}
 var input_text := ""
 var picked_post := -1
+var post_cell := Vector2i(-1, -1)   # いま挑んでいる立て札の場所
+var miss := 0                       # その問題で まちがえた回数
 
 
 func _ready() -> void:
@@ -220,15 +223,13 @@ func _sprinkle(kind: int, n: int) -> void:
 func _seed_owner(kind: int, from_y: int) -> void:
 	var step := 1 if from_y == 0 else -1
 	var y := from_y
-	var put := 0
-	while put < 2 and y >= 0 and y < H:
-		for x in W:
-			var mid := int(abs(float(x) - float(W - 1) * 0.5))
-			if cell[y][x] == EMPTY and mid <= 1:
+	while y >= 0 and y < H:
+		for x in range(W - 1):
+			# となりあった 2 マスを 出発点に する(いきなり 飛び地に しない)
+			if cell[y][x] == EMPTY and cell[y][x + 1] == EMPTY:
 				cell[y][x] = kind
-				put += 1
-				if put >= 2:
-					break
+				cell[y][x + 1] = kind
+				return
 		y += step
 
 
@@ -349,12 +350,21 @@ func _draw_board() -> void:
 				if marked.has(cv):
 					continue
 				var k: int = cell[y][x]
-				if k != EMPTY and k != SPRING and k != RUIN:
+				if k != EMPTY and k != SPRING and k != RUIN and k != CROW:
+					continue
+				if _cost_of(cv) > need - _marked_cost():
 					continue
 				if not _touches_mine(cv):
 					continue
 				var gr := Rect2(o + Vector2(float(x), float(y)) * s, Vector2(s, s))
-				c.draw_rect(gr.grow(-3.0), Color(GOLD.r, GOLD.g, GOLD.b, puls), false, 3.0)
+				# カラスのマスは 赤っぽく(2 マスぶん つかう)
+				var gc := Color(1.0, 0.45, 0.35, puls) if k == CROW else Color(GOLD.r, GOLD.g, GOLD.b, puls)
+				c.draw_rect(gr.grow(-3.0), gc, false, 3.0)
+	# ねらっている 立て札を 目立たせる(どこへ 伸ばすかの 目じるし)
+	if need > 0 and post_cell.x >= 0:
+		var tr := Rect2(o + Vector2(float(post_cell.x), float(post_cell.y)) * s, Vector2(s, s))
+		var tp := 1.0 + sin(float(Time.get_ticks_msec()) * 0.006) * 0.10
+		c.draw_arc(tr.get_center(), s * 0.62 * tp, 0.0, TAU, 28, GOLD, 4.0)
 	# 陣地の ふちを 太く(かたちが 読めるように)
 	_draw_outline(c, MINE, COL[MINE].lightened(0.45), o, s)
 	_draw_outline(c, CROW, Color(0.72, 0.68, 0.80), o, s)
@@ -371,12 +381,19 @@ func _draw_board() -> void:
 		var puls := 1.0 + sin(float(Time.get_ticks_msec()) * 0.004 + float(i)) * 0.08
 		c.draw_line(at + Vector2(0, s * 0.30), at + Vector2(0, -s * 0.05), Color(0.50, 0.36, 0.22),
 			maxf(s * 0.08, 3.0))
-		var bw := s * 0.72 * puls
-		var br := Rect2(at + Vector2(-bw * 0.5, -s * 0.42), Vector2(bw, s * 0.40))
-		c.draw_rect(br, Color(0.86, 0.72, 0.44))
+		# 板には「ここまで 何マスで 届くか」を 書く。
+		# 遠い立て札ほど 問題は 難しく、もらえる マスも 多い ―
+		# どれに 挑むかが この遊びの 判断どころ なので、数を 読める 大きさで 出す
+		var d := _dist_to_mine(int(p["x"]), int(p["y"]))
+		var bw := s * 1.06 * puls
+		var br := Rect2(at + Vector2(-bw * 0.5, -s * 0.60), Vector2(bw, s * 0.52))
+		c.draw_rect(br, Color(0.90, 0.78, 0.50))
 		c.draw_rect(br, INK, false, 2.0)
-		c.draw_string(font, br.position + Vector2(bw * 0.5 - s * 0.12, s * 0.30),
-			"?", HORIZONTAL_ALIGNMENT_LEFT, -1, int(s * 0.42), INK)
+		c.draw_string(font, br.position + Vector2(0, s * 0.38), "%d マス" % d,
+			HORIZONTAL_ALIGNMENT_CENTER, bw, int(s * 0.32), INK)
+		c.draw_circle(at + Vector2(0, -s * 0.72), s * 0.16, GOLD)
+		c.draw_string(font, at + Vector2(-s * 0.16, -s * 0.64), "?",
+			HORIZONTAL_ALIGNMENT_CENTER, s * 0.32, int(s * 0.26), INK)
 
 
 # =========================================================
@@ -415,19 +432,36 @@ func _tap_post(cv: Vector2i) -> void:
 		var p: Dictionary = posts[i]
 		if int(p["x"]) == cv.x and int(p["y"]) == cv.y:
 			picked_post = i
+			post_cell = cv
+			miss = 0
 			_open_quiz(int(p["tier"]))
 			return
 	GameState.play_sfx("fail")
 	msg.text = "「?」の立て札をタップすると 問題が出る"
 
 
-## なぞったマスを 選ぶ。じぶんの陣地か、選んだマスに となりあっていること
+## そのマスを 取るのに いくつ つかうか。カラスの陣地は 押し返すので 2 つぶん
+func _cost_of(cv: Vector2i) -> int:
+	return 2 if cell[cv.y][cv.x] == CROW else 1
+
+
+## いま 何マスぶん つかっているか
+func _marked_cost() -> int:
+	var n := 0
+	for m in marked:
+		n += _cost_of(m)
+	return n
+
+
+## なぞったマスを 選ぶ。じぶんの陣地か、選んだマスに となりあっていること。
+## カラスのマスも 取れる(2 マスぶん つかう)ので、囲まれても 押し返せる
 func _mark(cv: Vector2i) -> void:
 	if marked.has(cv):
 		return
-	if cell[cv.y][cv.x] != EMPTY and cell[cv.y][cv.x] != SPRING and cell[cv.y][cv.x] != RUIN:
+	var k: int = cell[cv.y][cv.x]
+	if k != EMPTY and k != SPRING and k != RUIN and k != CROW:
 		return
-	if marked.size() >= need:
+	if _marked_cost() + _cost_of(cv) > need:
 		return
 	if not _touches_mine(cv):
 		return
@@ -439,12 +473,16 @@ func _mark(cv: Vector2i) -> void:
 ## まだ なぞれる マスが いくつ あるか(囲まれて 置けない ときの ため)
 func _markable_left() -> int:
 	var n := 0
+	var left := need - _marked_cost()
 	for y in H:
 		for x in W:
 			var cv := Vector2i(x, y)
 			if marked.has(cv):
 				continue
-			if cell[y][x] != EMPTY and cell[y][x] != SPRING and cell[y][x] != RUIN:
+			var k: int = cell[y][x]
+			if k != EMPTY and k != SPRING and k != RUIN and k != CROW:
+				continue
+			if _cost_of(cv) > left:
 				continue
 			if _touches_mine(cv):
 				n += 1
@@ -478,31 +516,23 @@ func _on_act() -> void:
 		GameState.change_scene("res://scenes/main.tscn")
 		return
 	if need <= 0:
-		# 立て札を選ぶ番。いちばん近いものを開く
+		# どの立て札に 挑むかは 自分で えらぶ(ここが この遊びの 判断どころ)
 		if posts.is_empty():
 			_spawn_posts()
 		if posts.is_empty():
-			# 空きマスが 尽きた
 			_finish()
 			return
-		if true:
-			picked_post = 0
-			var best := 99
-			for i in posts.size():
-				var d := _dist_to_mine(int(posts[i]["x"]), int(posts[i]["y"]))
-				if d < best:
-					best = d
-					picked_post = i
-			_open_quiz(int(posts[picked_post]["tier"]))
+		GameState.play_sfx("fail")
+		msg.text = "立て札を タップして えらぼう。遠いほど 問題は 難しく、もらえる マスも 多い"
 		return
 	if marked.is_empty() and _markable_left() == 0:
 		# まわりを ぜんぶ カラスと岩に 囲まれた。ここで 勝負あり
 		msg.text = "囲まれた! もう 広げられない。"
 		_finish()
 		return
-	if marked.size() != need and _markable_left() > 0:
+	if _marked_cost() != need and _markable_left() > 0:
 		GameState.play_sfx("fail")
-		msg.text = "あと %d マス" % (need - marked.size())
+		msg.text = "あと %d マスぶん" % (need - _marked_cost())
 		return
 	if marked.is_empty():
 		GameState.play_sfx("fail")
@@ -517,6 +547,7 @@ func _take_marked() -> void:
 	var got_spring := 0
 	var got_ruin := 0
 	last_take = marked.size()
+	var reached_post := post_cell.x >= 0 and marked.has(post_cell)
 	for m in marked:
 		if cell[m.y][m.x] == SPRING:
 			got_spring += 1
@@ -537,16 +568,48 @@ func _take_marked() -> void:
 		extra += "  泉! つぎは +%d マス" % bonus
 	if got_ruin > 0:
 		extra += "  遺跡を見つけた!"
+	# 立て札まで 届いたか ― ここが 立て札を えらぶ 意味
+	if reached_post:
+		bonus += 4
+		extra += "  立て札に とどいた! つぎは +4 マス"
+		GameState.play_sfx("clear")
+	elif post_cell.x >= 0:
+		extra += "  立て札には とどかなかった(まだ 立っている)"
+	post_cell = Vector2i(-1, -1)
 	msg.text = "土地を広げた。" + extra
 	# ここで待たせない。待つと「カラスの番」が遅れて、
 	# 先に つぎの問題を開けてしまう(カラスが 一度も 広げられなかった)
 	_crow_turn()
 
 
+## 3 回はずしたとき ― その立て札は カラスの ものに なり、こちらは 何も 取れない
+func _lose_post(why: String) -> void:
+	GameState.play_sfx("fail")
+	need = 0
+	marked.clear()
+	_drop_post("")
+	post_cell = Vector2i(-1, -1)
+	msg.text = why
+	_crow_turn()
+
+
+## 立て札を 消して、その場所を カラスの ものに する
+func _drop_post(why: String) -> void:
+	if picked_post >= 0 and picked_post < posts.size():
+		posts.remove_at(picked_post)
+	picked_post = -1
+	# その場所を そのまま カラスに すると、自陣の 真ん中に カラスが 湧いて
+	# 立て直せなくなる。かわりに カラスの その番の 手数を 増やす
+	crow_extra += 2
+	if why != "":
+		msg.text = why
+
+
 ## カラスの番。じぶんに 近いところから 広げ、細いところを 1 つ 切り取る
 func _crow_turn() -> void:
 	# カラスは じぶんが 取ったのと 同じくらい 広げる(競り合いに なるように)
-	var n := clampi(last_take, 3, 10)
+	var n := clampi(last_take, 3, 8) + crow_extra
+	crow_extra = 0
 	for i in n:
 		var best := Vector2i(-1, -1)
 		var best_score := -999
@@ -567,6 +630,12 @@ func _crow_turn() -> void:
 		if best.x < 0:
 			break
 		cell[best.y][best.x] = CROW
+		# 立て札の 上を 取られたら、その立て札は カラスの ものに なる
+		for pi in range(posts.size() - 1, -1, -1):
+			if int(posts[pi]["x"]) == best.x and int(posts[pi]["y"]) == best.y:
+				posts.remove_at(pi)
+				crow_extra += 2
+				msg.text = "立て札を カラスに 取られた! 早く 取りに 行こう"
 	if turn % 2 == 0:
 		_crow_cut()
 	turn += 1
@@ -694,7 +763,7 @@ func _open_quiz(tier: int) -> void:
 	input_text = ""
 	keypad.answer_lbl.text = ""
 	keypad.unit_lbl.text = String(problem.get("unit", ""))
-	q_lbl.text = "%s\n(正解すると %s)" % [String(problem["q"]), _reward_note()]
+	q_lbl.text = "%s\n%s" % [String(problem["q"]), _reward_note()]
 	quiz.visible = true
 	GameState.play_sfx("tap")
 
@@ -703,12 +772,17 @@ func _open_quiz(tier: int) -> void:
 func _cells_for(v: float) -> int:
 	var unit := String(problem.get("unit", ""))
 	var per := 15.0 if unit == "度" else 10.0
-	return clampi(int(round(absf(v) / per)), 3, 10)
+	var n := int(round(absf(v) / per))
+	n = int(float(n) / pow(2.0, float(miss)))       # まちがえた ぶん 減る
+	return clampi(n, 3, 10)
 
 
 func _reward_note() -> String:
 	var unit := String(problem.get("unit", ""))
-	return "答え ÷ 15 マスもらえる" if unit == "度" else "答え ÷ 10 マスもらえる"
+	var per := "÷ 15" if unit == "度" else "÷ 10"
+	var d := _dist_to_mine(post_cell.x, post_cell.y) if post_cell.x >= 0 else 0
+	var lost := "" if miss == 0 else "  ※ まちがえたので もらえる マスは %d 分の 1" % int(pow(2, miss))
+	return "正解すると 答え %s マス。この立て札まで %d マス%s" % [per, d, lost]
 
 
 func _on_key(k: String) -> void:
@@ -738,18 +812,22 @@ func _submit() -> void:
 		return
 	if absf(v - float(problem["answer"])) > maxf(float(problem.get("tol", 0.01)), 0.01):
 		GameState.play_sfx("fail")
-		q_lbl.text = "ちがう。もう一度 ― %s" % String(problem["q"])
+		miss += 1
 		input_text = ""
 		keypad.answer_lbl.text = ""
+		if miss >= 3:
+			# 3 回はずすと この立て札は カラスの ものに なる
+			quiz.visible = false
+			_lose_post("3 回はずした。立て札は カラスに 取られた!")
+			return
+		q_lbl.text = "ちがう ― もらえる マスが 半分に なった(のこり %d 回)\n%s\n%s" % [
+			3 - miss, String(problem["q"]), _reward_note()]
 		return
 	GameState.play_sfx("correct")
 	need = _cells_for(float(problem["answer"])) + bonus
 	bonus = 0
-	if picked_post >= 0 and picked_post < posts.size():
-		posts.remove_at(picked_post)
-	picked_post = -1
 	quiz.visible = false
-	msg.text = "正解! %d マス取れる。島を 指で なぞろう" % need
+	msg.text = "正解! %d マスぶん。立て札まで とどけば 占領。カラスのマスは 2 マスぶんで 押し返せる" % need
 	_refresh()
 
 
@@ -772,9 +850,9 @@ func _refresh() -> void:
 		if msg.text == "":
 			msg.text = "「?」の立て札をタップ(近いほど やさしい)"
 	else:
-		act_btn.text = "ここに 決める(%d/%d)" % [marked.size(), need]
-		if marked.size() < need and _markable_left() == 0 and not marked.is_empty():
-			act_btn.text = "ここまでで 決める(%d/%d)" % [marked.size(), need]
+		act_btn.text = "ここに 決める(%d/%d)" % [_marked_cost(), need]
+		if _marked_cost() < need and _markable_left() == 0 and not marked.is_empty():
+			act_btn.text = "ここまでで 決める(%d/%d)" % [_marked_cost(), need]
 	redo_btn.disabled = marked.is_empty()
 	board.queue_redraw()
 
