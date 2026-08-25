@@ -249,6 +249,8 @@ func _submit() -> void:
 func _act_lead() -> String:
 	match String(unit["act"]):
 		"tear":
+			if String(unit["id"]) == "k7":
+				return "外がわの かどを 3 つ ならべよう。まん中の へこんだ かどと くらべて。"
 			return "三角形の かどを ゆびで つまんで、下の せんに ならべよう。3 つ ぜんぶ。"
 		"slide":
 			return "金色の かどを ゆびで つまんで、下の 線の 交わるところまで ずらそう。"
@@ -279,6 +281,8 @@ func _act_lead() -> String:
 func _act_after() -> String:
 	match String(unit["act"]):
 		"tear":
+			if String(unit["id"]) == "k7":
+				return "3 つ あわせると へこんだ かどと 同じだった。形を かえても?"
 			return "3 つ ならべたら まっすぐ。形を かえても 同じかな?"
 		"slide":
 			return "ずらしても かどの 大きさは 同じだった。ほかの ななめでも 同じ?"
@@ -309,6 +313,8 @@ func _act_after() -> String:
 func _act_cheer() -> String:
 	match String(unit["act"]):
 		"tear":
+			if String(unit["id"]) == "k7":
+				return "へこんだ かどと 同じ！ %d°" % roundi(float(st.get("dent", 0.0)))
 			return "ぴったり まっすぐ！ 180°"
 		"slide":
 			return "ぴったり 重なった！"
@@ -361,7 +367,21 @@ func _reset_act() -> void:
 			var pc := Vector2(side * 0.5, -3.0)
 			var ab := side * sin(deg_to_rad(c)) / sin(deg_to_rad(a))
 			var pa := pb + Vector2(cos(deg_to_rad(b)), sin(deg_to_rad(b))) * ab
-			st = {"tri": [pa, pb, pc], "deg": [a, b, c], "placed": [false, false, false]}
+			if String(unit["id"]) == "k7":
+				# 矢じりの形。外がわの 3 つの かどを ちぎると、へこんだ かどに なる
+				var da := Vector2(0.0, 7.5)
+				var db := Vector2(-6.0, -3.0)
+				var dc := Vector2(6.0, -3.0)
+				var dp := Vector2(0.0, 1.2 + rng.randf_range(-0.5, 1.2))
+				var ang_a := rad_to_deg(absf((db - da).angle_to(dc - da)))
+				var ang_b := rad_to_deg(absf((da - db).angle_to(dp - db)))
+				var ang_c := rad_to_deg(absf((da - dc).angle_to(dp - dc)))
+				st = {"tri": [da, db, dc], "deg": [ang_a, ang_b, ang_c],
+					"placed": [false, false, false], "poly": [da, db, dp, dc],
+					"dent": ang_a + ang_b + ang_c, "dent_at": dp}
+			else:
+				st = {"tri": [pa, pb, pc], "deg": [a, b, c], "placed": [false, false, false],
+					"poly": [pa, pb, pc]}
 		"slide":
 			var slope := rng.randf_range(28.0, 62.0)
 			st = {"slope": slope, "at": Vector2.ZERO, "moved": false, "gap": 7.0}
@@ -399,8 +419,9 @@ func _reset_act() -> void:
 # =========================================================
 
 func _to_screen(p: Vector2) -> Vector2:
-	var k := minf(map.size.x / 16.0, map.size.y / 22.0)
-	return Vector2(map.size.x * 0.5 + p.x * k, map.size.y * 0.42 - p.y * k)
+	# ちぎった かど(半径 74)のぶんも 入るように、少し小さめに置く
+	var k := minf(map.size.x / 16.0, map.size.y / 26.0)
+	return Vector2(map.size.x * 0.5 + p.x * k, map.size.y * 0.46 - p.y * k)
 
 
 func _line_y() -> float:
@@ -470,20 +491,41 @@ func _draw_tear(c: Control) -> void:
 	var tri: Array = st["tri"]
 	var placed: Array = st["placed"]
 	var deg: Array = st["deg"]
+	var poly: Array = st.get("poly", tri)
+	var shape := PackedVector2Array()
+	for p in poly:
+		shape.append(_to_screen(p))
+	var center := Vector2.ZERO
+	for q in shape:
+		center += q
+	center /= float(shape.size())
+	c.draw_colored_polygon(shape, Color(0.40, 0.60, 0.95, 0.30))
+	c.draw_polyline(shape + PackedVector2Array([shape[0]]), INK, 4.0)
+	if st.has("dent_at"):
+		# へこんだ かども 見せておく(ちぎった 3 つと くらべるため)
+		var dp := _to_screen(st["dent_at"])
+		c.draw_arc(dp, 46.0, 0.0, TAU, 24, Color(1, 1, 1, 0.18), 2.0)
+		c.draw_string(ThemeDB.fallback_font, dp + Vector2(-26.0, -18.0),
+			"%d°" % roundi(float(st["dent"])), HORIZONTAL_ALIGNMENT_LEFT, -1, 26, SKY)
 	var sp := PackedVector2Array()
 	for p in tri:
 		sp.append(_to_screen(p))
-	c.draw_colored_polygon(sp, Color(0.40, 0.60, 0.95, 0.30))
-	c.draw_polyline(PackedVector2Array([sp[0], sp[1], sp[2], sp[0]]), INK, 4.0)
 	for i in 3:
 		if bool(placed[i]) or i == dragging:
 			continue
 		var at: Vector2 = sp[i]
 		var d1 := _math_angle(sp[(i + 1) % 3] - at)
 		var d2 := _math_angle(sp[(i + 2) % 3] - at)
+		if st.has("dent_at") and i > 0:
+			# 矢じりのときは、外の かどは A と へこみ P にはさまれている
+			d2 = _math_angle(_to_screen(st["dent_at"]) - at)
+			d1 = _math_angle(sp[0] - at)
 		var start: float = d1
 		if _wrap_diff(d1, d2) < 0.0:
 			start = d2
+		var mid_dir := start + deg_to_rad(float(deg[i])) * 0.5
+		if absf(_wrap_diff(mid_dir, _math_angle(center - at))) > PI * 0.5:
+			start = start + deg_to_rad(float(deg[i])) - deg_to_rad(360.0)
 		_draw_piece(c, at, start, float(deg[i]), PIECE_COL[i], 74.0)
 	var ly := _line_y()
 	c.draw_line(Vector2(20, ly), Vector2(c.size.x - 20, ly), Color(1, 1, 1, 0.85), 5.0)
@@ -509,7 +551,9 @@ func _slide_points() -> Array:
 	var y_top := map.size.y * 0.30
 	var y_bottom := map.size.y * 0.64
 	var dir := Vector2(cos(deg_to_rad(float(st["slope"]))), sin(deg_to_rad(float(st["slope"]))))
-	var p_top := Vector2(map.size.x * 0.30, y_top)
+	# 下の交点が 右へ はみ出さない ところから 引く
+	var dx := (y_bottom - y_top) / maxf(tan(deg_to_rad(float(st["slope"]))), 0.05)
+	var p_top := Vector2(clampf(map.size.x - 130.0 - dx, 90.0, map.size.x * 0.34), y_top)
 	var p_bottom := p_top + dir * ((y_bottom - y_top) / maxf(dir.y, 0.05))
 	return [p_top, p_bottom, dir, y_top, y_bottom]
 
@@ -688,51 +732,95 @@ func _draw_grid(c: Control) -> void:
 		HORIZONTAL_ALIGNMENT_LEFT, -1, 25, DIM)
 
 
-## 切って 反対がわへ 運ぶ
-func _draw_cut(c: Control) -> void:
+## 切って 反対がわへ 運ぶ。運んだ あとに もとの形が 残らないよう、
+## 「切ったあとの のこり」と「運ぶ かけら」を 別々に 持つ
+func _cut_shapes() -> Array:
 	var s := _cell()
 	var o := _grid_origin()
-	var t: float = st["moved"]
 	var uid := String(unit["id"])
-	var slant := s * 2.0
-	# もとの 形(かたむいた 四角 / L 字 / 葉っぱ)
-	var body := PackedVector2Array()
-	var piece := PackedVector2Array()
 	if uid == "k11":
-		body = PackedVector2Array([o + Vector2(slant, 0), o + Vector2(s * 7.0 + slant, 0),
-			o + Vector2(s * 7.0, -s * 4.0), o + Vector2(0, -s * 4.0)])
-		piece = PackedVector2Array([o + Vector2(0, -s * 4.0), o + Vector2(slant, 0),
-			o + Vector2(slant, -s * 4.0)])
-	elif uid == "k14":
-		body = PackedVector2Array([o, o + Vector2(s * 7.0, 0), o + Vector2(s * 7.0, -s * 2.0),
-			o + Vector2(s * 3.0, -s * 2.0), o + Vector2(s * 3.0, -s * 5.0), o + Vector2(0, -s * 5.0)])
-		piece = PackedVector2Array([o + Vector2(s * 3.0, 0), o + Vector2(s * 7.0, 0),
-			o + Vector2(s * 7.0, -s * 2.0), o + Vector2(s * 3.0, -s * 2.0)])
-	else:
-		body = PackedVector2Array([o, o + Vector2(s * 5.0, 0), o + Vector2(s * 5.0, -s * 5.0),
-			o + Vector2(0, -s * 5.0)])
-		piece = PackedVector2Array([o + Vector2(s * 5.0, 0), o + Vector2(s * 5.0, -s * 5.0),
-			o + Vector2(0, -s * 5.0)])
+		# かたむいた四角。左の三角を 切って 右へ
+		var slant := s * 2.0
+		var w := s * 5.0
+		var h := s * 4.0
+		var a := o + Vector2(slant, 0)
+		var b := a + Vector2(w, 0)
+		var t := o + Vector2(slant, -h)
+		var d := o + Vector2(0, -h)
+		return [PackedVector2Array([a, b, b + Vector2(0, -h), t]),
+			PackedVector2Array([d, a, t]), Vector2(w, 0)]
+	if uid == "k14":
+		# L の字。下の 出っぱりを 切りはなす
+		var w2 := s * 4.0
+		var h2 := s * 5.0
+		return [PackedVector2Array([o, o + Vector2(s * 3.0, 0), o + Vector2(s * 3.0, -h2),
+				o + Vector2(0, -h2)]),
+			PackedVector2Array([o + Vector2(s * 3.0, 0), o + Vector2(s * 3.0 + w2, 0),
+				o + Vector2(s * 3.0 + w2, -s * 2.0), o + Vector2(s * 3.0, -s * 2.0)]),
+			Vector2(s * 1.2, s * 1.6)]
+	# 葉っぱ。右の おうぎ形を 左へ 重ねる
+	var r := s * 5.0
+	var corner := o
+	var fan1 := PackedVector2Array([corner])
+	for i in 13:
+		var th := deg_to_rad(-90.0 * float(i) / 12.0)
+		fan1.append(corner + Vector2(cos(th), sin(th)) * r)
+	var corner2 := o + Vector2(r, -r)
+	var fan2 := PackedVector2Array([corner2])
+	for i in 13:
+		var th2 := deg_to_rad(90.0 + 90.0 * float(i) / 12.0)
+		fan2.append(corner2 + Vector2(cos(th2), sin(th2)) * r)
+	return [fan1, fan2, Vector2(-s * 5.5, 0)]
+
+
+func _draw_cut(c: Control) -> void:
+	var s := _cell()
+	var t: float = st["moved"]
+	var parts := _cut_shapes()
+	var rest: PackedVector2Array = parts[0]
+	var piece: PackedVector2Array = parts[1]
+	var shift: Vector2 = parts[2] * t
 	_draw_grid_bg(c, 9, 7)
-	c.draw_colored_polygon(body, Color(0.40, 0.60, 0.95, 0.40))
-	c.draw_polyline(body + PackedVector2Array([body[0]]), INK, 4.0)
-	# 切って 動かす ぶん
-	var shift := Vector2(s * 7.0, 0) * t if uid == "k11" else Vector2(-s * 4.0, s * 0.0) * t
+	if String(unit["id"]) == "k17":
+		# 葉っぱは「重ねる」ので、動かす前の 位置に うすく 出しておく
+		var ghost := PackedVector2Array()
+		for p in piece:
+			ghost.append(p + parts[2])
+		c.draw_colored_polygon(ghost, Color(1, 1, 1, 0.06))
+	c.draw_colored_polygon(rest, Color(0.40, 0.60, 0.95, 0.45))
+	c.draw_polyline(rest + PackedVector2Array([rest[0]]), INK, 4.0)
 	var moved := PackedVector2Array()
 	for p in piece:
 		moved.append(p + shift)
 	c.draw_colored_polygon(moved, Color(1.0, 0.78, 0.35, 0.55))
 	c.draw_polyline(moved + PackedVector2Array([moved[0]]), GOLD, 3.0)
+	# つまむ ところ
+	var grab := Vector2.ZERO
+	for p in moved:
+		grab += p
+	grab /= float(moved.size())
+	c.draw_circle(grab, 15.0, Color(1, 1, 1, 0.35))
+	var done := t > 0.9
+	var msg := "金色の ところを つまんで、反対がわへ 運ぼう"
+	if String(unit["id"]) == "k14":
+		msg = "金色の ところを つまんで、切りはなそう"
+	elif String(unit["id"]) == "k17":
+		msg = "金色の おうぎ形を 左へ 運んで、重ねよう"
+	var done_msg := "ぴったり 四角に なった"
+	if String(unit["id"]) == "k14":
+		done_msg = "2 つの 四角に 分かれた"
+	elif String(unit["id"]) == "k17":
+		done_msg = "重なった ところが 葉っぱの 形"
 	c.draw_string(ThemeDB.fallback_font, Vector2(24, map.size.y - 18),
-		"金色の ところを つまんで、反対がわへ 運ぼう" if t < 0.9 else "ぴったり 四角に なった",
-		HORIZONTAL_ALIGNMENT_LEFT, -1, 25, DIM if t < 0.9 else GOLD)
+		done_msg if done else msg, HORIZONTAL_ALIGNMENT_LEFT, -1, 25, GOLD if done else DIM)
 
 
 ## 円を ころがす
 func _draw_roll(c: Control) -> void:
-	var r := minf(map.size.x, map.size.y) * 0.13
-	var y := map.size.y * 0.60
-	var start_x := 60.0 + r
+	# 1 まわり(円周 = 2πr)ぶん ころがしても はみ出さない 大きさにする
+	var r := minf((c.size.x - 90.0) / (TAU + 2.0), c.size.y * 0.16)
+	var y := c.size.y * 0.52
+	var start_x := 50.0 + r
 	var turns: float = st["turns"]
 	var x := start_x + TAU * r * turns
 	c.draw_line(Vector2(30, y + r), Vector2(map.size.x - 30, y + r), INK, 4.0)
@@ -1057,12 +1145,18 @@ func _drag_to(act: String, at: Vector2) -> void:
 			st["w"] = clampi(int(round((at.x - o.x) / s)), 1, 9)
 			st["h"] = clampi(int(round((o.y - at.y) / s)), 1, 7)
 		"cut":
-			var span := s * 7.0 if String(unit["id"]) == "k11" else s * 4.0
-			var moved := (at.x - o.x - s * 2.0) / maxf(span, 1.0)
-			st["moved"] = clampf(moved if String(unit["id"]) == "k11" else 1.0 - moved, 0.0, 1.0)
+			# かけらの もとの まん中から、運び先までの 進みぐあい
+			var parts := _cut_shapes()
+			var piece: PackedVector2Array = parts[1]
+			var from := Vector2.ZERO
+			for q in piece:
+				from += q
+			from /= float(piece.size())
+			var to_v: Vector2 = parts[2]
+			st["moved"] = clampf((at - from).dot(to_v) / maxf(to_v.length_squared(), 1.0), 0.0, 1.0)
 		"roll":
-			var r := minf(map.size.x, map.size.y) * 0.13
-			st["turns"] = clampf((at.x - (60.0 + r)) / maxf(TAU * r, 1.0), 0.0, 1.4)
+			var rr := minf((map.size.x - 90.0) / (TAU + 2.0), map.size.y * 0.16)
+			st["turns"] = clampf((at.x - (50.0 + rr)) / maxf(TAU * rr, 1.0), 0.0, 1.05)
 		"shift":
 			st["pos"] = clampf((at.x - o.x) / s - 0.5, 0.0, 8.0)
 		"pour":

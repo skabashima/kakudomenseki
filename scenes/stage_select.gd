@@ -126,18 +126,23 @@ func _stage_card(index: int, stage: Dictionary, col: Color) -> Control:
 	mid.add_theme_constant_override("separation", 2)
 	mid.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	hbox.add_child(mid)
-	var t := Label.new()
 	# 名前は未開放でも見せる(何が待っているか分かるほうが進めたくなる)。
-	# 開いていないことは右の錠前とボタンの色で示す
-	t.text = String(stage["title"])
-	t.add_theme_font_size_override("font_size", 30)
-	t.add_theme_color_override("font_color",
-		Color.WHITE if (unlocked or paid) else Color(0.78, 0.82, 0.9))
+	# 開いていないことは右の錠前とボタンの色で示す。
+	# 中学受験(小学生が遊ぶ)のステージは、漢字の上に よみ を付ける
+	var kids := Ruby.needed(String(stage["id"]))
+	var t := RubyLabel.new()
+	t.font_size = 30
+	t.ruby_size = 15
+	t.color = Color.WHITE if (unlocked or paid) else Color(0.78, 0.82, 0.9)
+	t.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	t.set_ruby_text(String(stage["title"]), kids)
 	mid.add_child(t)
-	var d := Label.new()
-	d.text = "全ステージ解放で遊べます" if paid else String(stage["desc"])
-	d.add_theme_font_size_override("font_size", 20)
-	d.add_theme_color_override("font_color", Color(0.85, 0.9, 1.0, 0.75))
+	var d := RubyLabel.new()
+	d.font_size = 21
+	d.ruby_size = 12
+	d.color = Color(0.85, 0.9, 1.0, 0.75)
+	d.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	d.set_ruby_text("全ステージ解放で遊べます" if paid else String(stage["desc"]), kids)
 	mid.add_child(d)
 
 	var right := VBoxContainer.new()
