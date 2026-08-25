@@ -169,7 +169,7 @@ func _ready() -> void:
 	cut_band.draw.connect(_draw_cut_band)
 	cutin.add_child(cut_band)
 	_make_island()
-	msg.text = "立て札をえらんで 問題を解くと、そこに旗が立ち、答えの数だけ土地が広がる"
+	msg.text = "立て札をえらんで 問題を解くと そこに旗が立ち、答えの数だけ 陣地を 広げられる"
 	_refresh()
 
 
@@ -495,6 +495,8 @@ func _tap_post(cv: Vector2i) -> void:
 
 ## そのマスを 取るのに いくつ つかうか。カラスの陣地は 押し返すので 2 つぶん
 func _cost_of(cv: Vector2i) -> int:
+	if cv == post_cell:
+		return 0                       # 旗の 1 マスは ただで もらえる
 	return 2 if cell[cv.y][cv.x] == CROW else 1
 
 
@@ -542,32 +544,18 @@ func _markable_left() -> int:
 	return n
 
 
-## 旗(または そこから なぞった かたまり)と つながっているか。
-## 土地は かならず 旗から 広がる ―― どこに 旗を 立てるかが、
-## そのまま「どこに 土地を 作るか」に なる
+## 伸ばせるのは、**自分の陣地の となり**か、いま なぞっている かたまりの となり。
+## 旗(立て札)も 陣地の 1 つに なるので、そこからも 伸ばせる。
+##
+## 「旗からしか 伸ばせない」に すると、どこに 旗を 立てるかだけの 遊びに なって
+## 陣取りの 読み合いが 消えてしまう。旗は「その 1 マスを ただで もらえる
+## 足がかり」に とどめて、伸ばす 先は 自分で えらぶ
 func _touches_claim(cv: Vector2i) -> bool:
 	for d in DIRS:
 		var n := cv + d
 		if n.x < 0 or n.x >= W or n.y < 0 or n.y >= H:
 			continue
-		if marked.has(n):
-			return true
-		if cell[n.y][n.x] != MINE:
-			continue
-		# 旗が まだ 無いとき(旗が 自陣の 上だった など)は、自陣の となりから 伸ばせる
-		if marked.is_empty() or _mine_next_to_claim(n):
-			return true
-	return false
-
-
-## 自陣のマスでも、旗の かたまりと つながっている ものは 足場に なる
-## (旗が 自陣の となりなら、そのまま 陣地が 伸びる)
-func _mine_next_to_claim(m: Vector2i) -> bool:
-	for d in DIRS:
-		var n := m + d
-		if n.x < 0 or n.x >= W or n.y < 0 or n.y >= H:
-			continue
-		if marked.has(n):
+		if marked.has(n) or cell[n.y][n.x] == MINE:
 			return true
 	return false
 
@@ -603,7 +591,7 @@ func _on_act() -> void:
 			_finish()
 			return
 		GameState.play_sfx("fail")
-		msg.text = "どの立て札に 旗を立てる? タップしてえらぼう(★が多いほど 難しく、土地は広い)"
+		msg.text = "どの立て札に 旗を立てる? タップしてえらぼう(★が多いほど 難しく、もらえる 土地も 広い)"
 		return
 	if marked.is_empty() and _markable_left() == 0:
 		# まわりを ぜんぶ カラスと岩に 囲まれた。ここで 勝負あり
@@ -789,7 +777,7 @@ func _build_quiz() -> void:
 	quiz.visible = false
 	add_child(quiz)
 	var back := ColorRect.new()
-	back.color = Color(0.07, 0.10, 0.17, 0.97)
+	back.color = Color(0.07, 0.10, 0.17, 1.0)
 	back.set_anchors_preset(Control.PRESET_FULL_RECT)
 	quiz.add_child(back)
 
@@ -813,7 +801,7 @@ func _build_quiz() -> void:
 	q_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	q_lbl.add_theme_font_size_override("font_size", 27)
 	q_lbl.add_theme_color_override("font_color", Color(0.92, 0.95, 1.0))
-	q_lbl.custom_minimum_size = Vector2(0, 92)
+	q_lbl.custom_minimum_size = Vector2(0, 118)
 	v.add_child(q_lbl)
 
 	keypad = Keypad.new()
@@ -856,6 +844,9 @@ func _open_quiz(tier: int) -> void:
 	keypad.answer_lbl.text = ""
 	keypad.unit_lbl.text = String(problem.get("unit", ""))
 	q_lbl.text = "%s\n%s" % [String(problem["q"]), _reward_note()]
+	# カットインが 出たままだと 電卓の 上に かぶる。ここで 引っこめる
+	cut_t = 0.0
+	cutin.visible = false
 	quiz.visible = true
 	GameState.play_sfx("tap")
 
@@ -873,7 +864,7 @@ func _reward_note() -> String:
 	var unit := String(problem.get("unit", ""))
 	var per := "÷ 15" if unit == "度" else "÷ 10"
 	var lost := "" if miss == 0 else "  ※ まちがえたので もらえる マスは %d 分の 1" % int(pow(2, miss))
-	return "正解すると、この立て札に 旗が立って 答え %s マスぶん 土地が 広がる%s" % [per, lost]
+	return "正解すると 立て札に 旗が立ち(ただ)、さらに 答え %s マスぶん 広げられる%s" % [per, lost]
 
 
 func _on_key(k: String) -> void:
@@ -926,7 +917,7 @@ func _submit() -> void:
 	if picked_post >= 0 and picked_post < posts.size():
 		posts.remove_at(picked_post)
 	picked_post = -1
-	msg.text = "旗を立てた! ここから %d マスぶん 広げよう(カラスのマスは 2 マスぶん)" % need
+	msg.text = "旗を立てた(この 1 マスは ただ)! 自陣の となりから %d マスぶん 広げよう" % need
 	_refresh()
 
 
@@ -971,6 +962,9 @@ func _finish() -> void:
 
 func _process(delta: float) -> void:
 	_t += delta
+	if quiz.visible and cutin.visible:
+		cut_t = 0.0
+		cutin.visible = false
 	if cut_t > 0.0:
 		cut_t -= delta / 2.6
 		cutin.queue_redraw()

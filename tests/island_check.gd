@@ -152,29 +152,10 @@ func _toward(inst: Node, target: Vector2i) -> Vector2i:
 	return best
 
 
-## 取る土地は「旗から、なぞったマスと 自分の陣地を たどって」つながること
-func _one_lump(inst: Node, flag: Vector2i) -> bool:
-	if inst.marked.is_empty():
-		return true
-	if not inst.marked.has(flag):
-		return false
-	var seen := {}
-	var stack: Array[Vector2i] = [flag]
-	while not stack.is_empty():
-		var cur: Vector2i = stack.pop_back()
-		if seen.has(cur):
-			continue
-		seen[cur] = true
-		for d in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
-			var n: Vector2i = cur + d
-			if n.x < 0 or n.x >= inst.W or n.y < 0 or n.y >= inst.H:
-				continue
-			if seen.has(n):
-				continue
-			if inst.marked.has(n) or inst.cell[n.y][n.x] == inst.MINE:
-				stack.append(n)
+## 取るマスは すべて「自分の陣地」か「なぞった かたまり」と となりあっていること
+func _one_lump(inst: Node, _flag: Vector2i) -> bool:
 	for m in inst.marked:
-		if not seen.has(m):
+		if not inst._touches_claim(m):
 			return false
 	return true
 
