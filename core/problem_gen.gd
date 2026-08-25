@@ -247,6 +247,16 @@ static func tick(a: Vector2, b: Vector2, n := 1) -> Dictionary:
 	return {"t": "tick", "a": a, "b": b, "n": n}
 
 
+## 解き方アニメ用: 形に動きを付けたす。
+##   dur/delay … ミリ秒。delay で 1 ステップ内の時間差を作る
+##   from_p(poly)/from_at(text) … 元の場所。指定すると そこから動いて現れる
+##   anim … "draw"(引かれていく)/"fade"。ふつうは自動で決まるので省略でよい
+static func animated(sh: Dictionary, extra: Dictionary) -> Dictionary:
+	var d := sh.duplicate()
+	d.merge(extra, true)
+	return d
+
+
 static func sector(c: Vector2, r: float, a0: float, a1: float, fill = null, stroke = null) -> Dictionary:
 	var d := {"t": "sector", "c": c, "r": r, "a0": a0, "a1": a1}
 	if fill != null:

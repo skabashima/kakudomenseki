@@ -317,15 +317,21 @@ func _draw() -> void:
 	for sh in spec.get("shapes", []):
 		_draw_one(sh)
 
-	# --- 解き方アニメのオーバーレイ(フェードインしながら重なる)---
+	# --- 解き方アニメのオーバーレイ ---
+	# 線や弧は「端からすっと引かれ」、多角形は「輪郭をなぞってから塗られ」、
+	# from_p つきの形は「元の場所から動いて」現れる(ease in-out)
 	var now := Time.get_ticks_msec()
 	var animating := false
 	for e in overlay_shapes:
-		var al := clampf((now - int(e["born"])) / 450.0, 0.06, 1.0)
-		if al < 1.0:
+		var sh: Dictionary = e["sh"]
+		var el := float(now - int(e["born"])) - float(sh.get("delay", 0.0))
+		if el <= 0.0:
 			animating = true
-		_omul = al
-		_draw_one(e["sh"])
+			continue
+		var t := clampf(el / float(sh.get("dur", 450.0)), 0.0, 1.0)
+		if t < 1.0:
+			animating = true
+		_draw_overlay_shape(sh, t)
 	_omul = 1.0
 	if not animating:
 		set_process(false)
@@ -400,6 +406,99 @@ func _draw_one(sh: Dictionary) -> void:
 			_draw_leaf(sh)
 		"lune":
 			_draw_lune(sh)
+
+
+## オーバーレイ 1 つ分を、進みぐあい t(0..1)に合わせて描く。
+## anim 指定が無くても、線・矢印・弧は「引かれていく」動きにする
+func _draw_overlay_shape(sh: Dictionary, t: float) -> void:
+	var k := t * t * (3.0 - 2.0 * t)      # ease in-out
+	var kind := String(sh["t"])
+	var anim := String(sh.get("anim", ""))
+	if sh.has("from_p") or sh.has("from_at"):
+		anim = "morph"
+	elif anim == "":
+		anim = "draw" if kind in ["seg", "arrow", "arc", "poly"] else "fade"
+	match anim:
+		"draw":
+			_omul = 1.0
+			match kind:
+				"seg", "arrow":
+					var d := sh.duplicate()
+					d["b"] = (sh["a"] as Vector2).lerp(sh["b"], k)
+					_draw_one(d)
+				"arc":
+					var d2 := sh.duplicate()
+					d2["a1"] = lerpf(float(sh["a0"]), float(sh["a1"]), k)
+					if absf(float(d2["a1"]) - float(sh["a0"])) > 0.5:
+						_draw_one(d2)
+				"poly":
+					_draw_poly_partial(sh, t, k)
+				_:
+					_omul = maxf(k, 0.06)
+					_draw_one(sh)
+		"morph":
+			# 元の場所(from_p / from_at)から本来の場所へ動かしながら描く
+			_omul = minf(t * 4.0 + 0.1, 1.0)
+			var d3 := sh.duplicate()
+			if kind == "poly" and sh.has("from_p"):
+				var from: Array = sh["from_p"]
+				var to: Array = sh["p"]
+				var pts: Array = []
+				var spread := 0.0
+				for i in to.size():
+					var p: Vector2 = (from[i % from.size()] as Vector2).lerp(to[i], k)
+					pts.append(p)
+					spread = maxf(spread, p.distance_to(pts[0]))
+				# 点対称の移動(さかさま くっつけ 等)は 中間で 1 点に つぶれる。
+				# その瞬間だけ 描かない(裏返る カードフリップに 見える)
+				if spread < 0.05:
+					return
+				d3["p"] = pts
+			elif kind == "text" and sh.has("from_at"):
+				d3["at"] = (sh["from_at"] as Vector2).lerp(sh["at"], k)
+			_draw_one(d3)
+		_:
+			_omul = maxf(k, 0.06)
+			_draw_one(sh)
+
+
+## 多角形の「なぞり描き」: 輪郭を一筆書きで引いてから、塗りをふわっと入れる
+func _draw_poly_partial(sh: Dictionary, t: float, k: float) -> void:
+	var pts := _pts_px(sh["p"])
+	if pts.size() < 2:
+		return
+	var closed := pts.duplicate()
+	closed.append(pts[0])
+	var total := 0.0
+	for i in closed.size() - 1:
+		total += closed[i].distance_to(closed[i + 1])
+	if sh.has("fill"):
+		var fill: Color = sh["fill"]
+		fill.a *= clampf((t - 0.55) / 0.45, 0.0, 1.0) * _omul
+		if fill.a > 0.004:
+			var tmp := sh.duplicate()
+			tmp["w"] = 0.0
+			tmp["fill"] = fill
+			var keep := _omul
+			_omul = 1.0
+			_draw_one(tmp)
+			_omul = keep
+	var w: float = sh.get("w", 4.0)
+	if w <= 0.0 or total <= 0.0:
+		return
+	var stroke: Color = sh.get("stroke", COL_LINE) if sh.get("stroke") != null else COL_LINE
+	stroke.a *= _omul
+	var left := total * k
+	var out := PackedVector2Array([closed[0]])
+	for i in closed.size() - 1:
+		var seg_len := closed[i].distance_to(closed[i + 1])
+		if seg_len >= left:
+			out.append(closed[i].lerp(closed[i + 1], left / maxf(seg_len, 0.001)))
+			break
+		out.append(closed[i + 1])
+		left -= seg_len
+	if out.size() >= 2:
+		draw_polyline(out, stroke, w, true)
 
 
 func _pts_px(arr: Array) -> PackedVector2Array:

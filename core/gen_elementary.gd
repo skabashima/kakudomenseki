@@ -354,17 +354,20 @@ static func _e5(rng: RandomNumberGenerator, tier: int) -> Dictionary:
 		]}
 		# 解き方: 左の三角形を切って右へ運ぶと、同じ広さの長方形になる
 		var pink := Color(1.0, 0.6, 0.68)
+		var cut := [Vector2(0, 0), Vector2(sk, 0), Vector2(sk, h)]
 		var steps := [
 			{"say": "ななめのままでは数えにくい。黄色い高さの線で、左の三角形を切り取ろう!",
-				"add": [ProblemGen.poly([Vector2(0, 0), Vector2(sk, 0), Vector2(sk, h)],
-					Color(1.0, 0.6, 0.68, 0.45), pink, 3.0)]},
-			{"say": "切った三角形を、そのまま右はしへ運ぶ!",
-				"add": [ProblemGen.arrow(Vector2(sk * 0.7, h * 0.45), Vector2(a + sk * 0.7, h * 0.45), Color(0.45, 1.0, 0.6, 0.9)),
-					ProblemGen.poly([Vector2(a, 0), Vector2(a + sk, 0), Vector2(a + sk, h)],
-						Color(1.0, 0.6, 0.68, 0.45), pink, 3.0)]},
+				"add": [ProblemGen.animated(ProblemGen.poly(cut, Color(1.0, 0.6, 0.68, 0.45), pink, 3.0),
+					{"dur": 700.0})]},
+			{"say": "切った三角形を、そのまま右へすーっと運ぶ!",
+				"add": [ProblemGen.animated(ProblemGen.arrow(Vector2(sk * 0.7, h * 0.45),
+						Vector2(a + sk * 0.7, h * 0.45), Color(0.45, 1.0, 0.6, 0.9)), {"dur": 600.0}),
+					ProblemGen.animated(ProblemGen.poly([Vector2(a, 0), Vector2(a + sk, 0), Vector2(a + sk, h)],
+						Color(1.0, 0.6, 0.68, 0.45), pink, 3.0),
+						{"from_p": cut, "dur": 1000.0, "delay": 250.0})]},
 			{"say": "たて %dcm・よこ %dcm の長方形にへんしん! 広さは変わっていないよ。" % [h, a],
-				"add": [ProblemGen.poly([Vector2(sk, 0), Vector2(a + sk, 0), Vector2(a + sk, h), Vector2(sk, h)],
-					null, Color(0.45, 1.0, 0.6, 0.9), 3.0)]},
+				"add": [ProblemGen.animated(ProblemGen.poly([Vector2(sk, 0), Vector2(a + sk, 0), Vector2(a + sk, h), Vector2(sk, h)],
+					null, Color(0.45, 1.0, 0.6, 0.9), 3.0), {"dur": 800.0})]},
 			{"say": "だから 平行四辺形の面積 = 底辺 × 高さ = %d × %d = %d cm²。答えを入力しよう!" % [a, h, a * h]},
 		]
 		return {
@@ -391,17 +394,22 @@ static func _e5(rng: RandomNumberGenerator, tier: int) -> Dictionary:
 			ProblemGen.label(Vector2(off + a * 0.5 + 1.4, h * 0.5), "%dcm" % h),
 		]}
 		# 解き方: さかさまにした同じ台形を右にくっつけると、
-		# 底辺 (上底+下底) の平行四辺形になる。台形はその半分
+		# 底辺 (上底+下底) の平行四辺形になる。台形はその半分。
+		# from_p は 180° 回した先の対応する頂点 ―― 元の台形から めくれて 裏返る動きになる
 		var copy := [Vector2(b, 0), Vector2(float(a + b), 0), Vector2(b + off + a, h), Vector2(off + a, h)]
+		var copy_from := [Vector2(off + a, h), Vector2(off, h), Vector2(0, 0), Vector2(b, 0)]
 		var green := Color(0.45, 1.0, 0.6, 0.9)
 		var steps := [
-			{"say": "同じ台形をもう 1 つ用意して、さかさまにして右にぴったりくっつける!",
-				"add": [ProblemGen.poly(copy, ProblemGen.FILL_ACCENT, ProblemGen.COL_YELLOW, 3.0),
-					ProblemGen.label(Vector2((a + 2 * b) * 0.5, h * 0.5), "さかさまの同じ台形", null, 24)]},
+			{"say": "同じ台形をもう 1 つ用意して、くるっとさかさまにして右にぴったりくっつける!",
+				"add": [ProblemGen.animated(ProblemGen.poly(copy, ProblemGen.FILL_ACCENT, ProblemGen.COL_YELLOW, 3.0),
+					{"from_p": copy_from, "dur": 1200.0}),
+					ProblemGen.animated(ProblemGen.label(Vector2((a + 2 * b) * 0.5, h * 0.5), "さかさまの同じ台形", null, 24),
+						{"delay": 900.0, "dur": 400.0})]},
 			{"say": "2 つあわせると大きな平行四辺形! 底辺は 上底+下底 = %d+%d = %dcm、高さは %dcm。" % [a, b, a + b, h],
-				"add": [ProblemGen.poly([Vector2(0, 0), Vector2(float(a + b), 0), Vector2(b + off + a, h), Vector2(off, h)],
-					null, green, 3.0),
-					ProblemGen.side_label(Vector2(0, 0), Vector2(float(a + b), 0), "(%d+%d)cm" % [a, b], 1.0, 1.8)]},
+				"add": [ProblemGen.animated(ProblemGen.poly([Vector2(0, 0), Vector2(float(a + b), 0), Vector2(b + off + a, h), Vector2(off, h)],
+					null, green, 3.0), {"dur": 900.0}),
+					ProblemGen.animated(ProblemGen.side_label(Vector2(0, 0), Vector2(float(a + b), 0), "(%d+%d)cm" % [a, b], 1.0, 1.8),
+						{"delay": 600.0, "dur": 400.0})]},
 			{"say": "平行四辺形の面積 = 底辺 × 高さ = %d × %d = %d cm²。でもこれは台形 2 つ分!" % [a + b, h, (a + b) * h]},
 			{"say": "1 つ分にもどすため ÷2。(%d+%d)×%d÷2 = %d cm²。答えを入力しよう!" % [a, b, h, (a + b) * h / 2]},
 		]
@@ -1218,14 +1226,18 @@ static func _e8_hard(rng: RandomNumberGenerator) -> Dictionary:
 	var p2 := Vector2(cos(deg_to_rad(float(th))), sin(deg_to_rad(float(th)))) * r
 	var steps := [
 		{"say": "まわりの長さは「弧(曲線)」と「半径 2 本」でできている。まず弧から。",
-			"add": [ProblemGen.arc(Vector2.ZERO, float(r), 0.0, float(th), ProblemGen.COL_YELLOW, 6.0)]},
+			"add": [ProblemGen.animated(ProblemGen.arc(Vector2.ZERO, float(r), 0.0, float(th), ProblemGen.COL_YELLOW, 6.0),
+				{"dur": 800.0})]},
 		{"say": "円のつづきをうすくかくと…弧は、円周まるごとの %d/360 の長さ!" % th,
-			"add": [ProblemGen.arc(Vector2.ZERO, float(r), float(th), 360.0, ProblemGen.COL_DIM, 2.0)]},
+			"add": [ProblemGen.animated(ProblemGen.arc(Vector2.ZERO, float(r), float(th), 360.0, ProblemGen.COL_DIM, 2.0),
+				{"dur": 900.0})]},
 		{"say": "円周まるごと = 2 × 3.14 × %d = %s cm。その %d/360 で、弧 = %s cm。" % [
 			r, ProblemGen.fmt(2.0 * 3.14 * r), th, ProblemGen.fmt(arc)]},
 		{"say": "わすれものに注意! まっすぐな半径 2 本、%d × 2 = %d cm もまわりの一部。" % [r, 2 * r],
-			"add": [ProblemGen.seg(Vector2.ZERO, Vector2(float(r), 0), sky, 6.0),
-				ProblemGen.seg(Vector2.ZERO, p2, sky, 6.0)]},
+			"add": [ProblemGen.animated(ProblemGen.seg(Vector2.ZERO, Vector2(float(r), 0), sky, 6.0),
+				{"dur": 500.0}),
+				ProblemGen.animated(ProblemGen.seg(Vector2.ZERO, p2, sky, 6.0),
+					{"dur": 500.0, "delay": 350.0})]},
 		{"say": "弧 %s + 半径 2 本 %d = %s cm。答えを入力しよう!" % [
 			ProblemGen.fmt(arc), 2 * r, ProblemGen.fmt(ans)]},
 	]
@@ -1664,13 +1676,16 @@ static func _e8_semi_perim(rng: RandomNumberGenerator) -> Dictionary:
 	# 解き方: 円ののこり半分をうすく見せて「曲線 = 円周の半分」を示し、直径をたす
 	var steps := [
 		{"say": "まわりの長さは「曲線」と「まっすぐな直径」の 2 つ分。まず曲線から。",
-			"add": [ProblemGen.arc(Vector2.ZERO, float(r), 0.0, 180.0, ProblemGen.COL_YELLOW, 6.0)]},
+			"add": [ProblemGen.animated(ProblemGen.arc(Vector2.ZERO, float(r), 0.0, 180.0, ProblemGen.COL_YELLOW, 6.0),
+				{"dur": 800.0})]},
 		{"say": "円ののこり半分をうすくかくと…曲線は、ちょうど円周の半分!",
-			"add": [ProblemGen.arc(Vector2.ZERO, float(r), 180.0, 360.0, ProblemGen.COL_DIM, 2.0)]},
+			"add": [ProblemGen.animated(ProblemGen.arc(Vector2.ZERO, float(r), 180.0, 360.0, ProblemGen.COL_DIM, 2.0),
+				{"dur": 900.0})]},
 		{"say": "円周まるごと = 直径 × 3.14 = %d × 3.14 = %s cm。半分だから曲線 = %s cm。" % [
 			2 * r, ProblemGen.fmt(2 * r * 3.14), ProblemGen.fmt(3.14 * r)]},
 		{"say": "わすれものに注意! まっすぐな直径 %dcm もまわりの一部。" % (2 * r),
-			"add": [ProblemGen.seg(Vector2(-float(r), 0), Vector2(float(r), 0), Color(0.55, 0.85, 1.0), 6.0)]},
+			"add": [ProblemGen.animated(ProblemGen.seg(Vector2(-float(r), 0), Vector2(float(r), 0), Color(0.55, 0.85, 1.0), 6.0),
+				{"dur": 600.0})]},
 		{"say": "曲線 %s + 直径 %d = %s cm。答えを入力しよう!" % [
 			ProblemGen.fmt(3.14 * r), 2 * r, ProblemGen.fmt(ans)]},
 	]
