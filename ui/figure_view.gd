@@ -100,6 +100,47 @@ func set_spec(s: Dictionary) -> void:
 
 
 ## 「もどす」: 最後に描いたものを 1 つ消す(補助線と手書きのどちらでも)
+
+
+## 図の 右上に「補助線」と「もどす」を つける。
+##
+## 本編・ストーリー・小学生モードで 同じ 使いごこちに したいので、ここに 1 つだけ
+## 置いて 各画面から 呼ぶ。kid = true のときは 小学生が 読めるよう かな にする
+## (漢字を 出すなら ふりがな が いるが、ボタンの 中には 入れられないため)。
+func add_tools(kid := false) -> void:
+	var undo_btn := Button.new()
+	undo_btn.add_theme_font_size_override("font_size", 24)
+	undo_btn.set_anchors_preset(Control.PRESET_TOP_RIGHT)
+	undo_btn.offset_left = -64.0
+	undo_btn.offset_top = 6.0
+	undo_btn.offset_right = -6.0
+	undo_btn.offset_bottom = 60.0
+	GameState.style_button(undo_btn, Color(0.28, 0.32, 0.44))
+	# ↩ は同梱フォントに無く Android で豆腐になるので図形で描く
+	var undo_mark := Icons.undo(30.0, Color(0.92, 0.95, 1.0))
+	undo_mark.set_anchors_and_offsets_preset(Control.PRESET_CENTER, Control.PRESET_MODE_KEEP_SIZE)
+	undo_btn.add_child(undo_mark)
+	undo_btn.pressed.connect(func() -> void:
+		GameState.play_sfx("type")
+		aux_undo())
+	add_child(undo_btn)
+
+	var pen_btn := Button.new()
+	pen_btn.toggle_mode = true
+	pen_btn.text = "せんを ひく" if kid else "補助線"
+	pen_btn.add_theme_font_size_override("font_size", 22)
+	pen_btn.set_anchors_preset(Control.PRESET_TOP_RIGHT)
+	pen_btn.offset_left = -236.0 if kid else -216.0
+	pen_btn.offset_top = 6.0
+	pen_btn.offset_right = -72.0
+	pen_btn.offset_bottom = 60.0
+	GameState.style_button(pen_btn, Color(0.24, 0.5, 0.35))
+	pen_btn.toggled.connect(func(on: bool) -> void:
+		GameState.play_sfx("tap")
+		aux_enabled = on)
+	add_child(pen_btn)
+
+
 func aux_undo() -> void:
 	if _undo_order.is_empty():
 		return

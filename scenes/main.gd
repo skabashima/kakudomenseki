@@ -80,26 +80,27 @@ func _ready() -> void:
 	for u in KidDefs.UNITS:
 		if GameState.kid_clear.has(String(u["id"])):
 			kid_done += 1
-	vbox.add_child(_story_card("たからのちず", "小学生",
+	var story_side := clampf(get_viewport_rect().size.x * 0.11, 40.0, 160.0)
+	vbox.add_child(_narrow(_story_card("たからのちず", "小学生",
 		"%d / %d" % [kid_done, KidDefs.UNITS.size()], Color(0.52, 0.30, 0.34),
 		Icons.flag(64.0, Color(1, 1, 1, 0.95)), func() -> void:
-			GameState.change_scene("res://scenes/kid_map.tscn")))
+			GameState.change_scene("res://scenes/kid_map.tscn")), story_side))
 	var jhs: Array = StoryDefs.chapters_of("jhs")
-	vbox.add_child(_story_card("はかる旅", "中学生",
+	vbox.add_child(_narrow(_story_card("はかる旅", "中学生",
 		"%d / %d 章" % [_story_done(jhs), jhs.size()], Color(0.45, 0.35, 0.62),
 		Icons.book(64.0, Color(1, 1, 1, 0.95)), func() -> void:
 			GameState.story_mode = "jhs"
 			GameState.story_chapter = "ch1"
 			GameState.story_scene = 0
-			GameState.change_scene("res://scenes/story_select.tscn")))
+			GameState.change_scene("res://scenes/story_select.tscn")), story_side))
 	var hs: Array = StoryDefs.chapters_of("hs")
-	vbox.add_child(_story_card("軌道計算室", "高校生",
+	vbox.add_child(_narrow(_story_card("軌道計算室", "高校生",
 		"%d / %d 章" % [_story_done(hs), hs.size()], Color(0.24, 0.42, 0.58),
 		Icons.timer(64.0, Color(1, 1, 1, 0.95)), func() -> void:
 			GameState.story_mode = "hs"
 			GameState.story_chapter = "ch17"
 			GameState.story_scene = 0
-			GameState.change_scene("res://scenes/story_select.tscn")))
+			GameState.change_scene("res://scenes/story_select.tscn")), story_side))
 
 	# ■ その下に「問題にチャレンジ」(2 編・チャレンジ・きろく)
 	vbox.add_child(_spacer(6))
@@ -192,11 +193,20 @@ func _story_done(list: Array) -> int:
 	return n
 
 
+## 左右に すきまを あけて、はばを せまくする
+func _narrow(c: Control, side: float) -> Control:
+	var m := MarginContainer.new()
+	m.add_theme_constant_override("margin_left", int(side))
+	m.add_theme_constant_override("margin_right", int(side))
+	m.add_child(c)
+	return m
+
+
 ## ストーリーのカード(絵 + 題名 + 学年 + すすみぐあい)
 func _story_card(name: String, grade: String, progress_text: String, color: Color,
 		icon: Control, callback: Callable) -> Button:
 	var btn := Button.new()
-	btn.custom_minimum_size = Vector2(0, 136)
+	btn.custom_minimum_size = Vector2(0, 124)
 	btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	GameState.style_button(btn, color)
 	btn.pressed.connect(func() -> void:

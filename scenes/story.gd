@@ -22,6 +22,10 @@ var fig_panel: PanelContainer
 var status_lbl: Label
 var next_btn: Button
 var choice_box: VBoxContainer
+var keypad: Keypad
+var answer_row: HBoxContainer
+var answer_btn: Button
+var input_text := ""
 var answered := false
 
 ## measure 用
@@ -88,7 +92,7 @@ func _build_frame() -> void:
 	var place := Label.new()
 	place.text = "%s ・ %s" % [String(chapter["place"]),
 		StoryDefs.level_label(String(chapter["level"]))]
-	place.add_theme_font_size_override("font_size", 20)
+	place.add_theme_font_size_override("font_size", 22)
 	place.add_theme_color_override("font_color", Color(0.7, 0.78, 0.92))
 	root.add_child(place)
 
@@ -101,10 +105,12 @@ func _build_frame() -> void:
 	root.add_child(fig_panel)
 	figure = FigureView.new()
 	figure.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	# ストーリーでは図に手書きさせない(本編の機能。ここでは線が残るだけで邪魔)
+	# 測る場面は 点を つかんで 動かすので 手書きは しない。
+	# 依頼(solve)の 場面だけ、考えるための 線を 引けるように する
 	figure.free_draw_enabled = false
 	figure.point_dragged.connect(_on_dragged)
 	fig_panel.add_child(figure)
+	figure.add_tools()
 
 	var scroll := ScrollContainer.new()
 	scroll.custom_minimum_size = Vector2(0, 420)
@@ -114,8 +120,37 @@ func _build_frame() -> void:
 	DragScroll.attach(scroll)
 	body = VBoxContainer.new()
 	body.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	body.add_theme_constant_override("separation", 10)
+	body.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	body.alignment = BoxContainer.ALIGNMENT_CENTER
+	body.add_theme_constant_override("separation", 12)
 	scroll.add_child(body)
+
+	# 答えは 選ぶのではなく、計算して 入れる(本編・小学生モードと 同じ 電卓)
+	keypad = Keypad.new()
+	keypad.key_pressed.connect(_on_key)
+	keypad.visible = false
+	root.add_child(keypad)
+	answer_row = HBoxContainer.new()
+	answer_row.add_theme_constant_override("separation", 10)
+	answer_row.visible = false
+	root.add_child(answer_row)
+	var calc_btn := Button.new()
+	calc_btn.text = "＝ 計算"
+	calc_btn.custom_minimum_size = Vector2(0, 84)
+	calc_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	calc_btn.add_theme_font_size_override("font_size", 28)
+	GameState.style_button(calc_btn, Color(0.24, 0.42, 0.72))
+	calc_btn.pressed.connect(_calc_in_place)
+	answer_row.add_child(calc_btn)
+	answer_btn = Button.new()
+	answer_btn.text = "答える"
+	answer_btn.custom_minimum_size = Vector2(0, 84)
+	answer_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	answer_btn.size_flags_stretch_ratio = 1.6
+	answer_btn.add_theme_font_size_override("font_size", 30)
+	GameState.style_button(answer_btn, Color(0.22, 0.55, 0.35))
+	answer_btn.pressed.connect(_submit_answer)
+	answer_row.add_child(answer_btn)
 
 
 # =========================================================
@@ -139,10 +174,15 @@ func _show_scene() -> void:
 	figure.drag_points = []
 	figure.set_spec({"shapes": []})
 	fig_panel.visible = false
+	keypad.visible = false
+	answer_row.visible = false
+	input_text = ""
+	keypad.answer_lbl.text = ""
+	fig_panel.custom_minimum_size = Vector2(0, 480)
 	var scenes: Array = chapter["scenes"]
 	scene_data = scenes[idx]
 	status_lbl.text = "%d / %d" % [idx + 1, scenes.size()]
-	_add_label(_kids(String(scene_data["title"])), 30, HEAD)
+	_add_label(_kids(String(scene_data["title"])), 34, HEAD)
 	match String(scene_data["type"]):
 		"talk":
 			_build_talk()
@@ -158,15 +198,18 @@ func _build_talk() -> void:
 		figure.set_spec(StoryFigs.spec(String(scene_data["fig"]), apex))
 	elif scene_data.has("art"):
 		# 文字だけの画面にしない。挿絵はその場で図形として描く(画像は持たない)
-		var art := StoryArt.make(String(scene_data["art"]), 240.0)
+		var art := StoryArt.make(String(scene_data["art"]), 300.0)
 		art.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		art.size_flags_vertical = Control.SIZE_EXPAND_FILL
 		var frame := PanelContainer.new()
 		frame.add_theme_stylebox_override("panel",
 			GameState.flat_style(Color(0.06, 0.09, 0.16, 1.0), 16))
+		# あまった たては 挿絵に わたす(下に 大きな 余白を 作らない)
+		frame.size_flags_vertical = Control.SIZE_EXPAND_FILL
 		frame.add_child(art)
 		body.add_child(frame)
 	for line in scene_data["lines"]:
-		_add_label(_kids(String(line)), 24, BODY)
+		_add_label(_kids(String(line)), 29, BODY)
 	_add_next("つぎへ ▶")
 
 
@@ -176,29 +219,29 @@ func _build_measure() -> void:
 	_refresh_figure()
 	if guess < 0:
 		# 測る前に賭けさせる。当たっても外れても、そのあとの表の見え方が変わる
-		_add_label(_kids("測る前に予想しよう。" + String(scene_data["question"])), 24, HEAD)
+		_add_label(_kids("測る前に予想しよう。" + String(scene_data["question"])), 28, HEAD)
 		var gb := VBoxContainer.new()
 		gb.add_theme_constant_override("separation", 10)
 		body.add_child(gb)
 		for i in (scene_data["choices"] as Array).size():
 			var g := Button.new()
 			g.text = _kids(String(scene_data["choices"][i]))
-			g.custom_minimum_size = Vector2(0, 84)
-			g.add_theme_font_size_override("font_size", 23)
+			g.custom_minimum_size = Vector2(0, 92)
+			g.add_theme_font_size_override("font_size", 26)
 			g.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 			GameState.style_button(g, Color(0.34, 0.3, 0.52))
 			g.pressed.connect(_do_guess.bind(i))
 			gb.add_child(g)
 		return
-	_add_label(_kids(String(scene_data["lead"])), 23, BODY)
+	_add_label(_kids(String(scene_data["lead"])), 27, BODY)
 	var rec := Button.new()
 	rec.text = "この形を記録する"
 	rec.custom_minimum_size = Vector2(0, 78)
-	rec.add_theme_font_size_override("font_size", 26)
+	rec.add_theme_font_size_override("font_size", 30)
 	GameState.style_button(rec, Color(0.2, 0.55, 0.35))
 	rec.pressed.connect(_record)
 	body.add_child(rec)
-	_add_label("", 22, BODY).name = "table"
+	_add_label("", 24, BODY).name = "table"
 	choice_box = VBoxContainer.new()
 	choice_box.add_theme_constant_override("separation", 10)
 	body.add_child(choice_box)
@@ -213,42 +256,16 @@ func _build_solve() -> void:
 	# その章の依頼として書き直したものを出す(数値は毎回変わる)
 	problem = StoryTasks.make(String(scene_data["fig"]), rng)
 	figure.set_spec(problem["fig"])
-	_add_label(_kids(String(scene_data.get("lead", ""))), 23, BODY)
-	_add_label(String(problem["q"]), 25, BODY)
+	_add_label(_kids(String(scene_data.get("lead", ""))), 27, BODY)
+	_add_label(String(problem["q"]), 30, BODY)
 	choice_box = VBoxContainer.new()
 	choice_box.add_theme_constant_override("separation", 10)
 	body.add_child(choice_box)
-	var ans := float(problem["answer"])
-	var opts := _choices_for(ans)
-	for v in opts:
-		var b := Button.new()
-		b.text = "%s%s" % [ProblemGen.fmt(float(v)), String(problem["unit"])]
-		b.custom_minimum_size = Vector2(0, 76)
-		b.add_theme_font_size_override("font_size", 28)
-		GameState.style_button(b, Color(0.24, 0.42, 0.72))
-		b.pressed.connect(_pick_answer.bind(float(v), ans))
-		choice_box.add_child(b)
-
-
-## 3 択の選択肢。まちがいの候補は答えに応じて作る。
-## ans ± 決め打ちだと、答えが小さいときに「1」のような不自然な値が並んで
-## 正解が丸わかりになってしまう
-func _choices_for(ans: float) -> Array:
-	var step := maxf(2.0, absf(ans) * 0.25)
-	var hi := ans + step
-	var lo := ans - maxf(2.0, absf(ans) * 0.2)
-	if lo <= 0.0:
-		lo = ans + step * 2.0
-	# 小数の答えなら小数のまま、整数なら整数に丸める(見た目をそろえる)
-	if is_equal_approx(ans, round(ans)):
-		hi = round(hi)
-		lo = round(lo)
-	else:
-		hi = snappedf(hi, 0.1)
-		lo = snappedf(lo, 0.1)
-	var opts := [ans, hi, lo]
-	opts.shuffle()
-	return opts
+	# 電卓で 答える(式のまま 入れてもよい)。図と文を つぶさないよう 図は 少し 低く
+	fig_panel.custom_minimum_size = Vector2(0, 300)
+	keypad.unit_lbl.text = String(problem.get("unit", ""))
+	keypad.visible = true
+	answer_row.visible = true
 
 
 # =========================================================
@@ -322,19 +339,52 @@ func _choose(pick: int) -> void:
 		return
 	if pick != int(scene_data["answer"]):
 		GameState.play_sfx("fail")
-		_add_label("それは記録と合わない。表をもう一度見てみよう。", 23, Color(1.0, 0.7, 0.6))
+		_add_label("それは記録と合わない。表をもう一度見てみよう。", 26, Color(1.0, 0.7, 0.6))
 		return
 	answered = true
 	GameState.play_sfx("correct")
 	if guess == pick:
-		_add_label("予想的中! 測る前から見抜いていた。", 24, HEAD)
+		_add_label("予想的中! 測る前から見抜いていた。", 27, HEAD)
 	elif guess >= 0:
-		_add_label("予想ははずれ。だが記録が正しい答えを教えてくれた。", 23, Color(0.85, 0.9, 1.0))
-	_add_label(_kids(String(scene_data.get("after", ""))), 24, Color(0.7, 1.0, 0.8))
+		_add_label("予想ははずれ。だが記録が正しい答えを教えてくれた。", 26, Color(0.85, 0.9, 1.0))
+	_add_label(_kids(String(scene_data.get("after", ""))), 27, Color(0.7, 1.0, 0.8))
 	for b in choice_box.get_children():
 		if b is Button:
 			(b as Button).disabled = true
 	_add_next("つぎへ ▶")
+
+
+func _on_key(k: String) -> void:
+	if answered:
+		return
+	GameState.play_sfx("type")
+	input_text = Keypad.apply(input_text, k)
+	keypad.answer_lbl.text = input_text
+
+
+## 式のまま「＝ 計算」を押すと、その場で 計算して 答え欄に 入れる
+func _calc_in_place() -> void:
+	if input_text == "" or answered:
+		return
+	var res: Dictionary = ExprEval.eval(input_text)
+	if not bool(res["ok"]):
+		GameState.play_sfx("fail")
+		_add_label(String(res["err"]), 24, Color(1.0, 0.7, 0.6))
+		return
+	GameState.play_sfx("type")
+	input_text = ExprEval.fmt(float(res["value"]))
+	keypad.answer_lbl.text = input_text
+
+
+func _submit_answer() -> void:
+	if answered:
+		return
+	var v := Keypad.value_of(input_text)
+	if is_nan(v):
+		GameState.play_sfx("fail")
+		_add_label("数を入れてね(式のままでもよい)", 24, Color(1.0, 0.7, 0.6))
+		return
+	_pick_answer(v, float(problem["answer"]))
 
 
 func _pick_answer(v: float, ans: float) -> void:
@@ -344,7 +394,7 @@ func _pick_answer(v: float, ans: float) -> void:
 		GameState.play_sfx("fail")
 		# 章ごとに見つけたことを言い直す(ここを決め打ちにすると別の章で嘘になる)
 		_add_label(_kids("ちがう。%s ― もう一度。" % String(chapter.get("found", ""))),
-			23, Color(1.0, 0.7, 0.6))
+			26, Color(1.0, 0.7, 0.6))
 		return
 	answered = true
 	GameState.play_sfx("correct")
@@ -352,8 +402,10 @@ func _pick_answer(v: float, ans: float) -> void:
 	# ここで問題の辞書に無い鍵を読むと関数がそこで止まり、
 	# 「つぎへ」が出ないまま進めなくなる(実際にそうなっていた)
 	_add_label(_kids("答え %s%s ― %s" % [ProblemGen.fmt(ans), String(problem.get("unit", "")),
-		String(chapter.get("found", ""))]), 23, Color(0.85, 0.92, 1.0))
-	_add_label(String(scene_data.get("after", "")), 24, Color(0.7, 1.0, 0.8))
+		String(chapter.get("found", ""))]), 26, Color(0.85, 0.92, 1.0))
+	_add_label(String(scene_data.get("after", "")), 27, Color(0.7, 1.0, 0.8))
+	keypad.visible = false
+	answer_row.visible = false
 	for b in choice_box.get_children():
 		if b is Button:
 			(b as Button).disabled = true

@@ -97,11 +97,17 @@ func _do_measure(inst: Node, sc: Dictionary, where: String) -> void:
 
 
 func _do_solve(inst: Node, sc: Dictionary, where: String) -> void:
-	var ans := float(inst.problem["answer"])
-	inst._pick_answer(ans, ans)
+	# 実際の遊び方どおり、電卓に数を入れて「答える」を押す
+	# (選択肢ではなくなったので、ここも電卓の道を通す)
+	if not inst.keypad.visible or not inst.answer_row.visible:
+		failures.append(where + ": 電卓が出ていない")
+		return
+	inst.input_text = ProblemGen.fmt(float(inst.problem["answer"]))
+	inst.keypad.answer_lbl.text = inst.input_text
+	inst._submit_answer()
 	await _wait(4)
 	if not inst.answered:
-		failures.append(where + ": 正解を選んでも先へ進める状態にならない")
+		failures.append(where + ": 正しい数を入れても先へ進める状態にならない")
 
 
 func _has_next(inst: Node) -> bool:

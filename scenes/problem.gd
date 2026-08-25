@@ -171,37 +171,7 @@ func _build_ui() -> void:
 	# ふだんは図を指でなぞると手書きできる(計算のメモや印つけ)。
 	# 「補助線」を押している間は、まっすぐな線になり端点が頂点や中点にスナップする。
 	# ↩ で 1 本もどす。問題が変わると補助線は消える
-	var undo_btn := Button.new()
-	undo_btn.text = ""
-	undo_btn.add_theme_font_size_override("font_size", 24)
-	undo_btn.set_anchors_preset(Control.PRESET_TOP_RIGHT)
-	undo_btn.offset_left = -64.0
-	undo_btn.offset_top = 6.0
-	undo_btn.offset_right = -6.0
-	undo_btn.offset_bottom = 60.0
-	GameState.style_button(undo_btn, Color(0.28, 0.32, 0.44))
-	# ↩ は同梱フォントに無く Android で豆腐になるので図形で描く
-	var undo_mark := Icons.undo(30.0, Color(0.92, 0.95, 1.0))
-	undo_mark.set_anchors_and_offsets_preset(Control.PRESET_CENTER, Control.PRESET_MODE_KEEP_SIZE)
-	undo_btn.add_child(undo_mark)
-	undo_btn.pressed.connect(func() -> void:
-		GameState.play_sfx("type")
-		figure.aux_undo())
-	figure.add_child(undo_btn)
-	var pen_btn := Button.new()
-	pen_btn.toggle_mode = true
-	pen_btn.text = "補助線"
-	pen_btn.add_theme_font_size_override("font_size", 22)
-	pen_btn.set_anchors_preset(Control.PRESET_TOP_RIGHT)
-	pen_btn.offset_left = -216.0
-	pen_btn.offset_top = 6.0
-	pen_btn.offset_right = -72.0
-	pen_btn.offset_bottom = 60.0
-	GameState.style_button(pen_btn, Color(0.24, 0.5, 0.35))
-	pen_btn.toggled.connect(func(on: bool) -> void:
-		GameState.play_sfx("tap")
-		figure.aux_enabled = on)
-	figure.add_child(pen_btn)
+	figure.add_tools()
 
 	# --- 問題文 ---
 	question_lbl = RubyLabel.new()

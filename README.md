@@ -364,6 +364,9 @@ tests/
   smoke.tscn             全シーンのロード確認 (--headless 可)
   iap_gate.tscn          課金ゲート(無料/有料の線引き)の検証 (--headless 可)
   kid_check.tscn         ストーリー(小学生)の全単元を最後まで通す (--headless 可)
+  kid_touch.tscn         同じ 23 単元を「指の動き」で通す。押しても反応しない
+                         当たり判定のずれを見つける (--headless 可)
+  shot_view.tscn         好きな画面を 1 枚だけ撮る(要描画環境)
   story_check.gd         ストーリーの章データと角度の丸めの検証 (--headless 可)
   ruby_check.gd          小学生むけの文が「小 1 の漢字 + ふりがな」だけかを検証 (--headless 可)
   story_play.tscn        ストーリーを両モードとも最後まで通す (--headless 可)

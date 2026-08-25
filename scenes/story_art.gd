@@ -24,7 +24,8 @@ static func make(kind: String, h: float) -> Control:
 	c.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	c.clip_contents = true
 	# 描画はラムダの外に出す(ラムダの中に match を書くと構文解析に失敗する)
-	c.draw.connect(func() -> void: _render(c, kind, maxf(c.size.x, 10.0), h))
+	# もらえた 高さ いっぱいに 描く(画面の 余白を つぶすため。h は 下限)
+	c.draw.connect(func() -> void: _render(c, kind, maxf(c.size.x, 10.0), maxf(c.size.y, h)))
 	c.resized.connect(c.queue_redraw)
 	return c
 
@@ -228,10 +229,11 @@ static func _night(c: Control, w: float, h: float) -> void:
 
 
 static func _sky(c: Control, w: float, h: float, top: Color, bottom: Color) -> void:
-	var bands := 12
+	# 帯の 数は 高さに あわせる(のばしたときに すきまの すじが 出ないように)
+	var bands := maxi(12, int(h / 12.0))
 	for i in bands:
 		var t := float(i) / float(bands - 1)
-		c.draw_rect(Rect2(0, h * t * 0.6, w, h * 0.6 / float(bands) + 1.0),
+		c.draw_rect(Rect2(0, h * t * 0.6, w, h * 0.6 / float(bands - 1) + 1.5),
 			top.lerp(bottom, t))
 
 
