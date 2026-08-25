@@ -247,7 +247,12 @@ func _collect_bounds() -> Rect2:
 	var lo := Vector2(INF, INF)
 	var hi := Vector2(-INF, -INF)
 	var pts: Array = []
-	for sh in spec.get("shapes", []):
+	# 解き方アニメで 図の外に 形を たす台本(台形を もう 1 つ ならべる 等)も
+	# 入るように、オーバーレイも 縮尺の 計算に 含める(出た時点で 引きで 収まる)
+	var shapes: Array = spec.get("shapes", []).duplicate()
+	for e in overlay_shapes:
+		shapes.append(e["sh"])
+	for sh in shapes:
 		match String(sh["t"]):
 			"poly", "curve":
 				for p in sh["p"]:
