@@ -1120,6 +1120,18 @@ const CHAPTERS := [
 ]
 
 
+## 中学生モードでの、レベルの見せ方。
+## 中学受験の内容は、中学生にとっては「小学校の復習」なのでそう書く
+static func level_label(level: String) -> String:
+	match level:
+		"中学受験":
+			return "小学校の復習"
+		"高校受験":
+			return "中学の内容"
+		_:
+			return "高校の内容"
+
+
 static func chapter_by_id(id: String) -> Dictionary:
 	for c in CHAPTERS:
 		if String(c["id"]) == id:

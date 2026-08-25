@@ -23,6 +23,8 @@ var _font: Font
 func _init() -> void:
 	_font = ThemeDB.fallback_font
 	clip_contents = false
+	# 見せるだけのラベル。ボタンの上に置いても、指の操作を邪魔しない
+	mouse_filter = Control.MOUSE_FILTER_IGNORE
 
 
 ## 文をセットする。with_ruby が true なら 小 1 以外の漢字に よみ を付ける
@@ -84,8 +86,16 @@ static func _hangs(s: String) -> bool:
 	return s in ["。", "、", "」", ")", "?", "!", "・", "°"]
 
 
+## ふりがなが 1 つも無い文では、上の空きを取らない(空白だけが空くのを防ぐ)
+func _has_ruby() -> bool:
+	for a in _atoms:
+		if String((a as Dictionary)["r"]) != "":
+			return true
+	return false
+
+
 func _line_height() -> float:
-	return font_size * line_gap + ruby_size * 1.05
+	return font_size * line_gap + (ruby_size * 1.05 if _has_ruby() else 0.0)
 
 
 func _get_minimum_size() -> Vector2:
@@ -100,7 +110,7 @@ func _draw() -> void:
 		return
 	var lines := _lines(size.x)
 	var lh := _line_height()
-	var ruby_h := ruby_size * 1.05
+	var ruby_h := ruby_size * 1.05 if _has_ruby() else 0.0
 	for li in lines.size():
 		var y := li * lh
 		var baseline := y + ruby_h + _font.get_ascent(font_size)

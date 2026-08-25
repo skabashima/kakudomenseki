@@ -24,22 +24,7 @@ func _init() -> void:
 				var p: Dictionary = ProblemGen.generate(sid, rng, seed_i % 10)
 				for key in ["q", "hint1", "hint2", "expl"]:
 					_scan(Ruby.apply(String(p.get(key, ""))), sid)
-	for ch in StoryDefs.CHAPTERS:
-		if String(ch.get("level", "")) != "中学受験":
-			continue
-		_scan(Ruby.apply(String(ch["title"])), String(ch["id"]))
-		_scan(Ruby.apply(String(ch["found"])), String(ch["id"]))
-		_scan(Ruby.apply(String(ch["place"])), String(ch["id"]))
-		_scan(Ruby.apply("第%d章 %s" % [StoryDefs.chapter_index(String(ch["id"])) + 1,
-			String(ch["title"])]), String(ch["id"]))
-		for sc in ch["scenes"]:
-			for key in ["title", "lead", "question", "after"]:
-				_scan(Ruby.apply(String((sc as Dictionary).get(key, ""))), String(ch["id"]))
-			for line in (sc as Dictionary).get("lines", []):
-				_scan(Ruby.apply(String(line)), String(ch["id"]))
-			for c in (sc as Dictionary).get("choices", []):
-				_scan(Ruby.apply(String(c)), String(ch["id"]))
-
+	# ストーリー(中学生)は ふりがな を付けないモードなので見ない
 	_report()
 
 

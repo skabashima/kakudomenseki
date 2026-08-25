@@ -82,7 +82,8 @@ func _build_frame() -> void:
 	head.add_child(status_lbl)
 
 	var place := Label.new()
-	place.text = "%s ・ %s" % [_kids(String(chapter["place"])), _kids(String(chapter["level"]))]
+	place.text = "%s ・ %s" % [String(chapter["place"]),
+		StoryDefs.level_label(String(chapter["level"]))]
 	place.add_theme_font_size_override("font_size", 20)
 	place.add_theme_color_override("font_color", Color(0.7, 0.78, 0.92))
 	root.add_child(place)
@@ -117,10 +118,9 @@ func _build_frame() -> void:
 # シーンの組み立て
 # =========================================================
 
-## 小学生が読む章(中学受験レベル)なら、漢字によみを付ける
+## 中学生むけのモードなので ふりがな は付けない
+## (小学生むけは「ストーリー(小学生)」= scenes/kid_unit.gd のほう)
 func _kids(text: String) -> String:
-	if String(chapter.get("level", "")) == "中学受験":
-		return Ruby.apply(text)
 	return text
 
 

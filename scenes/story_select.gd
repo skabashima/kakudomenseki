@@ -70,7 +70,7 @@ func _ready() -> void:
 		if lv != last_level:
 			last_level = lv
 			var h := Label.new()
-			h.text = "― %sレベル ―" % lv
+			h.text = "― %s ―" % StoryDefs.level_label(lv)
 			h.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 			h.add_theme_font_size_override("font_size", 24)
 			h.add_theme_color_override("font_color", Color(0.75, 0.68, 0.95))
@@ -162,7 +162,5 @@ func _card(index: int, ch: Dictionary) -> Control:
 
 
 ## 小学生が読む章(中学受験レベル)なら、漢字によみを付ける
-func _kids(ch: Dictionary, text: String) -> String:
-	if String(ch.get("level", "")) == "中学受験":
-		return Ruby.apply(text)
+func _kids(_ch: Dictionary, text: String) -> String:
 	return text
