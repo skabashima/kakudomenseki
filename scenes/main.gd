@@ -98,27 +98,24 @@ func _ready() -> void:
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 10)
 	vbox.add_child(row)
-	row.add_child(_small_card("ストーリー
-小学生", Color(0.52, 0.30, 0.34),
+	row.add_child(_small_card("ストーリー", Color(0.52, 0.30, 0.34),
 		Icons.flag(52.0, Color(1, 1, 1, 0.92)), func() -> void:
-			GameState.change_scene("res://scenes/kid_select.tscn")))
-	row.add_child(_small_card("ストーリー
-中学生", Color(0.45, 0.35, 0.62),
+			GameState.change_scene("res://scenes/kid_select.tscn"), "小学生"))
+	row.add_child(_small_card("ストーリー", Color(0.45, 0.35, 0.62),
 		Icons.book(52.0, Color(1, 1, 1, 0.92)), func() -> void:
 			GameState.story_mode = "jhs"
 			GameState.story_chapter = "ch1"
 			GameState.story_scene = 0
-			GameState.change_scene("res://scenes/story_select.tscn")))
+			GameState.change_scene("res://scenes/story_select.tscn"), "中学生"))
 	var row2 := HBoxContainer.new()
 	row2.add_theme_constant_override("separation", 10)
 	vbox.add_child(row2)
-	row2.add_child(_small_card("ストーリー
-高校生", Color(0.24, 0.42, 0.58),
-		Icons.timer(52.0, Color(1, 1, 1, 0.92)), func() -> void:
+	row2.add_child(_small_card("ストーリー", Color(0.24, 0.42, 0.58),
+		Icons.book(52.0, Color(1, 1, 1, 0.92)), func() -> void:
 			GameState.story_mode = "hs"
 			GameState.story_chapter = "ch17"
 			GameState.story_scene = 0
-			GameState.change_scene("res://scenes/story_select.tscn")))
+			GameState.change_scene("res://scenes/story_select.tscn"), "高校生"))
 	row2.add_child(_small_card("きろく", SECONDARY,
 		Icons.chart(52.0, Color(1, 1, 1, 0.92)), func() -> void:
 			GameState.change_scene("res://scenes/records.tscn")))
@@ -205,7 +202,9 @@ func _course_card(name: String, progress_text: String, color: Color,
 
 
 ## そのほかのカード(小さめ。絵と名前だけ)
-func _small_card(name: String, color: Color, icon: Control, callback: Callable) -> Button:
+## そのほかのカード。絵の右に 名前(と、あれば 学年)を きっちり寄せて置く
+func _small_card(name: String, color: Color, icon: Control, callback: Callable,
+		sub := "") -> Button:
 	var btn := Button.new()
 	btn.custom_minimum_size = Vector2(0, 108)
 	btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -217,16 +216,33 @@ func _small_card(name: String, color: Color, icon: Control, callback: Callable) 
 	h.set_anchors_preset(Control.PRESET_FULL_RECT)
 	h.alignment = BoxContainer.ALIGNMENT_CENTER
 	h.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	h.add_theme_constant_override("separation", 10)
+	h.add_theme_constant_override("separation", 12)
 	btn.add_child(h)
 	var holder := CenterContainer.new()
 	holder.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	holder.add_child(icon)
 	h.add_child(holder)
-	var lbl := Label.new()
-	lbl.text = name
-	lbl.add_theme_font_size_override("font_size", 27)
-	h.add_child(lbl)
+	if sub == "":
+		var one := Label.new()
+		one.text = name
+		one.add_theme_font_size_override("font_size", 27)
+		h.add_child(one)
+		return btn
+	# 2 行のときは、行の間を詰めて 1 かたまりに見せる
+	var v := VBoxContainer.new()
+	v.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	v.alignment = BoxContainer.ALIGNMENT_CENTER
+	v.add_theme_constant_override("separation", 0)
+	h.add_child(v)
+	var top := Label.new()
+	top.text = name
+	top.add_theme_font_size_override("font_size", 22)
+	top.add_theme_color_override("font_color", Color(1, 1, 1, 0.75))
+	v.add_child(top)
+	var bottom := Label.new()
+	bottom.text = sub
+	bottom.add_theme_font_size_override("font_size", 30)
+	v.add_child(bottom)
 	return btn
 
 

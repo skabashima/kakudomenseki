@@ -502,34 +502,47 @@ func _draw_tear(c: Control) -> void:
 			Color(1.0, 0.95, 0.5, cheer), 6.0)
 
 
-## 平行な 2 本の線と、ななめの線。金色の かどを もう一方の交点へ運ぶ
+## 平行な 2 本の線と、ななめの線。金色の かどを もう一方の交点へ運ぶ。
+## 画面の座標だけで組み立てる(y は下向き)。前は上下の向きを取りちがえて、
+## ななめの線が 交点を 通らずに 浮いていた
+func _slide_points() -> Array:
+	var y_top := map.size.y * 0.30
+	var y_bottom := map.size.y * 0.64
+	var dir := Vector2(cos(deg_to_rad(float(st["slope"]))), sin(deg_to_rad(float(st["slope"]))))
+	var p_top := Vector2(map.size.x * 0.30, y_top)
+	var p_bottom := p_top + dir * ((y_bottom - y_top) / maxf(dir.y, 0.05))
+	return [p_top, p_bottom, dir, y_top, y_bottom]
+
+
 func _draw_slide(c: Control) -> void:
-	var gap: float = st["gap"]
-	var slope: float = st["slope"]
-	var top := _to_screen(Vector2(0, gap * 0.5))
-	var bottom := _to_screen(Vector2(0, -gap * 0.5))
-	var dx := c.size.x * 0.5
-	c.draw_line(Vector2(20, top.y), Vector2(c.size.x - 20, top.y), INK, 4.0)
-	c.draw_line(Vector2(20, bottom.y), Vector2(c.size.x - 20, bottom.y), INK, 4.0)
-	var dir := Vector2(cos(deg_to_rad(slope)), -sin(deg_to_rad(slope)))
-	var cross_top := Vector2(dx - 90.0, top.y)
-	var cross_bottom := cross_top + dir * ((bottom.y - top.y) / dir.y)
-	c.draw_line(cross_top - dir * 200.0, cross_bottom + dir * 200.0, Color(1, 0.85, 0.4), 4.0)
-	# 交点の しるし
-	for p in [cross_top, cross_bottom]:
-		c.draw_circle(p, 9.0, Color(0.8, 0.86, 1.0))
-	# 上の交点の かど(これを運ぶ)
-	var here: Vector2 = cross_top if not bool(st["moved"]) else cross_bottom
+	var pts := _slide_points()
+	var p_top: Vector2 = pts[0]
+	var p_bottom: Vector2 = pts[1]
+	var dir: Vector2 = pts[2]
+	var y_top: float = pts[3]
+	var y_bottom: float = pts[4]
+	# 平行な 2 本
+	c.draw_line(Vector2(20, y_top), Vector2(c.size.x - 20, y_top), INK, 4.0)
+	c.draw_line(Vector2(20, y_bottom), Vector2(c.size.x - 20, y_bottom), INK, 4.0)
+	# ななめの線(2 本を つらぬく)
+	c.draw_line(p_top - dir * 140.0, p_bottom + dir * 140.0, Color(1, 0.85, 0.4, 0.85), 4.0)
+	# 交わる ところ
+	c.draw_circle(p_top, 10.0, Color(0.85, 0.9, 1.0))
+	c.draw_circle(p_bottom, 14.0 if not bool(st["moved"]) else 10.0,
+		GOLD if not bool(st["moved"]) else Color(0.85, 0.9, 1.0))
+	# 運ぶ かど(上の交点 → 下の交点)
+	var here: Vector2 = p_bottom if bool(st["moved"]) else p_top
 	if dragging >= 0:
 		here = st["drag_pos"]
-	var ang := deg_to_rad(slope)
-	_draw_piece(c, here, 0.0, slope, PIECE_COL[0], 78.0)
+	var slope: float = st["slope"]
+	_draw_piece(c, here, deg_to_rad(-slope), slope, PIECE_COL[0], 82.0)
 	if bool(st["moved"]):
-		c.draw_string(ThemeDB.fallback_font, Vector2(24, c.size.y - 20),
-			"下の 交わるところでも 同じ 大きさ", HORIZONTAL_ALIGNMENT_LEFT, -1, 26, GOLD)
-	else:
-		c.draw_string(ThemeDB.fallback_font, Vector2(24, c.size.y - 20),
-			"金色の かどを 下の ● まで はこぼう", HORIZONTAL_ALIGNMENT_LEFT, -1, 26, DIM)
+		# くらべる ため、上の かども うすく のこす
+		_draw_piece(c, p_top, deg_to_rad(-slope), slope, Color(1.0, 0.78, 0.35, 0.35), 82.0)
+	c.draw_string(ThemeDB.fallback_font, Vector2(24, c.size.y - 18),
+		"下の 交わる ところでも 同じ 大きさ" if bool(st["moved"])
+			else "金色の かどを 下の ● まで はこぼう",
+		HORIZONTAL_ALIGNMENT_LEFT, -1, 26, GOLD if bool(st["moved"]) else DIM)
 
 
 ## 二等辺三角形を まん中で 折る
@@ -858,10 +871,9 @@ func _draw_pour(c: Control) -> void:
 	var vol := 24.0
 	var w: float = st["w"]
 	var depth := vol / w
-	c.draw_rect(Rect2(o + Vector2(0, -s * 6.0), Vector2(s * 3.0, s * 6.0)),
-		Color(1, 1, 1, 0.06))
+	# もとの 器(はば 3・水は いっぱい)
 	c.draw_rect(Rect2(o + Vector2(0, -s * 8.0), Vector2(s * 3.0, s * 8.0)), INK, false, 4.0)
-	c.draw_rect(Rect2(o + Vector2(0, -s * 8.0), Vector2(s * 3.0, s * 2.0)),
+	c.draw_rect(Rect2(o + Vector2(0, -s * 8.0), Vector2(s * 3.0, s * 8.0)),
 		Color(0.30, 0.60, 0.95, 0.5))
 	var rx := o.x + s * 4.0
 	c.draw_rect(Rect2(Vector2(rx, o.y - s * 8.0), Vector2(s * w, s * 8.0)), INK, false, 4.0)
@@ -873,26 +885,45 @@ func _draw_pour(c: Control) -> void:
 		HORIZONTAL_ALIGNMENT_LEFT, -1, 25, DIM)
 
 
-## 影で 測る
+## 影で 測る。影の長さは 太陽の 高さで 大きく変わるので、
+## そのつど 全体が 収まる 倍率を 決める(前は 右へ はみ出していた)
 func _draw_shadow(c: Control) -> void:
-	var s := _cell()
-	var o := _grid_origin()
 	var th: float = st["sun"]
 	var pole := 2.0
 	var tree := 5.0
+	var tree_x := 4.0
 	var s1 := pole / tan(deg_to_rad(th))
 	var s2 := tree / tan(deg_to_rad(th))
-	c.draw_line(o, o + Vector2(map.size.x, 0), INK, 4.0)
-	c.draw_line(o, o + Vector2(0, -s * pole), GOLD, 6.0)
-	c.draw_line(o, o + Vector2(s * s1, 0), SKY, 5.0)
-	var tx := o + Vector2(s * 5.0, 0)
-	c.draw_line(tx, tx + Vector2(0, -s * tree), GOLD, 6.0)
-	c.draw_line(tx, tx + Vector2(s * s2, 0), SKY, 5.0)
-	var sun := o + Vector2(-s * 1.5, -s * 6.5)
-	c.draw_circle(sun, 22.0, Color(1.0, 0.9, 0.4))
-	c.draw_string(ThemeDB.fallback_font, Vector2(24, map.size.y - 18),
-		"太陽を 上下に 動かそう(くい %.1f ÷ %.1f ・ 木 %.1f ÷ %.1f)" % [
-			pole, s1, tree, s2], HORIZONTAL_ALIGNMENT_LEFT, -1, 25, DIM)
+	var need_w := tree_x + s2 + 2.0
+	var need_h := tree + 3.5
+	var k := minf((c.size.x - 60.0) / need_w, (c.size.y - 150.0) / need_h)
+	var ground := c.size.y * 0.74
+	var ox := 40.0
+	var font := ThemeDB.fallback_font
+	c.draw_line(Vector2(20, ground), Vector2(c.size.x - 20, ground), INK, 4.0)
+	# くい と 木
+	for item in [[0.0, pole, s1, "くい"], [tree_x, tree, s2, "木"]]:
+		var x: float = ox + float(item[0]) * k
+		var h: float = float(item[1]) * k
+		var sh: float = float(item[2]) * k
+		c.draw_line(Vector2(x, ground), Vector2(x, ground - h), GOLD, 7.0)
+		c.draw_line(Vector2(x, ground), Vector2(x + sh, ground), SKY, 6.0)
+		c.draw_dashed_line(Vector2(x, ground - h), Vector2(x + sh, ground),
+			Color(1, 1, 1, 0.35), 2.0, 9.0)
+		c.draw_string(font, Vector2(x - 34.0, ground - h - 12.0), String(item[3]),
+			HORIZONTAL_ALIGNMENT_LEFT, -1, 24, GOLD)
+	# 太陽(光の 向きに 置く)
+	var dir := Vector2(-cos(deg_to_rad(th)), -sin(deg_to_rad(th)))
+	# 太陽は 木の 上から 光の 向きへ(画面の 外に 出ないように)
+	var sun := Vector2(ox + tree_x * k, ground - tree * k) + dir * (k * 1.8)
+	sun.x = clampf(sun.x, 40.0, c.size.x - 40.0)
+	sun.y = clampf(sun.y, 46.0, ground - 40.0)
+	c.draw_circle(sun, 24.0, Color(1.0, 0.9, 0.4))
+	c.draw_string(font, sun + Vector2(-18.0, -32.0), "太陽", HORIZONTAL_ALIGNMENT_LEFT, -1, 22, DIM)
+	c.draw_string(font, Vector2(24, c.size.y - 18),
+		"太陽を 上下に 動かそう(くい %.1f ÷ %.1f ＝ %.2f ・ 木 %.1f ÷ %.1f ＝ %.2f)" % [
+			pole, s1, pole / s1, tree, s2, tree / s2],
+		HORIZONTAL_ALIGNMENT_LEFT, -1, 24, DIM)
 
 
 # =========================================================
@@ -974,12 +1005,8 @@ func _release(act: String, at: Vector2) -> void:
 				if n == 3:
 					_act_done()
 		"slide":
-			var gap: float = st["gap"]
-			var bottom := _to_screen(Vector2(0, -gap * 0.5))
-			var dir := Vector2(cos(deg_to_rad(float(st["slope"]))), -sin(deg_to_rad(float(st["slope"]))))
-			var cross_top := Vector2(map.size.x * 0.5 - 90.0, _to_screen(Vector2(0, gap * 0.5)).y)
-			var cross_bottom := cross_top + dir * ((bottom.y - cross_top.y) / dir.y)
-			if at.distance_to(cross_bottom) < 120.0:
+			var cross_bottom: Vector2 = _slide_points()[1]
+			if at.distance_to(cross_bottom) < 130.0:
 				st["moved"] = true
 				GameState.play_sfx("correct")
 				_act_done()
