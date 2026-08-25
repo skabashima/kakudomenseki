@@ -8,6 +8,7 @@ extends Node
 ##   --ch=ch4 --idx=3           ストーリー(中学生・高校生)の章と場面
 ##   --mode=jhs|hs              ストーリーのモード
 ##   --cleared=9                たからのちずを 9 歩 進んだ ことにする
+##   --sclear=21                ストーリーの 章を 21 まで クリアした ことにする
 ##   --act --try=1              小学生の単元の さわる場面(何回めか)
 ##   --deg=210                  時計の 針を そこまで まわした ところ
 ##   --quiz                     小学生の単元を しるし(問題)まで 進める
@@ -17,6 +18,7 @@ func _ready() -> void:
 	var scene := "main"
 	var out := "shot_view.png"
 	var cleared := 0
+	var sclear := 0
 	var wait := 30
 	var quiz := false
 	var act := false
@@ -30,6 +32,7 @@ func _ready() -> void:
 		if arg.begins_with("--idx="): GameState.story_scene = int(arg.substr(6))
 		if arg.begins_with("--mode="): GameState.story_mode = arg.substr(7)
 		if arg.begins_with("--cleared="): cleared = int(arg.substr(10))
+		if arg.begins_with("--sclear="): sclear = int(arg.substr(9))
 		if arg.begins_with("--wait="): wait = int(arg.substr(7))
 		if arg == "--quiz": quiz = true
 		if arg == "--act": act = true
@@ -37,6 +40,10 @@ func _ready() -> void:
 		if arg.begins_with("--try="): tri = int(arg.substr(6))
 	for i in cleared:
 		GameState.kid_clear[String(KidDefs.UNITS[i]["id"])] = true
+	for i in sclear:
+		var list: Array = StoryDefs.chapters_of(GameState.story_mode)
+		if i < list.size():
+			GameState.story_clear[String(list[i]["id"])] = true
 	var inst: Node = (load("res://scenes/%s.tscn" % scene) as PackedScene).instantiate()
 	get_tree().root.add_child(inst)
 	for i in 10:

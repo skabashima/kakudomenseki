@@ -23,7 +23,7 @@ func _run() -> void:
 	await _open("res://scenes/challenge_select.tscn")
 	await _open("res://scenes/records.tscn")
 	await _open("res://scenes/store.tscn")
-	await _open("res://scenes/story_select.tscn")
+	await _open("res://scenes/story_map.tscn")
 	await _open("res://scenes/story.tscn")
 	await _open("res://scenes/kid_map.tscn")
 	await _open("res://scenes/kid_unit.tscn")

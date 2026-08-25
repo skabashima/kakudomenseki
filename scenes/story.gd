@@ -74,7 +74,7 @@ func _build_frame() -> void:
 		GameState.play_sfx("tap")
 		GameState.story_scene = idx
 		GameState.save_game()
-		GameState.change_scene("res://scenes/story_select.tscn"))
+		GameState.change_scene("res://scenes/story_map.tscn"))
 	head.add_child(back)
 	var title := Label.new()
 	title.text = _kids("第%d章 %s" % [
@@ -479,5 +479,5 @@ func _finish() -> void:
 	GameState.style_button(b, Color(0.24, 0.42, 0.72))
 	b.pressed.connect(func() -> void:
 		GameState.play_sfx("tap")
-		GameState.change_scene("res://scenes/story_select.tscn"))
+		GameState.change_scene("res://scenes/story_map.tscn"))
 	body.add_child(b)

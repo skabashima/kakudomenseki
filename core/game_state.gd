@@ -123,6 +123,9 @@ var kid_unit: String = "k1"
 ## (進みぐあいそのものではないので 保存しない)
 var kid_walk_from: String = ""
 
+## ストーリー(中学生・高校生)で 章をクリアした直後だけ入る。図で歩くために使う
+var story_walk_from: String = ""
+
 
 ## 単元をクリアした。はじめてなら true
 func record_kid_clear(id: String) -> bool:
@@ -138,6 +141,8 @@ func record_story_clear(id: String) -> bool:
 	if story_clear.has(id):
 		return false
 	story_clear[id] = true
+	# 図(story_map)で「つぎの場所まで進む」ために覚えておく(保存はしない)
+	story_walk_from = id
 	bump_stat("story_chapter")
 	save_game()
 	return true

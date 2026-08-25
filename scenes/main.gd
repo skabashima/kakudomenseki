@@ -92,7 +92,7 @@ func _ready() -> void:
 			GameState.story_mode = "jhs"
 			GameState.story_chapter = "ch1"
 			GameState.story_scene = 0
-			GameState.change_scene("res://scenes/story_select.tscn")), story_side))
+			GameState.change_scene("res://scenes/story_map.tscn")), story_side))
 	var hs: Array = StoryDefs.chapters_of("hs")
 	vbox.add_child(_narrow(_story_card("軌道計算室", "高校生",
 		"%d / %d 章" % [_story_done(hs), hs.size()], Color(0.24, 0.42, 0.58),
@@ -100,7 +100,7 @@ func _ready() -> void:
 			GameState.story_mode = "hs"
 			GameState.story_chapter = "ch17"
 			GameState.story_scene = 0
-			GameState.change_scene("res://scenes/story_select.tscn")), story_side))
+			GameState.change_scene("res://scenes/story_map.tscn")), story_side))
 
 	# ■ その下に「問題にチャレンジ」(2 編・チャレンジ・きろく)
 	vbox.add_child(_spacer(6))
