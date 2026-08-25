@@ -569,12 +569,16 @@ func _draw_tear(c: Control) -> void:
 func _slide_points() -> Array:
 	var y_top := map.size.y * 0.30
 	var y_bottom := map.size.y * 0.64
-	var dir := Vector2(cos(deg_to_rad(float(st["slope"]))), sin(deg_to_rad(float(st["slope"]))))
+	# ゆるい かたむきだと 左端(90)から 引いても 下の交点が 右へ はみ出す。
+	# 画面の はばに 入る かたむきまで 立ててから 使う
+	var slope := maxf(float(st["slope"]),
+		rad_to_deg(atan((y_bottom - y_top) / maxf(map.size.x - 220.0, 1.0))))
+	var dir := Vector2(cos(deg_to_rad(slope)), sin(deg_to_rad(slope)))
 	# 下の交点が 右へ はみ出さない ところから 引く
-	var dx := (y_bottom - y_top) / maxf(tan(deg_to_rad(float(st["slope"]))), 0.05)
+	var dx := (y_bottom - y_top) / maxf(tan(deg_to_rad(slope)), 0.05)
 	var p_top := Vector2(clampf(map.size.x - 130.0 - dx, 90.0, map.size.x * 0.34), y_top)
 	var p_bottom := p_top + dir * ((y_bottom - y_top) / maxf(dir.y, 0.05))
-	return [p_top, p_bottom, dir, y_top, y_bottom]
+	return [p_top, p_bottom, dir, y_top, y_bottom, slope]
 
 
 func _draw_slide(c: Control) -> void:
@@ -597,7 +601,8 @@ func _draw_slide(c: Control) -> void:
 	var here: Vector2 = p_bottom if bool(st["moved"]) else p_top
 	if dragging >= 0:
 		here = st["drag_pos"]
-	var slope: float = st["slope"]
+	# かどの 大きさも、実際に 引いた 線の かたむきに あわせる
+	var slope: float = pts[5]
 	_draw_piece(c, here, deg_to_rad(-slope), slope, PIECE_COL[0], 82.0)
 	if bool(st["moved"]):
 		# くらべる ため、上の かども うすく のこす
