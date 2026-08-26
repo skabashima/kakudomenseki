@@ -69,17 +69,9 @@ func _ready() -> void:
 			inst._advance()
 			await get_tree().process_frame
 	for tn in turns:
-		# 島取りを 何ターンか 自動で 進めた ところを 撮る
-		var near2: Vector2i = Vector2i(-1, -1)
-		var nd2 := 999
-		for pp in inst.posts:
-			var dd2: int = inst._dist_to_mine(int(pp["x"]), int(pp["y"]))
-			if dd2 < nd2:
-				nd2 = dd2
-				near2 = Vector2i(int(pp["x"]), int(pp["y"]))
-		if near2.x < 0 or inst.over or inst.auto_fill:
+		if inst.over or inst.auto_fill:
 			break
-		inst._tap_post(near2)
+		inst._pick_level(1)
 		await get_tree().process_frame
 		inst.input_text = ProblemGen.fmt(float(inst.problem["answer"]))
 		inst._submit()
@@ -90,16 +82,7 @@ func _ready() -> void:
 			await get_tree().process_frame
 	if island > 0:
 		# 島取り: 立て札の問題を開く(2 なら 正解して なぞる 途中まで)
-		# 立て札は タップして えらぶ(いちばん 近いものを 開く)
-		var near: Vector2i = Vector2i(-1, -1)
-		var nd := 999
-		for pp in inst.posts:
-			var dd: int = inst._dist_to_mine(int(pp["x"]), int(pp["y"]))
-			if dd < nd:
-				nd = dd
-				near = Vector2i(int(pp["x"]), int(pp["y"]))
-		if near.x >= 0:
-			inst._tap_post(near)
+		inst._pick_level(1)
 		for i in 4:
 			await get_tree().process_frame
 		if island == 3:
