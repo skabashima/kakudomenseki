@@ -82,15 +82,15 @@ var cut_t := 0.0
 var cut_mood := "calm"
 var cut_text := ""
 var board: Control
-var msg: Label
-var head_lbl: Label
+var msg: RubyLabel
+var head_lbl: RubyLabel
 var act_btn: Button
 var redo_btn: Button
 var auto_btn: Button
 var quiz: Control              # 問題の重ね画面
 var figure: FigureView
 var keypad: Keypad
-var q_lbl: Label
+var q_lbl: RubyLabel
 var problem: Dictionary = {}
 var input_text := ""
 var level := 1                      # いま えらんでいる 難しさ(0..2)
@@ -101,8 +101,9 @@ var claim_row: HBoxContainer        # なぞる ときの ボタン
 
 func _ready() -> void:
 	isle = clampi(GameState.island_index, 0, IslandDefs.count() - 1)
-	if not IslandDefs.is_open(isle, GameState.island_clear):
-		isle = IslandDefs.current(GameState.island_clear)
+	var in_range: Array = IslandDefs.islands_in(GameState.island_range)
+	if not in_range.has(isle):
+		isle = IslandDefs.first_open_in(GameState.island_range, GameState.island_clear)
 	isle_def = IslandDefs.of(isle)
 	W = int(isle_def["w"])
 	H = int(isle_def["h"])
@@ -134,13 +135,14 @@ func _ready() -> void:
 	GameState.style_button(back, Color(0.28, 0.32, 0.44))
 	back.pressed.connect(func() -> void:
 		GameState.play_sfx("tap")
-		GameState.change_scene("res://scenes/main.tscn"))
+		GameState.change_scene("res://scenes/island_select.tscn"))
 	head.add_child(back)
-	head_lbl = Label.new()
-	head_lbl.add_theme_font_size_override("font_size", 24)
-	head_lbl.add_theme_color_override("font_color", Color(0.88, 0.92, 1.0))
+	# 小学生から 遊べるように、画面の 文には ふりがなを のせる
+	head_lbl = RubyLabel.new()
+	head_lbl.font_size = 22
+	head_lbl.ruby_size = 11
+	head_lbl.color = Color(0.88, 0.92, 1.0)
 	head_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	head_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	head.add_child(head_lbl)
 
 	bar = Control.new()
@@ -156,11 +158,11 @@ func _ready() -> void:
 	board.gui_input.connect(_on_board_input)
 	root.add_child(board)
 
-	msg = Label.new()
-	msg.add_theme_font_size_override("font_size", 25)
-	msg.add_theme_color_override("font_color", GOLD)
-	msg.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	msg.custom_minimum_size = Vector2(0, 66)
+	msg = RubyLabel.new()
+	msg.font_size = 24
+	msg.ruby_size = 12
+	msg.color = GOLD
+	msg.custom_minimum_size = Vector2(0, 76)
 	root.add_child(msg)
 
 	# 難しさを えらぶ 段(問題を 解く 番)
@@ -185,7 +187,7 @@ func _ready() -> void:
 	claim_row.visible = false
 	root.add_child(claim_row)
 	redo_btn = Button.new()
-	redo_btn.text = "なぞり直す"
+	redo_btn.text = "なぞりなおす"
 	redo_btn.custom_minimum_size = Vector2(0, 92)
 	redo_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	redo_btn.add_theme_font_size_override("font_size", 24)
@@ -223,7 +225,7 @@ func _ready() -> void:
 	cut_band.draw.connect(_draw_cut_band)
 	cutin.add_child(cut_band)
 	_make_island()
-	msg.text = "難しさをえらんで 問題を解くと、答えの数だけ 陣地を 広げられる。石碑は 毎ターン +2 マス(取られたら 戻らない)"
+	msg.set_ruby_text("難しさをえらんで 問題を解くと、答えの数だけ 土地を 広げられる。石碑は 毎ターン +2 マス(取られたら 戻らない)", true)
 	_refresh()
 
 
@@ -632,7 +634,7 @@ func _clear_marks() -> void:
 		return
 	GameState.play_sfx("tap")
 	marked.clear()
-	msg.text = "もう一度 なぞろう"
+	msg.set_ruby_text("もう一度 なぞろう", true)
 	_refresh()
 
 
@@ -648,20 +650,20 @@ func _on_act() -> void:
 		return
 	if need <= 0:
 		GameState.play_sfx("fail")
-		msg.text = "下の 3 つから 難しさを えらぼう"
+		msg.set_ruby_text("下の 3 つから 難しさを えらぼう", true)
 		return
 	if marked.is_empty() and _markable_left() == 0:
 		# まわりを ぜんぶ カラスと岩に 囲まれた。ここで 勝負あり
-		msg.text = "囲まれた! もう 広げられない。"
+		msg.set_ruby_text("囲まれた! もう 広げられない。", true)
 		_finish()
 		return
 	if _marked_cost() != need and _markable_left() > 0:
 		GameState.play_sfx("fail")
-		msg.text = "あと %d マスぶん" % (need - _marked_cost())
+		msg.set_ruby_text("あと %d マスぶん" % (need - _marked_cost()), true)
 		return
 	if marked.is_empty():
 		GameState.play_sfx("fail")
-		msg.text = "広げられる ところが ない。ふちの マスを なぞろう"
+		msg.set_ruby_text("広げられる ところが ない。ふちの マスを なぞろう", true)
 		return
 	_take_marked()
 
@@ -692,7 +694,7 @@ func _take_marked() -> void:
 	if got_shrine > 0:
 		extra += "  石碑を %d こ 取った! 毎ターン +%d マス" % [got_shrine,
 			got_shrine * SHRINE_GAIN]
-	msg.text = "土地を広げた。" + extra
+	msg.set_ruby_text("土地を広げた。" + extra, true)
 	# ここで待たせない。待つと「カラスの番」が遅れて、
 	# 先に つぎの問題を開けてしまう(カラスが 一度も 広げられなかった)
 	_crow_turn()
@@ -704,7 +706,7 @@ func _lose_turn(why: String) -> void:
 	need = 0
 	marked.clear()
 	cut_text_override = _crow_says("laugh")
-	msg.text = why
+	msg.set_ruby_text(why, true)
 	_crow_turn()
 
 
@@ -740,7 +742,7 @@ func _crow_turn() -> void:
 		var was_shrine: bool = shrines.has(best)
 		cell[best.y][best.x] = CROW
 		if was_shrine:
-			msg.text = "石碑を カラスに 取られた! 取り返しに 行こう"
+			msg.set_ruby_text("石碑を カラスに 取られた! 取り返しに 行こう", true)
 			cut_text_override = "この石碑は もらった。毎ターン 2 マスずつ 頂こう"
 	if turn % 2 == 0:
 		_crow_cut()
@@ -765,9 +767,11 @@ func _crow_turn() -> void:
 		auto_fill = true
 		var mine2 := _count(MINE)
 		var crow2 := _count(CROW)
-		msg.text = ("勝負あり ― カラスは もう %d マスまでしか 伸ばせない。のこりは 自動で ぬる"
-			% _potential(CROW)) if mine2 > crow2 else 			("勝負あり ― こちらは もう %d マスまでしか 伸ばせない。のこりは 自動で ぬる"
-			% _potential(MINE))
+		var win_side := mine2 > crow2
+		var left_n := _potential(CROW) if win_side else _potential(MINE)
+		var who := "カラス" if win_side else "こちら"
+		msg.set_ruby_text("勝負あり ― %s は もう %d マスまでしか 伸ばせない。のこりは 自動で ぬる"
+			% [who, left_n], true)
 
 
 ## 細い所を 切る。まわりが 3 方カラスの 自分のマスを 1 つ 奪う
@@ -786,7 +790,7 @@ func _crow_cut() -> void:
 					crows += 1
 			if crows >= 3:
 				cell[y][x] = CROW
-				msg.text = "カラスに 細いところを 切られた!"
+				msg.set_ruby_text("カラスに 細いところを 切られた!", true)
 				cut_text_override = _crow_says("cut")
 				return
 
@@ -840,11 +844,11 @@ func _build_quiz() -> void:
 	v.add_child(figure)
 	figure.add_tools()
 
-	q_lbl = Label.new()
-	q_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	q_lbl.add_theme_font_size_override("font_size", 27)
-	q_lbl.add_theme_color_override("font_color", Color(0.92, 0.95, 1.0))
-	q_lbl.custom_minimum_size = Vector2(0, 118)
+	q_lbl = RubyLabel.new()
+	q_lbl.font_size = 26
+	q_lbl.ruby_size = 13
+	q_lbl.color = Color(0.92, 0.95, 1.0)
+	q_lbl.custom_minimum_size = Vector2(0, 124)
 	v.add_child(q_lbl)
 
 	keypad = Keypad.new()
@@ -891,7 +895,7 @@ func _open_quiz(_tier: int) -> void:
 	input_text = ""
 	keypad.answer_lbl.text = ""
 	keypad.unit_lbl.text = String(problem.get("unit", ""))
-	q_lbl.text = "%s\n%s" % [String(problem["q"]), _reward_note()]
+	q_lbl.set_ruby_text("%s\n%s" % [String(problem["q"]), _reward_note()], true)
 	# カットインが 出たままだと 電卓の 上に かぶる。ここで 引っこめる
 	cut_t = 0.0
 	cutin.visible = false
@@ -936,7 +940,7 @@ func _calc_in_place() -> void:
 	var res: Dictionary = ExprEval.eval(input_text)
 	if not bool(res["ok"]):
 		GameState.play_sfx("fail")
-		q_lbl.text = String(res["err"])
+		q_lbl.set_ruby_text(String(res["err"]), true)
 		return
 	GameState.play_sfx("type")
 	input_text = ExprEval.fmt(float(res["value"]))
@@ -947,7 +951,7 @@ func _submit() -> void:
 	var v := Keypad.value_of(input_text)
 	if is_nan(v):
 		GameState.play_sfx("fail")
-		q_lbl.text = "数を入れてね(式のままでもよい)"
+		q_lbl.set_ruby_text("数を入れてね(式のままでもよい)", true)
 		return
 	if absf(v - float(problem["answer"])) > maxf(float(problem.get("tol", 0.01)), 0.01):
 		GameState.play_sfx("fail")
@@ -960,8 +964,8 @@ func _submit() -> void:
 			quiz.visible = false
 			_lose_turn("%s を はずした。このターンは 何も 取れない" % String(LEVELS[level]["name"]))
 			return
-		q_lbl.text = "ちがう ― もらえる マスが 半分に なった(のこり %d 回)\n%s\n%s" % [
-			can - miss, String(problem["q"]), _reward_note()]
+		q_lbl.set_ruby_text("ちがう ― もらえる マスが 半分に なった(のこり %d 回)\n%s\n%s" % [
+			can - miss, String(problem["q"]), _reward_note()], true)
 		return
 	GameState.play_sfx("correct")
 	var shrine_bonus := _shrine_count(MINE) * SHRINE_GAIN
@@ -973,8 +977,8 @@ func _submit() -> void:
 	var note := ""
 	if shrine_bonus > 0:
 		note += " + 石碑 %d" % shrine_bonus
-	msg.text = "正解! 答え %s → %d マス%s = %d マスぶん なぞろう" % [
-		ProblemGen.fmt(float(problem["answer"])), got, note, need]
+	msg.set_ruby_text("正解! 答え %s → %d マス%s = %d マスぶん なぞろう" % [
+		ProblemGen.fmt(float(problem["answer"])), got, note, need], true)
 	_refresh()
 
 
@@ -989,9 +993,9 @@ func _refresh() -> void:
 	var crow := _count(CROW)
 	var all := maxi(mine + crow + _count(EMPTY) + _count(SPRING) + _count(RUIN) + _count(SHRINE), 1)
 	# 割合は 下の 帯(顔つき)に 出すので、ここは ターン数だけ
-	head_lbl.text = "  %d島 %s   %d/%d ターン   石碑 %d-%d" % [isle + 1,
+	head_lbl.set_ruby_text("  %d島 %s  %d/%d ターン  石碑 %d-%d" % [isle + 1,
 		String(isle_def["name"]), mini(turn, MAX_TURN), MAX_TURN,
-		_shrine_count(MINE), _shrine_count(CROW)]
+		_shrine_count(MINE), _shrine_count(CROW)], true)
 	pick_row.visible = need <= 0 and not over and not auto_fill
 	claim_row.visible = not pick_row.visible
 	if over:
@@ -999,9 +1003,9 @@ func _refresh() -> void:
 	elif need <= 0:
 		pass
 	else:
-		act_btn.text = "ここに 決める(%d/%d)" % [_marked_cost(), need]
+		act_btn.text = "ここに きめる(%d/%d)" % [_marked_cost(), need]
 		if _marked_cost() < need and _markable_left() == 0 and not marked.is_empty():
-			act_btn.text = "ここまでで 決める(%d/%d)" % [_marked_cost(), need]
+			act_btn.text = "ここまでで きめる(%d/%d)" % [_marked_cost(), need]
 	redo_btn.disabled = marked.is_empty()
 	auto_btn.disabled = need <= 0 or _markable_left() <= 0
 	board.queue_redraw()
@@ -1015,7 +1019,7 @@ func _finish() -> void:
 	var pct := int(round(100.0 * float(mine) / float(all)))
 	var cpct := int(round(100.0 * float(crow) / float(all)))
 
-	msg.text = "おわり ― じぶん %d%% / カラス %d%%" % [pct, cpct]
+	msg.set_ruby_text("おわり ― じぶん %d%% / カラス %d%%" % [pct, cpct], true)
 	_refresh()
 	_show_result(pct, cpct)
 
@@ -1399,10 +1403,11 @@ func _show_result(mine_pct: int, crow_pct: int) -> void:
 	spacer.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	v.add_child(spacer)
 
-	if win and isle + 1 < IslandDefs.count():
-		var nxt: Dictionary = IslandDefs.of(isle + 1)
+	var nxt_i := IslandDefs.next_in(GameState.island_range, isle)
+	if win and nxt_i >= 0:
+		var nxt: Dictionary = IslandDefs.of(nxt_i)
 		var open := Label.new()
-		open.text = "つぎの島が 開いた ― %d島 %s(%s)" % [isle + 2, String(nxt["name"]),
+		open.text = "つぎの島が 開いた ― %d島 %s(%s)" % [nxt_i + 1, String(nxt["name"]),
 			String(nxt["level"])]
 		open.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		open.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -1416,12 +1421,14 @@ func _show_result(mine_pct: int, crow_pct: int) -> void:
 		GameState.style_button(go, Color(0.22, 0.55, 0.35))
 		go.pressed.connect(func() -> void:
 			GameState.play_sfx("tap")
-			GameState.island_index = isle + 1
+			GameState.island_index = nxt_i
 			GameState.change_scene("res://scenes/island.tscn"))
 		v.add_child(go)
 	elif win:
 		var all_done := Label.new()
-		all_done.text = "12 の島を すべて 取った! 群島は こちらのものだ"
+		var pr := IslandDefs.progress_in(GameState.island_range, GameState.island_clear)
+		all_done.text = "%s の島を すべて 取った!(%d / %d)" % [
+			String(IslandDefs.range_of(GameState.island_range)["name"]), int(pr[0]), int(pr[1])]
 		all_done.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		all_done.add_theme_font_size_override("font_size", 27)
 		all_done.add_theme_color_override("font_color", GOLD)
@@ -1439,12 +1446,12 @@ func _show_result(mine_pct: int, crow_pct: int) -> void:
 	v.add_child(again)
 
 	var back := Button.new()
-	back.text = "もどる"
+	back.text = "はんいを えらび直す"
 	back.custom_minimum_size = Vector2(0, 80)
 	back.add_theme_font_size_override("font_size", 26)
 	GameState.style_button(back, Color(0.28, 0.32, 0.44))
 	back.pressed.connect(func() -> void:
 		GameState.play_sfx("tap")
-		GameState.change_scene("res://scenes/main.tscn"))
+		GameState.change_scene("res://scenes/island_select.tscn"))
 	v.add_child(back)
 	GameState.play_sfx("clear" if win else "fail")

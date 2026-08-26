@@ -115,7 +115,7 @@ func _ready() -> void:
 		print("ISLAND OK: %d ターンで 決着(じぶん %d マス / カラス %d マス・石碑 %d 回 取った・空き %d マス)" % [
 			inst.turn, inst._count(inst.MINE), inst._count(inst.CROW), reached,
 			inst._count(inst.EMPTY)])
-		print("  おわり方: " + inst.msg.text)
+		print("  おわり方: " + inst.msg.plain)
 	else:
 		for f in failures:
 			print("FAIL: " + str(f))

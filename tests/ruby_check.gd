@@ -24,8 +24,41 @@ func _init() -> void:
 				var p: Dictionary = ProblemGen.generate(sid, rng, seed_i % 10)
 				for key in ["q", "hint1", "hint2", "expl"]:
 					_scan(Ruby.apply(String(p.get(key, ""))), sid)
+	# 島取り(戦略ゲーム)も 小学生から 遊ぶ。画面に 出る 文を そのまま 走査する
+	for path in ["res://scenes/island.gd", "res://scenes/island_select.gd",
+			"res://core/island_defs.gd"]:
+		_scan_source(path)
 	# ストーリー(中学生)は ふりがな を付けないモードなので見ない
 	_report()
+
+
+## ソースの 中の 日本語の 文字列を 取り出して 走査する。
+## 画面の 文は その場で 書いているので、データを 見るだけでは 抜ける
+func _scan_source(path: String) -> void:
+	var f := FileAccess.open(path, FileAccess.READ)
+	if f == null:
+		return
+	var src := f.get_as_text()
+	# 二重引用符の あいだを 取り出す(正規表現の 逃がし字で 事故りやすいので 手で)
+	var i := 0
+	while true:
+		var a := src.find("\"", i)
+		if a < 0:
+			break
+		var b := src.find("\"", a + 1)
+		if b < 0:
+			break
+		var lit := src.substr(a + 1, b - a - 1)
+		i = b + 1
+		if lit.begins_with("res://") or lit.begins_with("user://"):
+			continue
+		var has_kanji := false
+		for k in lit.length():
+			var c := lit.unicode_at(k)
+			if c >= 0x4E00 and c <= 0x9FFF:
+				has_kanji = true
+		if has_kanji:
+			_scan(Ruby.apply(lit), path.get_file())
 
 
 func _report() -> void:

@@ -27,8 +27,12 @@ func _init() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 
 
+## いま 出している 文(ふりがな を 外した もの)
+var plain := ""
+
 ## 文をセットする。with_ruby が true なら 小 1 以外の漢字に よみ を付ける
 func set_ruby_text(text: String, with_ruby: bool) -> void:
+	plain = text                       # いま 出している 文(検分や ログ用)
 	_atoms = []
 	var parts: Array = Ruby.parts(text) if with_ruby else [{"s": text, "r": ""}]
 	for p in parts:

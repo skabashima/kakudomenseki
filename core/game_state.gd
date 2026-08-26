@@ -118,6 +118,8 @@ var story_scene: int = 0
 ## 取った島の番号(島取り)。キーは str(番号)
 var island_clear: Dictionary = {}
 var island_index := 0
+## 島取りの 出題の はんい("elem" / "jhs" / "hs" / "all")
+var island_range := "all"
 
 
 ## 島を取った。はじめてなら true
@@ -552,6 +554,7 @@ func save_game() -> void:
 		"story_clear": story_clear,
 		"kid_clear": kid_clear,
 		"island_clear": island_clear,
+		"island_range": island_range,
 		"kid_unit": kid_unit,
 		"story_chapter": story_chapter,
 		"story_scene": story_scene,
@@ -581,6 +584,7 @@ func load_game() -> void:
 	story_clear = data.get("story_clear", {})
 	kid_clear = data.get("kid_clear", {})
 	island_clear = data.get("island_clear", {})
+	island_range = String(data.get("island_range", "all"))
 	kid_unit = String(data.get("kid_unit", "k1"))
 	story_chapter = String(data.get("story_chapter", "ch1"))
 	story_scene = int(data.get("story_scene", 0))
