@@ -18,6 +18,23 @@ var missing: Dictionary = {}   # 文字 -> [出てくる場所, ...]
 var checked := 0
 
 
+## フォントの 取り込み設定も 見る。
+## allow_system_fallback を 入れておくと、同梱フォントに 無い字を
+## OS の フォントが 埋めてしまい、PC では 気づけない ―― そのまま Android に
+## 出すと 豆腐に なる。subpixel_positioning は 小さい字が にじむ もとに なる
+func _check_import() -> Array:
+	var bad: Array = []
+	var f := FileAccess.open("res://assets/fonts/NotoSansJP.ttf.import", FileAccess.READ)
+	if f == null:
+		return ["フォントの 取り込み設定が 見つからない"]
+	var src := f.get_as_text()
+	if src.find("allow_system_fallback=false") < 0:
+		bad.append("allow_system_fallback が 切れていない(足りない字に 気づけない)")
+	if src.find("subpixel_positioning=0") < 0:
+		bad.append("subpixel_positioning が 0 でない(小さい字が にじむ)")
+	return bad
+
+
 func _init() -> void:
 	font = load(FONT_PATH)
 	if font == null:
@@ -26,7 +43,10 @@ func _init() -> void:
 		return
 	for d in DIRS:
 		_scan_dir(d)
-	if missing.is_empty():
+	var bad_import := _check_import()
+	for b in bad_import:
+		print("FAIL: " + str(b))
+	if missing.is_empty() and bad_import.is_empty():
 		print("FONT CHECK OK: %d 種類の文字はすべて同梱フォントにある" % checked)
 		quit(0)
 		return
@@ -34,7 +54,7 @@ func _init() -> void:
 		var locs: Array = missing[ch]
 		print("FAIL: %s U+%04X が同梱フォントに無い(%d 箇所) 例: %s" % [
 			ch, String(ch).unicode_at(0), locs.size(), String(locs[0])])
-	print("FONT CHECK FAILED: %d 種類が豆腐になる" % missing.size())
+	print("FONT CHECK FAILED: 豆腐に なる字 %d 種類 / 取り込み設定 %d 件" % [missing.size(), bad_import.size()])
 	quit(1)
 
 
