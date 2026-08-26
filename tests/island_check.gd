@@ -8,6 +8,9 @@ extends Node
 ##   ・えらんだ 難しさの 回数だけ まちがえたら ターンが 進むか
 ##     (何度でも 答えられない)
 ##   ・石碑を 取ると その ぶん 多く もらえるか
+##   ・むずかしい を 正解したら、その 難しさの 下限より 多く もらえるか
+##     (わり算だけで 決めていた ころ、角度の 小さい 答えだと
+##      むずかしい でも 3 マスしか もらえなかった)
 ##   ・指で なぞって 取れるか / なぞり直しても 旗が 残るか
 ##   ・囲まれても 詰まらず、決着して 占有率が 出るか
 
@@ -21,6 +24,7 @@ func _ready() -> void:
 	for i in 8:
 		await get_tree().process_frame
 
+	await _check_reward(inst)
 	await _check_drag(inst)
 	await _check_miss(inst)
 
@@ -174,6 +178,27 @@ func _wait(n: int) -> void:
 ##   ・なぞり直しで 旗まで 消えて どこも なぞれなくなる
 ##   ・速く なぞると 通ったマスが 飛ぶ
 ## という 指でしか 起きない 不具合を 見つけられない(実際に 両方 起きた)。
+## 難しさごとの もらえる マス数を 見る。
+## えらんだ 難しさより 少ない ときは、えらぶ 意味が なくなっている
+func _check_reward(inst: Node) -> void:
+	for lv in [2, 1, 0]:
+		inst._pick_level(lv)
+		await _wait(2)
+		if not inst.quiz.visible:
+			failures.append("難しさ %d で 問題が 出ない" % lv)
+			return
+		var low: int = int(inst.LEVELS[lv]["low"])
+		var got: int = inst._cells_for(float(inst.problem["answer"]))
+		if got < low:
+			failures.append("%s を 正解しても %d マス(下限 %d マス)" % [
+				String(inst.LEVELS[lv]["name"]), got, low])
+		# 答えずに 閉じて つぎの 難しさへ
+		inst.quiz.visible = false
+		inst.need = 0
+		inst.marked.clear()
+		await _wait(1)
+
+
 func _check_drag(inst: Node) -> void:
 	inst._pick_level(0)
 	await _wait(2)

@@ -32,13 +32,19 @@ const COL := {
 const SHRINE_GAIN := 2
 
 ## 難しさ(★の数)ごとの: 出す tier / 答え を 何で わるか / 何回まで まちがえられるか
+## 難しさごとの: 出す tier / 答えを 何で わるか / まちがえられる 回数 /
+## もらえる マスの 下と 上。
+##
+## わり算だけで 決めると、答えが 小さい 問題(角度の 30° など)では
+## むずかしい を 正解しても 3 マスしか もらえない ―― えらぶ 意味が 消える。
+## だから 難しさごとに 下限と 上限を 置く(むずかしい は 必ず 8 マス以上)。
 const LEVELS := [
 	{"name": "やさしい", "star": "★", "tier": 0, "per": 12.0, "miss": 3,
-		"color": Color(0.26, 0.50, 0.36)},
+		"low": 3, "high": 7, "color": Color(0.26, 0.50, 0.36)},
 	{"name": "ふつう", "star": "★★", "tier": 2, "per": 10.0, "miss": 2,
-		"color": Color(0.30, 0.42, 0.62)},
+		"low": 5, "high": 10, "color": Color(0.30, 0.42, 0.62)},
 	{"name": "むずかしい", "star": "★★★", "tier": 4, "per": 7.0, "miss": 1,
-		"color": Color(0.58, 0.30, 0.26)},
+		"low": 8, "high": 14, "color": Color(0.58, 0.30, 0.26)},
 ]
 ## となりの 4 方向(型を付けておかないと Vector2i の足し算が Variant になる)
 const DIRS: Array[Vector2i] = [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]
@@ -877,17 +883,23 @@ func _cells_for(v: float) -> int:
 	var per := float(LEVELS[level]["per"])
 	if unit == "度":
 		per *= 1.5                      # 角度は 数が 大きいので ならす
-	var n := int(round(absf(v) / per))
-	n = int(float(n) / pow(2.0, float(miss)))       # まちがえた ぶん 減る
-	return clampi(n, 3, 10)
+	var lo := int(LEVELS[level]["low"])
+	var hi := int(LEVELS[level]["high"])
+	var n := clampi(int(round(absf(v) / per)), lo, hi)
+	if miss > 0:
+		# まちがえた ぶん 減る。ただし 下限の 半分は のこす
+		n = maxi(int(float(n) / pow(2.0, float(miss))), lo / 2)
+	return n
 
 
+## 何マスもらえるかは 答えの 大きさで 変わるが、難しさごとの 下限と 上限の 中。
+## 「答え ÷ 7 マスぶん」は 7 マスもらえると 読めてしまうので、
+## そう 書かずに もらえる 数の はばで 出す
 func _reward_note() -> String:
-	var unit := String(problem.get("unit", ""))
-	var per := float(LEVELS[level]["per"]) * (1.5 if unit == "度" else 1.0)
+	var lv: Dictionary = LEVELS[level]
 	var lost := "" if miss == 0 else "  ※ まちがえたので もらえる マスは %d 分の 1" % int(pow(2, miss))
-	return "正解すると 答え ÷ %d マスぶん 広げられる(%s)%s" % [
-		int(per), String(LEVELS[level]["name"]), lost]
+	return "正解すると %d〜%d マス(%s。答えが 大きいほど 多い)%s" % [
+		int(lv["low"]), int(lv["high"]), String(lv["name"]), lost]
 
 
 func _on_key(k: String) -> void:
@@ -931,14 +943,16 @@ func _submit() -> void:
 		return
 	GameState.play_sfx("correct")
 	var shrine_bonus := _shrine_count(MINE) * SHRINE_GAIN
-	need = _cells_for(float(problem["answer"])) + bonus + shrine_bonus
+	var got := _cells_for(float(problem["answer"]))
+	need = got + bonus + shrine_bonus
 	bonus = 0
 	quiz.visible = false
 	marked.clear()
 	var note := ""
 	if shrine_bonus > 0:
-		note = "(石碑 %d こで +%d)" % [_shrine_count(MINE), shrine_bonus]
-	msg.text = "正解! %d マスぶん%s ― 自陣の となりから なぞろう" % [need, note]
+		note += " + 石碑 %d" % shrine_bonus
+	msg.text = "正解! 答え %s → %d マス%s = %d マスぶん なぞろう" % [
+		ProblemGen.fmt(float(problem["answer"])), got, note, need]
 	_refresh()
 
 
