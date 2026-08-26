@@ -13,16 +13,11 @@ config_version=5
 config/name="図形ハンター"
 config/description="角度と面積の問題を、中学受験・高校受験・大学受験の3コースで解く図形の学習ゲーム。数字で答えて撃ち落とし、コンボと星を集めよう。"
 run/main_scene="res://scenes/main.tscn"
-; 画面が 120Hz の 端末でも 60 で 止める。倍の 速さで 描くと そのぶん
-; 電池を 使い、端末も 熱くなる(見た目は 変わらない)
-run/max_fps=60
-; 画面が 変わっていないときは 描き直さない(電池・発熱)。
-; 画面の 差しかえの 境目だけ GameState.wake() で ふつうに 描く
-run/low_processor_mode=true
-; 起動の 待ちを 真っ暗に しない。既定は 濃い灰色 + Godot のロゴ
-boot_splash/bg_color=Color(0.10, 0.14, 0.24, 1)
-boot_splash/show_image=false
 config/features=PackedStringArray("4.7", "Mobile")
+run/max_fps=60
+run/low_processor_mode=true
+boot_splash/bg_color=Color(0.1, 0.14, 0.24, 1)
+boot_splash/show_image=false
 config/icon="res://icon.svg"
 
 [autoload]
@@ -56,8 +51,6 @@ pointing/emulate_touch_from_mouse=true
 
 [physics]
 
-; 物理は 使っていない(図形は 自前で 描いている)。既定の 60 回/秒 を
-; 回し続ける 意味が ないので 下げる
 common/physics_ticks_per_second=20
 
 [rendering]
