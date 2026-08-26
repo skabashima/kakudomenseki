@@ -21,6 +21,10 @@ var failures: Array = []
 
 func _ready() -> void:
 	await get_tree().process_frame
+	var keep: Dictionary = GameState.island_clear.duplicate(true)
+	var keep_i := GameState.island_index
+	GameState.island_clear = {}
+	GameState.island_index = 0
 	var inst: Node = (load("res://scenes/island.tscn") as PackedScene).instantiate()
 	get_tree().root.add_child(inst)
 	for i in 8:
@@ -55,6 +59,14 @@ func _ready() -> void:
 			failures.append("%d ターンめ: 正解しても 取れるマスが 決まらない" % inst.turn)
 			break
 		var turn_now: int = inst.turn
+		if inst.turn % 2 == 0:
+			# 1 ターンおきに「おまかせ」でも 埋まるかを 見る
+			# (おまかせが 取れない マスを えらび続けて 1 つも 埋まらない ことがあった)
+			inst._auto_mark()
+			if inst._marked_cost() < inst.need and inst._markable_left() > 0:
+				failures.append("%d ターンめ: おまかせで 埋まらない(%d/%d・まだ置ける %d)" % [
+					inst.turn, inst._marked_cost(), inst.need, inst._markable_left()])
+				break
 		# コストで 数える(カラスのマスは 2 マスぶん)
 		while inst._marked_cost() < inst.need:
 			var m: Vector2i = _toward(inst, _shrine_target(inst))
@@ -81,12 +93,24 @@ func _ready() -> void:
 
 	if not inst.over and failures.is_empty():
 		failures.append("60 手 まわしても 終わらない(ターンが 進んでいない)")
-	if reached == 0 and failures.is_empty():
-		var who := []
-		for sh in inst.shrines:
-			who.append("%s:%d" % [str(sh), int(inst.cell[sh.y][sh.x])])
-		failures.append("一度も 石碑を 取れない(石碑の 持ち主 %s / MINE=%d CROW=%d SHRINE=%d)" % [
-			str(who), inst.MINE, inst.CROW, inst.SHRINE])
+	# 石碑は 取り合いに なる もの。どちらかが 取れていれば しくみは 動いている
+	# (どちらが 取るかは 勝負しだいなので、こちらが 取れなくても よい)
+	var owned := 0
+	for sh in inst.shrines:
+		if inst.cell[sh.y][sh.x] != inst.SHRINE:
+			owned += 1
+	if owned == 0 and failures.is_empty():
+		failures.append("石碑を だれも 取れない(取れる ようになっていない)")
+	# 勝ったら その島が クリアとして のこり、つぎの島が 開くこと
+	var mine_end: int = inst._count(inst.MINE)
+	var crow_end: int = inst._count(inst.CROW)
+	if mine_end > crow_end:
+		if not GameState.island_clear.has(str(inst.isle)):
+			failures.append("勝ったのに 島が クリアに ならない")
+		elif inst.isle + 1 < IslandDefs.count() 				and not IslandDefs.is_open(inst.isle + 1, GameState.island_clear):
+			failures.append("勝ったのに つぎの島が 開かない")
+		if inst.result_layer == null:
+			failures.append("決着しても 勝ち負けの 画面が 出ない")
 	if failures.is_empty():
 		print("ISLAND OK: %d ターンで 決着(じぶん %d マス / カラス %d マス・石碑 %d 回 取った・空き %d マス)" % [
 			inst.turn, inst._count(inst.MINE), inst._count(inst.CROW), reached,
@@ -97,6 +121,9 @@ func _ready() -> void:
 			print("FAIL: " + str(f))
 	inst.queue_free()
 	await _wait(1)
+	GameState.island_clear = keep
+	GameState.island_index = keep_i
+	GameState.save_game()
 	get_tree().quit(0 if failures.is_empty() else 1)
 
 

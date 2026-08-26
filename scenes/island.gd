@@ -10,9 +10,12 @@ extends Control
 ## ためし版なので、泉・遺跡・週替わりの島までは入れて、
 ## 定理カードとの連携と角度編の扇形取りはまだ入れていない。
 
-const W := 10                  # 島の よこマス数
-const H := 14                  # 島の たてマス数
-const MAX_TURN := 12
+## 島の 大きさなどは 島ごとに 変わる(core/island_defs.gd)
+var W := 10                    # 島の よこマス数
+var H := 14                    # 島の たてマス数
+var MAX_TURN := 12
+var isle := 0                  # いま 挑んでいる 島の 番号
+var isle_def: Dictionary = {}
 
 # マスの中身
 enum {SEA, EMPTY, MINE, CROW, ROCK, SPRING, RUIN, SHRINE}
@@ -61,8 +64,10 @@ var bonus := 0                 # 泉で増える ぶん
 var last_take := 4             # 前のターンに じぶんが 取った マス数(カラスの強さの目安)
 var crow_extra := 0            # 立て札を 取り逃した ぶん、カラスが 多く広げる
 var cut_text_override := ""    # 切り取りなど、特別な ひとことが あるとき
-var rng := RandomNumberGenerator.new()
+var rng := RandomNumberGenerator.new()      # 島の かたち(島ごとに 決まっている)
+var prng := RandomNumberGenerator.new()     # 出す問題(毎回 変わる)
 var over := false
+var result_layer: Control
 var auto_fill := false         # 決着が 見えたので 残りを 自動で 塗っている
 var auto_t := 0.0
 var _t := 0.0
@@ -92,8 +97,16 @@ var claim_row: HBoxContainer        # なぞる ときの ボタン
 
 
 func _ready() -> void:
-	# 週替わりの島。同じ週なら誰の端末でも同じ島になる(通信しないで話を合わせる)
-	rng.seed = _week() * 7919
+	isle = clampi(GameState.island_index, 0, IslandDefs.count() - 1)
+	if not IslandDefs.is_open(isle, GameState.island_clear):
+		isle = IslandDefs.current(GameState.island_clear)
+	isle_def = IslandDefs.of(isle)
+	W = int(isle_def["w"])
+	H = int(isle_def["h"])
+	MAX_TURN = int(isle_def["turns"])
+	# 島の かたちは 島ごとに 決まっている(同じ島は 何度でも 同じ かたち)
+	rng.seed = 7919 * (isle + 1) + 104729
+	prng.randomize()
 	var bg := ColorRect.new()
 	bg.color = Color(0.09, 0.13, 0.20)
 	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
@@ -239,7 +252,7 @@ func _make_island() -> void:
 				cell[y][x] = EMPTY
 	_keep_main_island()
 	# 岩・泉・遺跡を まく
-	_sprinkle(ROCK, 7)
+	_sprinkle(ROCK, int(isle_def["rocks"]))
 	_sprinkle(SPRING, 3)
 	_sprinkle(RUIN, 2)
 	# 出発点。じぶんは 下、カラスは 上
@@ -696,7 +709,7 @@ func _lose_turn(why: String) -> void:
 func _crow_turn() -> void:
 	# カラスは じぶんが 取ったのと 同じくらい 広げる(競り合いに なるように)
 	# 石碑を 持っている ぶん、カラスも 毎ターン 多く 広げる
-	var n := clampi(last_take, 3, 7) + crow_extra + _shrine_count(CROW) * SHRINE_GAIN
+	var n := int(round(float(clampi(last_take, 3, 7)) * float(isle_def["crow"]))) 		+ crow_extra + _shrine_count(CROW) * SHRINE_GAIN
 	crow_extra = 0
 	for i in n:
 		var best := Vector2i(-1, -1)
@@ -857,26 +870,19 @@ func _build_quiz() -> void:
 
 
 ## 立て札の 遠さで 難度が 上がる。無料の 範囲は 守る
-## 難しさごとに、ステージの はばと 難度ラダーの 段を **毎回 ふり直す**。
-## 前は「その難しさ = いつも 同じステージ・同じ段」だったので、
-## むずかしい を えらぶたび 同じ問題が 出ていた
-const BANDS := [[0, 3], [2, 8], [5, 14]]
-
+## 出す問題は **その島の 範囲**から。難しさで はばの 中の どこを 使うかが
+## 変わり、難度ラダーの 段(解き方の 種類)も 毎回 ふり直す
 func _open_quiz(_tier: int) -> void:
-	var courses: Array = ProblemGen.COURSES
-	var c: Dictionary = courses[rng.randi_range(0, courses.size() - 1)]
-	var stages: Array = c["stages"]
+	var stages: Array = ProblemGen.stages_of(String(isle_def["course"]))
 	var limit: int = GameState.free_stage_limit()
 	var top := stages.size() if limit <= 0 else mini(limit, stages.size())
-	var band: Array = BANDS[level]
+	var band: Array = IslandDefs.stage_range(isle, level)
 	var lo := clampi(int(band[0]), 0, top - 1)
 	var hi := clampi(int(band[1]), lo, top - 1)
-	var idx := rng.randi_range(lo, hi)
-	# 段(解き方の 種類)も ふる。無料の 範囲では ステージが 少ないぶん、
-	# ここで 変化を つける
+	var idx := prng.randi_range(lo, hi)
 	var base := int(LEVELS[level]["tier"])
-	var tier2 := clampi(base + rng.randi_range(0, 2), 0, 8)
-	problem = ProblemGen.generate(String(stages[idx]["id"]), rng, tier2)
+	var tier2 := clampi(base + prng.randi_range(0, 2), 0, 8)
+	problem = ProblemGen.generate(String(stages[idx]["id"]), prng, tier2)
 	figure.set_spec(problem["fig"])
 	input_text = ""
 	keypad.answer_lbl.text = ""
@@ -977,7 +983,8 @@ func _refresh() -> void:
 	var crow := _count(CROW)
 	var all := maxi(mine + crow + _count(EMPTY) + _count(SPRING) + _count(RUIN) + _count(SHRINE), 1)
 	# 割合は 下の 帯(顔つき)に 出すので、ここは ターン数だけ
-	head_lbl.text = "  %d / %d ターン    石碑 %d - %d" % [mini(turn, MAX_TURN), MAX_TURN,
+	head_lbl.text = "  %d島 %s   %d/%d ターン   石碑 %d-%d" % [isle + 1,
+		String(isle_def["name"]), mini(turn, MAX_TURN), MAX_TURN,
 		_shrine_count(MINE), _shrine_count(CROW)]
 	pick_row.visible = need <= 0 and not over and not auto_fill
 	claim_row.visible = not pick_row.visible
@@ -1002,10 +1009,9 @@ func _finish() -> void:
 	var pct := int(round(100.0 * float(mine) / float(all)))
 	var cpct := int(round(100.0 * float(crow) / float(all)))
 
-	GameState.play_sfx("clear" if pct > cpct else "fail")
-	msg.text = "おわり ― じぶん %d%% / カラス %d%%  %s" % [pct, cpct,
-		"島は こちらのものだ!" if pct > cpct else "カラスに 取られた…"]
+	msg.text = "おわり ― じぶん %d%% / カラス %d%%" % [pct, cpct]
 	_refresh()
+	_show_result(pct, cpct)
 
 
 func _process(delta: float) -> void:
@@ -1058,7 +1064,7 @@ const CROW_LINES := {
 
 func _crow_says(kind: String) -> String:
 	var list: Array = CROW_LINES.get(kind, CROW_LINES["win"])
-	return String(list[rng.randi_range(0, list.size() - 1)])
+	return String(list[prng.randi_range(0, list.size() - 1)])
 
 
 ## カラスの番の カットイン。大きく出して、何をされたのか 分かるようにする
@@ -1240,7 +1246,7 @@ func _auto_mark() -> void:
 				if marked.has(cv):
 					continue
 				var k: int = cell[y][x]
-				if k != EMPTY and k != SPRING and k != RUIN and k != CROW:
+				if k != EMPTY and k != SPRING and k != RUIN and k != SHRINE:
 					continue
 				if _cost_of(cv) > left:
 					continue
@@ -1260,6 +1266,131 @@ func _auto_mark() -> void:
 					best = cv
 		if best.x < 0:
 			break
+		var was := marked.size()
 		_mark(best)
+		if marked.size() == was:
+			break                      # 取れない ものを えらび続けない ための 保険
 	GameState.play_sfx("tap")
 	_refresh()
+
+
+# =========================================================
+# 決着の 画面
+# =========================================================
+
+## 勝ち負けを ちゃんと 見せる。勝ったら つぎの島が 開く
+func _show_result(mine_pct: int, crow_pct: int) -> void:
+	var win := mine_pct > crow_pct
+	if win:
+		GameState.record_island_clear(isle)
+		GameState.bump_stat("island_clear")
+	var layer := Control.new()
+	layer.set_anchors_preset(Control.PRESET_FULL_RECT)
+	add_child(layer)
+	result_layer = layer
+	var dim := ColorRect.new()
+	dim.color = Color(0.05, 0.06, 0.11, 0.88)
+	dim.set_anchors_preset(Control.PRESET_FULL_RECT)
+	layer.add_child(dim)
+
+	# 大きな 絵(勝ったら カラスが くやしがる、負けたら 高笑い)
+	var art := Control.new()
+	art.set_anchors_preset(Control.PRESET_FULL_RECT)
+	art.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	art.draw.connect(func() -> void:
+		var w := art.size.x
+		var h := art.size.y
+		var tall := h * 0.34
+		Chars.crow(art, Vector2(w * 0.74, h * 0.56), tall, "panic" if win else "laugh", _t, -1.0)
+		Chars.hero(art, Vector2(w * 0.26, h * 0.56), tall * 0.92, "guts" if win else "calm", _t))
+	layer.add_child(art)
+
+	var ins := GameState.safe_insets()
+	var v := VBoxContainer.new()
+	v.set_anchors_preset(Control.PRESET_FULL_RECT)
+	v.offset_left = 24
+	v.offset_right = -24
+	v.offset_top = float(ins["top"]) + 20.0
+	v.offset_bottom = -float(ins["bottom"]) - 20.0
+	v.add_theme_constant_override("separation", 10)
+	layer.add_child(v)
+
+	var top_pad := Control.new()
+	top_pad.custom_minimum_size = Vector2(0, 26)
+	v.add_child(top_pad)
+	var big := Label.new()
+	big.text = "島を 取った!" if win else "島を 取られた…"
+	big.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	big.add_theme_font_size_override("font_size", 52)
+	big.add_theme_color_override("font_color", GOLD if win else Color(0.85, 0.6, 0.55))
+	v.add_child(big)
+
+	var sub := Label.new()
+	sub.text = "%d島 %s   じぶん %d%%  ―  カラス %d%%" % [isle + 1, String(isle_def["name"]),
+		mine_pct, crow_pct]
+	sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	sub.add_theme_font_size_override("font_size", 26)
+	sub.add_theme_color_override("font_color", Color(0.88, 0.92, 1.0))
+	v.add_child(sub)
+
+	var say := Label.new()
+	say.text = "「%s」" % (_crow_says("lose") if win else _crow_says("win"))
+	say.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	say.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	say.add_theme_font_size_override("font_size", 24)
+	say.add_theme_color_override("font_color", Color(0.80, 0.84, 0.96))
+	v.add_child(say)
+
+	var spacer := Control.new()
+	spacer.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	v.add_child(spacer)
+
+	if win and isle + 1 < IslandDefs.count():
+		var nxt: Dictionary = IslandDefs.of(isle + 1)
+		var open := Label.new()
+		open.text = "つぎの島が 開いた ― %d島 %s(%s)" % [isle + 2, String(nxt["name"]),
+			String(nxt["level"])]
+		open.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		open.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		open.add_theme_font_size_override("font_size", 25)
+		open.add_theme_color_override("font_color", Color(0.65, 1.0, 0.75))
+		v.add_child(open)
+		var go := Button.new()
+		go.text = "つぎの島へ ▶"
+		go.custom_minimum_size = Vector2(0, 96)
+		go.add_theme_font_size_override("font_size", 30)
+		GameState.style_button(go, Color(0.22, 0.55, 0.35))
+		go.pressed.connect(func() -> void:
+			GameState.play_sfx("tap")
+			GameState.island_index = isle + 1
+			GameState.change_scene("res://scenes/island.tscn"))
+		v.add_child(go)
+	elif win:
+		var all_done := Label.new()
+		all_done.text = "12 の島を すべて 取った! 群島は こちらのものだ"
+		all_done.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		all_done.add_theme_font_size_override("font_size", 27)
+		all_done.add_theme_color_override("font_color", GOLD)
+		v.add_child(all_done)
+
+	var again := Button.new()
+	again.text = "もう一度 この島" if not win else "この島を もう一度"
+	again.custom_minimum_size = Vector2(0, 88)
+	again.add_theme_font_size_override("font_size", 27)
+	GameState.style_button(again, Color(0.30, 0.40, 0.56))
+	again.pressed.connect(func() -> void:
+		GameState.play_sfx("tap")
+		GameState.island_index = isle
+		GameState.change_scene("res://scenes/island.tscn"))
+	v.add_child(again)
+
+	var back := Button.new()
+	back.text = "もどる"
+	back.custom_minimum_size = Vector2(0, 80)
+	back.add_theme_font_size_override("font_size", 26)
+	GameState.style_button(back, Color(0.28, 0.32, 0.44))
+	back.pressed.connect(func() -> void:
+		GameState.play_sfx("tap")
+		GameState.change_scene("res://scenes/main.tscn"))
+	v.add_child(back)
+	GameState.play_sfx("clear" if win else "fail")

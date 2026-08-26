@@ -57,13 +57,15 @@ static func crow(c: CanvasItem, at: Vector2, tall: float, mood := "calm", t := 0
 	c.draw_circle(head, 16.0 * u, BLACK)
 	c.draw_arc(head, 16.0 * u, 0.0, TAU, 26, RIM, maxf(2.0 * u, 2.0))
 	# くちばし
-	var beak_dir := 1.0
 	var beak_len := 26.0 * u
 	if mood == "panic":
 		beak_len = 20.0 * u
+	# 根もとも 先も 同じ 向きに する(片方だけ 反転すると 顔を つらぬく)
+	var beak_root := 10.0 * u * fx
 	c.draw_colored_polygon(PackedVector2Array([
-		head + Vector2(10.0 * u * fx, -3.0 * u), head + Vector2(10.0 * u + beak_dir * beak_len * fx, 3.0 * u),
-		head + Vector2(10.0 * u * fx, 8.0 * u)]), BEAK)
+		head + Vector2(beak_root, -3.0 * u),
+		head + Vector2(beak_root + beak_len * fx, 3.0 * u),
+		head + Vector2(beak_root, 8.0 * u)]), BEAK)
 	# 目(気分で かたちが 変わる)
 	var eye_at := head + Vector2(4.0 * u * fx, -4.0 * u)
 	match mood:
