@@ -70,6 +70,9 @@ var over := false
 var result_layer: Control
 var auto_fill := false         # 決着が 見えたので 残りを 自動で 塗っている
 var auto_t := 0.0
+var draw_t := 0.0              # 描き直しの 間引き(電池と 発熱を おさえる)
+var pot_mine := 0              # 伸ばせる 先(盤面が 変わったときだけ 数える)
+var pot_crow := 0
 var _t := 0.0
 
 var bar: Control                    # 上の 帯(顔と 占有率)
@@ -711,6 +714,7 @@ func _crow_turn() -> void:
 	# 石碑を 持っている ぶん、カラスも 毎ターン 多く 広げる
 	var n := int(round(float(clampi(last_take, 3, 7)) * float(isle_def["crow"]))) 		+ crow_extra + _shrine_count(CROW) * SHRINE_GAIN
 	crow_extra = 0
+	var dmap := _dist_map(MINE)
 	for i in n:
 		var best := Vector2i(-1, -1)
 		var best_score := -999
@@ -723,7 +727,7 @@ func _crow_turn() -> void:
 				if not _touches(cv, CROW):
 					continue
 				# じぶんの陣地に 近いマスほど 高い点(にらみ合いに なる)
-				var score := 40 - _dist_to_mine(x, y) * 3
+				var score := 40 - mini(int(dmap[y][x]), 30) * 3
 				if cell[y][x] == SPRING:
 					score += 12
 				if cell[y][x] == SHRINE:
@@ -979,6 +983,8 @@ func _submit() -> void:
 # =========================================================
 
 func _refresh() -> void:
+	pot_mine = _potential(MINE)
+	pot_crow = _potential(CROW)
 	var mine := _count(MINE)
 	var crow := _count(CROW)
 	var all := maxi(mine + crow + _count(EMPTY) + _count(SPRING) + _count(RUIN) + _count(SHRINE), 1)
@@ -1030,9 +1036,20 @@ func _process(delta: float) -> void:
 		while auto_t > 0.045:
 			auto_t -= 0.045
 			_auto_fill_step()
-	if not over and not quiz.visible:
-		board.queue_redraw()
-		bar.queue_redraw()
+	# 光り方の 点滅・カットイン・自動ぬり ― 動いている ときだけ、
+	# それも 20 回/秒 で 足りる。ずっと 60 回/秒 で 描き直すと
+	# 電池が 減り、端末も 熱くなる
+	if over or quiz.visible:
+		return
+	var moving := need > 0 or cut_t > 0.0 or auto_fill
+	if not moving:
+		return
+	draw_t += delta
+	if draw_t < 0.05:
+		return
+	draw_t = 0.0
+	board.queue_redraw()
+	bar.queue_redraw()
 
 
 # =========================================================
@@ -1122,9 +1139,11 @@ func _draw_bar() -> void:
 	var bw := x1 - x0
 	var y := h * 0.52
 	c.draw_rect(Rect2(x0, y - 13.0, bw, 26.0), Color(0.80, 0.73, 0.56))
-	# うすい ところ = このまま 伸ばせば 届く ところ(行ける 空きマス)
-	var mpp := float(_potential(MINE)) / float(all)
-	var cpp := float(_potential(CROW)) / float(all)
+	# うすい ところ = このまま 伸ばせば 届く ところ(行ける 空きマス)。
+	# 盤面ぜんぶを たどる 数え方なので、毎フレームでは なく
+	# 盤面が 変わったときだけ 数え直す(_refresh)
+	var mpp := float(pot_mine) / float(all)
+	var cpp := float(pot_crow) / float(all)
 	c.draw_rect(Rect2(x0, y - 13.0, bw * mpp, 26.0), Color(COL[MINE].r, COL[MINE].g,
 		COL[MINE].b, 0.35))
 	c.draw_rect(Rect2(x1 - bw * cpp, y - 13.0, bw * cpp, 26.0),
@@ -1197,16 +1216,20 @@ func _decided() -> bool:
 ## 残りのマスを、近いほうの 陣地に 順ぐりに 塗って 終わらせる。
 ## 決まった 勝負を なぞり続けるのは ただの 作業なので、そこは 見せるだけにする
 func _auto_fill_step() -> void:
+	# 距離は 1 マス塗るたびに 全マスを 数え直すと 重い。
+	# 幅優先で 一度に 全部の 距離を 作って 使いまわす
+	var dmap_mine := _dist_map(MINE)
+	var dmap_crow := _dist_map(CROW)
 	var best := Vector2i(-1, -1)
 	var best_kind := EMPTY
-	var best_d := 999
+	var best_d := 9999
 	for y in H:
 		for x in W:
 			var k: int = cell[y][x]
 			if k != EMPTY and k != SPRING and k != RUIN and k != SHRINE:
 				continue
-			var dm := _dist_to(Vector2i(x, y), MINE)
-			var dc := _dist_to(Vector2i(x, y), CROW)
+			var dm: int = dmap_mine[y][x]
+			var dc: int = dmap_crow[y][x]
 			var d := mini(dm, dc)
 			if d < best_d:
 				best_d = d
@@ -1220,6 +1243,37 @@ func _auto_fill_step() -> void:
 	GameState.play_sfx("type")
 	board.queue_redraw()
 	bar.queue_redraw()
+
+
+## その持ち主の 陣地からの 距離を、盤面ぜんぶぶん 一度に 作る(幅優先)。
+## 1 マスごとに 全マスを 数え直すと、マスの 数の 2 乗ぶん かかる
+func _dist_map(kind: int) -> Array:
+	var d: Array = []
+	var q: Array[Vector2i] = []
+	for y in H:
+		var row: Array = []
+		for x in W:
+			if cell[y][x] == kind:
+				row.append(0)
+				q.append(Vector2i(x, y))
+			else:
+				row.append(9999)
+		d.append(row)
+	var head := 0
+	while head < q.size():
+		var cur: Vector2i = q[head]
+		head += 1
+		for dir in DIRS:
+			var n := cur + dir
+			if n.x < 0 or n.x >= W or n.y < 0 or n.y >= H:
+				continue
+			if cell[n.y][n.x] == SEA or cell[n.y][n.x] == ROCK:
+				continue
+			if int(d[n.y][n.x]) <= int(d[cur.y][cur.x]) + 1:
+				continue
+			d[n.y][n.x] = int(d[cur.y][cur.x]) + 1
+			q.append(n)
+	return d
 
 
 func _dist_to(cv: Vector2i, kind: int) -> int:

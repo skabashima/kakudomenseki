@@ -383,6 +383,8 @@ tests/
   ruby_check.gd          小学生むけの文が「小 1 の漢字 + ふりがな」だけかを検証 (--headless 可)
   story_play.tscn        ストーリーを両モードとも最後まで通す (--headless 可)
   font_check.gd          画面に出る文字が同梱フォントにあるか検証 (--headless 可)
+  power_check.tscn       電池・発熱の出荷設定(低消費モード・fps 上限・物理の回数・
+                         起動画面の色)と、画面差しかえで目が覚めるか (--headless 可)
   variation_report.tscn  ステージごとの問題バリエーション数を実測 (--headless 可)
   shots.tscn             全画面のスクリーンショット撮影(要描画環境)
   shot_one.tscn          1 ステージ・1 tier の図形だけ撮影するデバッグ用

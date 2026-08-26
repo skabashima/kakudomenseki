@@ -263,6 +263,40 @@ func _ready() -> void:
 	get_window().size_changed.connect(_update_ui_scale)
 	_init_sfx()
 	load_game()
+	_low_wanted = bool(ProjectSettings.get_setting("application/run/low_processor_mode", false))
+	# 起動直後の 画面の 切りかわりが いちばん あぶない。長めに 起こしておく
+	wake(90)
+
+
+# ---------------------------------------------------------
+# 低消費モード(電池と 発熱)
+#
+# 画面が 変わっていないときは 描き直さない ―― これが 効くのは
+# 問題を 読んでいる あいだ など、いちばん 長い 時間。
+# ただし この状態の Godot は「変わった」印が 立った 回しか 描かないので、
+# 画面を 差しかえる 境目で 印が 立ち損ねると **真っ暗のまま 止まって 見える**。
+# そこで 画面が 変わる ときだけ、しばらく 印なしでも 描かせる。
+# ---------------------------------------------------------
+
+const WAKE_FRAMES := 12
+var _wake_left := 0
+var _low_wanted := true
+
+
+## しばらく ふつうに 描く(画面の 差しかえ どき)
+func wake(frames: int = WAKE_FRAMES) -> void:
+	_wake_left = maxi(_wake_left, frames)
+	OS.low_processor_usage_mode = false
+	set_process(true)
+
+
+func _process(_delta: float) -> void:
+	if _wake_left <= 0:
+		return
+	_wake_left -= 1
+	if _wake_left <= 0:
+		OS.low_processor_usage_mode = _low_wanted
+		set_process(false)
 
 
 func _input(event: InputEvent) -> void:
@@ -329,6 +363,7 @@ func change_scene(path: String) -> void:
 	if _transitioning:
 		return
 	_transitioning = true
+	wake()                          # 差しかえの 境目は 印なしでも 描く
 	var layer := CanvasLayer.new()
 	layer.layer = 100
 	var overlay := ColorRect.new()

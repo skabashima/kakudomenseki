@@ -40,6 +40,7 @@ var scroll: ScrollContainer
 var done_lbl: Label
 var nodes: Array = []          # {"pos": Vector2, "unit": Dictionary, "index": int}
 var _t := 0.0
+var _draw_t := 0.0
 var walk_from := -1            # 歩いている とちゅうなら 出発の 歩数
 var walk_t := -1.0             # 0.0 → 1.0。-1 は 歩いていない
 
@@ -96,7 +97,12 @@ func _process(delta: float) -> void:
 			walk_from = -1
 			GameState.play_sfx("tap")
 		_scroll_to(_hero_pos(), false)
-	canvas.queue_redraw()
+	# 光っている ところの 点滅は 20 回/秒 で 足りる。
+	# 地図ぜんぶを 毎フレーム 描き直すと 電池を 食う
+	_draw_t += delta
+	if _draw_t >= 0.05:
+		_draw_t = 0.0
+		canvas.queue_redraw()
 
 
 func _header() -> Control:

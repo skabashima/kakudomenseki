@@ -6,11 +6,18 @@ const SECONDARY := Color(0.28, 0.32, 0.44)
 var debug_btn: Button
 var _deco: Array = []   # [poly, base_pos, phase]
 var _t := 0.0
+var _deco_t := 0.0
 
 
 func _process(delta: float) -> void:
-	# 背景の図形をゆっくり漂わせる
+	# 背景の図形をゆっくり漂わせる。
+	# ゆっくりした 動きなので 毎フレーム 動かす 必要は ない。
+	# 20 回/秒 に 落として、電池と 発熱を おさえる
 	_t += delta
+	_deco_t += delta
+	if _deco_t < 0.05:
+		return
+	_deco_t = 0.0
 	for d in _deco:
 		d[0].position = d[1] + Vector2(
 			sin(_t * 0.45 + d[2]) * 14.0, cos(_t * 0.35 + d[2] * 1.7) * 10.0)
