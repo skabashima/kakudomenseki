@@ -32,25 +32,27 @@ static func crow(c: CanvasItem, at: Vector2, tall: float, mood := "calm", t := 0
 	# 外套(下ほど 広がる)。暗い ところに 出しても 形が 見えるよう、
 	# 明るい 縁取りを つける(黒地に 黒で 見えない ことが あった)
 	var cloak := PackedVector2Array([
-		at + Vector2(-30.0 * u * fx, 0), at + Vector2(-16.0 * u * fx, -62.0 * u),
-		at + Vector2(16.0 * u * fx, -62.0 * u), at + Vector2(30.0 * u * fx, 0)])
+		at + Vector2(-30.0 * u, 0), at + Vector2(-16.0 * u, -62.0 * u),
+		at + Vector2(16.0 * u, -62.0 * u), at + Vector2(30.0 * u, 0)])
 	c.draw_colored_polygon(cloak, CLOAK)
 	var edge := PackedVector2Array(cloak)
 	edge.append(cloak[0])
 	c.draw_polyline(edge, RIM, maxf(2.0 * u, 2.0))
 	# 羽(両肩から 垂れる)
 	for sgn in [-1.0, 1.0]:
-		var w0 := at + Vector2(sgn * 15.0 * u * fx, -60.0 * u)
+		# 左右に かけるのは sgn だけ。ここに fx を まぜると 形が ねじれて
+		# 三角形分割に 失敗する(Invalid polygon data)
+		var w0 := at + Vector2(sgn * 15.0 * u, -60.0 * u)
 		var flap := (sin(t * 3.0) * 0.25 if mood == "angry" or mood == "panic" else 0.0)
 		c.draw_colored_polygon(PackedVector2Array([
 			w0,
 			w0 + Vector2(sgn * (26.0 + flap * 20.0) * u, 16.0 * u),
 			w0 + Vector2(sgn * (20.0 + flap * 16.0) * u, 34.0 * u),
-			w0 + Vector2(sgn * 6.0 * u * fx, 26.0 * u)]), BLACK)
+			w0 + Vector2(sgn * 6.0 * u, 26.0 * u)]), BLACK)
 	# 首もと
 	c.draw_colored_polygon(PackedVector2Array([
-		at + Vector2(-10.0 * u * fx, -58.0 * u), at + Vector2(-8.0 * u + sway * fx, -70.0 * u),
-		at + Vector2(8.0 * u + sway * fx, -70.0 * u), at + Vector2(10.0 * u * fx, -58.0 * u)]), CLOAK)
+		at + Vector2(-10.0 * u, -58.0 * u), at + Vector2(-8.0 * u + sway, -70.0 * u),
+		at + Vector2(8.0 * u + sway, -70.0 * u), at + Vector2(10.0 * u, -58.0 * u)]), CLOAK)
 	# 頭(鳥のかたち)
 	c.draw_circle(head, 16.0 * u, BLACK)
 	c.draw_arc(head, 16.0 * u, 0.0, TAU, 26, RIM, maxf(2.0 * u, 2.0))
@@ -80,18 +82,18 @@ static func crow(c: CanvasItem, at: Vector2, tall: float, mood := "calm", t := 0
 				BLACK, 2.5 * u)
 	# つばの広い 帽子
 	c.draw_colored_polygon(PackedVector2Array([
-		head + Vector2(-30.0 * u * fx, -10.0 * u), head + Vector2(30.0 * u * fx, -10.0 * u),
-		head + Vector2(22.0 * u * fx, -16.0 * u), head + Vector2(-22.0 * u * fx, -16.0 * u)]), BLACK)
+		head + Vector2(-30.0 * u, -10.0 * u), head + Vector2(30.0 * u, -10.0 * u),
+		head + Vector2(22.0 * u, -16.0 * u), head + Vector2(-22.0 * u, -16.0 * u)]), BLACK)
 	c.draw_colored_polygon(PackedVector2Array([
-		head + Vector2(-15.0 * u * fx, -16.0 * u), head + Vector2(15.0 * u * fx, -16.0 * u),
-		head + Vector2(11.0 * u * fx, -40.0 * u), head + Vector2(-11.0 * u * fx, -40.0 * u)]), BLACK)
-	c.draw_line(head + Vector2(-15.0 * u * fx, -20.0 * u), head + Vector2(15.0 * u * fx, -20.0 * u),
+		head + Vector2(-15.0 * u, -16.0 * u), head + Vector2(15.0 * u, -16.0 * u),
+		head + Vector2(11.0 * u, -40.0 * u), head + Vector2(-11.0 * u, -40.0 * u)]), BLACK)
+	c.draw_line(head + Vector2(-15.0 * u, -20.0 * u), head + Vector2(15.0 * u, -20.0 * u),
 		Color(0.72, 0.58, 0.28), 4.0 * u)
 	# 帽子の 輪郭
 	c.draw_polyline(PackedVector2Array([
-		head + Vector2(-30.0 * u * fx, -10.0 * u), head + Vector2(-22.0 * u * fx, -16.0 * u),
-		head + Vector2(-11.0 * u * fx, -40.0 * u), head + Vector2(11.0 * u * fx, -40.0 * u),
-		head + Vector2(22.0 * u * fx, -16.0 * u), head + Vector2(30.0 * u * fx, -10.0 * u)]),
+		head + Vector2(-30.0 * u, -10.0 * u), head + Vector2(-22.0 * u, -16.0 * u),
+		head + Vector2(-11.0 * u, -40.0 * u), head + Vector2(11.0 * u, -40.0 * u),
+		head + Vector2(22.0 * u, -16.0 * u), head + Vector2(30.0 * u, -10.0 * u)]),
 		RIM, maxf(2.0 * u, 2.0))
 	# 手の 金貨(公式を 売りつける 学者)
 	var coin := at + Vector2(30.0 * u, -44.0 * u + sin(t * 3.2) * 2.0 * u)

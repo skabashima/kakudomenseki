@@ -207,7 +207,7 @@ func _ready() -> void:
 	cut_band.draw.connect(_draw_cut_band)
 	cutin.add_child(cut_band)
 	_make_island()
-	msg.text = "難しさをえらんで 問題を解くと、答えの数だけ 陣地を 広げられる。石碑は 毎ターン +2 マス"
+	msg.text = "難しさをえらんで 問題を解くと、答えの数だけ 陣地を 広げられる。石碑は 毎ターン +2 マス(取られたら 戻らない)"
 	_refresh()
 
 
@@ -448,16 +448,14 @@ func _draw_board() -> void:
 				if marked.has(cv):
 					continue
 				var k: int = cell[y][x]
-				if k != EMPTY and k != SPRING and k != RUIN and k != SHRINE and k != CROW:
+				if k != EMPTY and k != SPRING and k != RUIN and k != SHRINE:
 					continue
 				if _cost_of(cv) > need - _marked_cost():
 					continue
 				if not _touches_claim(cv):
 					continue
 				var gr := Rect2(o + Vector2(float(x), float(y)) * s, Vector2(s, s))
-				# カラスのマスは 赤っぽく(2 マスぶん つかう)
-				var gc := Color(1.0, 0.45, 0.35, puls) if k == CROW else Color(GOLD.r, GOLD.g, GOLD.b, puls)
-				c.draw_rect(gr.grow(-3.0), gc, false, 3.0)
+				c.draw_rect(gr.grow(-3.0), Color(GOLD.r, GOLD.g, GOLD.b, puls), false, 3.0)
 	# 陣地の ふちを 太く(かたちが 読めるように)
 	_draw_outline(c, MINE, COL[MINE].lightened(0.45), o, s)
 	_draw_outline(c, CROW, Color(0.72, 0.68, 0.80), o, s)
@@ -545,8 +543,10 @@ func _pick_level(i: int) -> void:
 
 
 ## そのマスを 取るのに いくつ つかうか。カラスの陣地は 押し返すので 2 つぶん
-func _cost_of(cv: Vector2i) -> int:
-	return 2 if cell[cv.y][cv.x] == CROW else 1
+## 取れるのは 空きマスだけ。取られた ところは もう 戻らない ―
+## 押し返せると、どこを どう 取るかの 読み合いが うすくなるため
+func _cost_of(_cv: Vector2i) -> int:
+	return 1
 
 
 ## いま 何マスぶん つかっているか
@@ -563,7 +563,7 @@ func _mark(cv: Vector2i) -> void:
 	if marked.has(cv):
 		return
 	var k: int = cell[cv.y][cv.x]
-	if k != EMPTY and k != SPRING and k != RUIN and k != SHRINE and k != CROW:
+	if k != EMPTY and k != SPRING and k != RUIN and k != SHRINE:
 		return
 	if _marked_cost() + _cost_of(cv) > need:
 		return
@@ -584,7 +584,7 @@ func _markable_left() -> int:
 			if marked.has(cv):
 				continue
 			var k: int = cell[y][x]
-			if k != EMPTY and k != SPRING and k != RUIN and k != SHRINE and k != CROW:
+			if k != EMPTY and k != SPRING and k != RUIN and k != SHRINE:
 				continue
 			if _cost_of(cv) > left:
 				continue
@@ -857,14 +857,26 @@ func _build_quiz() -> void:
 
 
 ## 立て札の 遠さで 難度が 上がる。無料の 範囲は 守る
-func _open_quiz(tier: int) -> void:
+## 難しさごとに、ステージの はばと 難度ラダーの 段を **毎回 ふり直す**。
+## 前は「その難しさ = いつも 同じステージ・同じ段」だったので、
+## むずかしい を えらぶたび 同じ問題が 出ていた
+const BANDS := [[0, 3], [2, 8], [5, 14]]
+
+func _open_quiz(_tier: int) -> void:
 	var courses: Array = ProblemGen.COURSES
 	var c: Dictionary = courses[rng.randi_range(0, courses.size() - 1)]
 	var stages: Array = c["stages"]
 	var limit: int = GameState.free_stage_limit()
 	var top := stages.size() if limit <= 0 else mini(limit, stages.size())
-	var idx := clampi(tier, 0, top - 1)
-	problem = ProblemGen.generate(String(stages[idx]["id"]), rng, clampi(tier, 0, 4))
+	var band: Array = BANDS[level]
+	var lo := clampi(int(band[0]), 0, top - 1)
+	var hi := clampi(int(band[1]), lo, top - 1)
+	var idx := rng.randi_range(lo, hi)
+	# 段(解き方の 種類)も ふる。無料の 範囲では ステージが 少ないぶん、
+	# ここで 変化を つける
+	var base := int(LEVELS[level]["tier"])
+	var tier2 := clampi(base + rng.randi_range(0, 2), 0, 8)
+	problem = ProblemGen.generate(String(stages[idx]["id"]), rng, tier2)
 	figure.set_spec(problem["fig"])
 	input_text = ""
 	keypad.answer_lbl.text = ""
@@ -1167,10 +1179,8 @@ func _decided() -> bool:
 	var rest := _count(EMPTY) + _count(SPRING) + _count(RUIN) + _count(SHRINE)
 	if absi(mine - crow) > rest:
 		return true
-	# 囲まれていても、相手の陣地は 2 マスぶんで 押し返せる。
-	# 残りターンで 押し返せる 見込みぶんは 大目に 見ておく
-	# (見込みを 少なく すると、まだ 決まっていない 勝負を 打ち切って しまう)
-	var slack := maxi(MAX_TURN - turn, 0) * 3 + 2
+	# 取り返しは できないので、伸ばせる 先が すべて。少しだけ 余裕を みる
+	var slack := 2
 	if _potential(CROW) + slack < mine:
 		return true
 	if _potential(MINE) + slack < crow:
@@ -1243,8 +1253,6 @@ func _auto_mark() -> void:
 					score += 60
 				elif k == RUIN:
 					score += 40
-				elif k == CROW:
-					score += 10           # 押し返しは 2 マスぶん つかうので ほどほどに
 				if _touches(cv, CROW):
 					score += 12           # 前線を 広げると 切られにくい
 				if score > best_score:

@@ -8,6 +8,8 @@ extends Node
 ##   ・えらんだ 難しさの 回数だけ まちがえたら ターンが 進むか
 ##     (何度でも 答えられない)
 ##   ・石碑を 取ると その ぶん 多く もらえるか
+##   ・同じ 難しさでも 毎回 ちがう 問題が 出るか
+##     (前は「むずかしい = いつも 同じステージ」だった)
 ##   ・むずかしい を 正解したら、その 難しさの 下限より 多く もらえるか
 ##     (わり算だけで 決めていた ころ、角度の 小さい 答えだと
 ##      むずかしい でも 3 マスしか もらえなかった)
@@ -24,6 +26,7 @@ func _ready() -> void:
 	for i in 8:
 		await get_tree().process_frame
 
+	await _check_variety(inst)
 	await _check_reward(inst)
 	await _check_drag(inst)
 	await _check_miss(inst)
@@ -142,7 +145,7 @@ func _toward(inst: Node, target: Vector2i) -> Vector2i:
 			if inst.marked.has(cv):
 				continue
 			var k: int = inst.cell[y][x]
-			if k != inst.EMPTY and k != inst.SPRING and k != inst.RUIN and k != inst.SHRINE 					and k != inst.CROW:
+			if k != inst.EMPTY and k != inst.SPRING and k != inst.RUIN and k != inst.SHRINE:
 				continue
 			if not inst._touches_claim(cv):
 				continue
@@ -180,6 +183,24 @@ func _wait(n: int) -> void:
 ## という 指でしか 起きない 不具合を 見つけられない(実際に 両方 起きた)。
 ## 難しさごとの もらえる マス数を 見る。
 ## えらんだ 難しさより 少ない ときは、えらぶ 意味が なくなっている
+## 同じ 難しさを えらび直すと ちがう 問題が 出るか
+func _check_variety(inst: Node) -> void:
+	var seen := {}
+	for i in 6:
+		inst._pick_level(2)
+		await _wait(2)
+		if not inst.quiz.visible:
+			failures.append("むずかしい で 問題が 出ない")
+			return
+		seen[String(inst.problem["q"])] = true
+		inst.quiz.visible = false
+		inst.need = 0
+		inst.marked.clear()
+		await _wait(1)
+	if seen.size() < 3:
+		failures.append("むずかしい を 6 回 えらんでも %d 種類しか 出ない(毎回 同じ)" % seen.size())
+
+
 func _check_reward(inst: Node) -> void:
 	for lv in [2, 1, 0]:
 		inst._pick_level(lv)
