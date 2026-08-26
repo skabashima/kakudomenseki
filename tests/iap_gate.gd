@@ -7,6 +7,8 @@ extends Node
 ##   ・有料ステージ数が「全ステージ - 無料ステージ」に一致する
 ##   ・未購入のチャレンジは タイムアタック(角度編)だけ遊べる
 ##   ・未購入のチャレンジ出題が無料ステージからしか出ない
+##   ・ストーリー 3 つと 島取りも「入口だけ無料、続きは買い切り」に なっているか
+##     (ここが 抜けていて、ストーリーが 3 つとも 完全無料に なっていた)
 ##   ・Iap(オートロード)がスタブとして安全に動く(PC では購入不可)
 
 var failures: Array = []
@@ -22,6 +24,8 @@ func _ready() -> void:
 	_check_free_range()
 	_check_paid_count()
 	_check_challenge_gate()
+	_check_story_gate()
+	_check_island_gate()
 	_check_challenge_pool()
 	_check_premium_opens_all()
 	_check_iap_stub()
@@ -101,6 +105,11 @@ func _check_challenge_pool() -> void:
 ## 購入 / デバッグ解放で全ステージが開く
 func _check_premium_opens_all() -> void:
 	GameState.premium = true
+	if GameState.kid_unit_needs_purchase(String(KidDefs.UNITS[KidDefs.UNITS.size() - 1]["id"])) 			or GameState.island_needs_purchase(IslandDefs.count() - 1) 			or GameState.story_chapter_needs_purchase("hs",
+				String(StoryDefs.chapters_of("hs")[0]["id"])):
+		failures.append("購入しても ストーリー / 島取りが 開かない")
+	GameState.premium = false
+	GameState.premium = true
 	_ok(GameState.free_stage_limit() == 0, "購入後は出題の制限が外れるはず")
 	for c in ProblemGen.COURSES:
 		for i in (c["stages"] as Array).size():
@@ -126,3 +135,38 @@ func _check_iap_stub() -> void:
 	iap.purchase()
 	iap.restore()
 	iap.query_price()
+
+
+## ストーリー 3 つ: 入口だけ 無料で、その先は 買い切り
+## (ここが 抜けていて、ストーリーが 3 つとも 完全無料に なっていた)
+func _check_story_gate() -> void:
+	var n_free: int = GameState.FREE_KID_UNITS
+	if GameState.kid_unit_needs_purchase(String(KidDefs.UNITS[0]["id"])):
+		failures.append("たからのちず: 1 歩めが 無料で ない")
+	if GameState.kid_unit_needs_purchase(String(KidDefs.UNITS[n_free - 1]["id"])):
+		failures.append("たからのちず: %d 歩めまでは 無料の はず" % n_free)
+	if not GameState.kid_unit_needs_purchase(String(KidDefs.UNITS[n_free]["id"])):
+		failures.append("たからのちず: %d 歩め以降が 無料に なっている" % (n_free + 1))
+	for mode in ["jhs", "hs"]:
+		var list: Array = StoryDefs.chapters_of(mode)
+		var free_n := int(GameState.FREE_STORY_CHAPTERS[mode])
+		if GameState.story_chapter_needs_purchase(mode, String(list[0]["id"])):
+			failures.append("ストーリー(%s): 1 章めが 無料で ない" % mode)
+		if not GameState.story_chapter_needs_purchase(mode, String(list[free_n]["id"])):
+			failures.append("ストーリー(%s): %d 章め以降が 無料に なっている" % [mode, free_n + 1])
+
+
+## 島取り: はんいごとに 先頭 2 島だけ 無料
+func _check_island_gate() -> void:
+	for r in IslandDefs.RANGES:
+		var id := String(r["id"])
+		if id == "all":
+			continue
+		var list: Array = IslandDefs.islands_in(id)
+		var free_n: int = GameState.FREE_ISLANDS_PER_RANGE
+		for k in list.size():
+			var need: bool = GameState.island_needs_purchase(int(list[k]))
+			if k < free_n and need:
+				failures.append("島取り(%s): %d 島めが 無料で ない" % [id, k + 1])
+			if k >= free_n and not need:
+				failures.append("島取り(%s): %d 島めが 無料に なっている" % [id, k + 1])

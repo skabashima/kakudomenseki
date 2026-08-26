@@ -54,7 +54,11 @@ func _run() -> void:
 	await _kid_unit("k1", "08_kid_tear.png")
 	# 9) ストーリー(高校生)の 測る場面(惑星の基地。表に数が並ぶ)
 	await _story_scene("hs", "ch17", 1, "09_story_hs.png")
-	# 10) ストーリー(中学生)の図 ― 測量野帳の街道図
+	# 10) 島取り(戦略ゲーム)― 石碑の 取り合い
+	GameState.island_range = "elem"
+	GameState.island_index = 0
+	await _scene("res://scenes/island.tscn", "15_island.png")
+	# 11) ストーリー(中学生)の図 ― 測量野帳の街道図
 	GameState.story_mode = "jhs"
 	await _scene("res://scenes/story_map.tscn", "13_story_map_jhs.png")
 	# 11) ストーリー(高校生)の図 ― 星図

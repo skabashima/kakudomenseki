@@ -214,6 +214,62 @@ func is_stage_free(index: int) -> bool:
 	return index < FREE_STAGES_PER_COURSE
 
 
+# ---------------------------------------------------------
+# ストーリーと島取りの 無料範囲
+#
+# 「入口だけ 無料、続きは 買い切り」に そろえる。どの 学年の 人でも
+# 自分の ところを 試してから 決められるように、島取りは **はんいごとに**
+# 先頭 2 島を 無料に する
+# ---------------------------------------------------------
+
+const FREE_KID_UNITS := 5              # たからのちず(小学生)の 無料の 歩
+const FREE_STORY_CHAPTERS := {"jhs": 3, "hs": 2}   # ストーリー(中学生/高校生)の 無料の 章
+const FREE_ISLANDS_PER_RANGE := 2      # 島取り: はんいごとに 無料の 島
+
+
+## たからのちず(小学生)の その歩に 購入が 必要か
+func kid_unit_needs_purchase(unit_id: String) -> bool:
+	if premium or debug_unlock_all:
+		return false
+	return KidDefs.index_of(unit_id) >= FREE_KID_UNITS
+
+
+## ストーリー(中学生/高校生)の その章に 購入が 必要か
+func story_chapter_needs_purchase(mode: String, chapter_id: String) -> bool:
+	if premium or debug_unlock_all:
+		return false
+	var free_n := int(FREE_STORY_CHAPTERS.get(mode, 3))
+	return StoryDefs.chapter_index_in(StoryDefs.chapters_of(mode), chapter_id) >= free_n
+
+
+## 島取りの その島に 購入が 必要か(はんいの 中で 何番めか で 見る)
+func island_needs_purchase(i: int) -> bool:
+	if premium or debug_unlock_all:
+		return false
+	var lv := String(IslandDefs.of(i)["level"])
+	var n := 0
+	for k in IslandDefs.count():
+		if String(IslandDefs.of(k)["level"]) != lv:
+			continue
+		if k == i:
+			return n >= FREE_ISLANDS_PER_RANGE
+		n += 1
+	return true
+
+
+## 買い切りで 開く もの ぜんぶの 数(訴求の 文言に 使う)
+func paid_content_count() -> Dictionary:
+	var isles := 0
+	for i in IslandDefs.count():
+		if island_needs_purchase(i):
+			isles += 1
+	var kid := maxi(KidDefs.UNITS.size() - FREE_KID_UNITS, 0)
+	var chap := 0
+	for m in ["jhs", "hs"]:
+		chap += maxi(StoryDefs.chapters_of(m).size() - int(FREE_STORY_CHAPTERS[m]), 0)
+	return {"stage": paid_stage_count(), "kid": kid, "chapter": chap, "island": isles}
+
+
 ## そのステージを遊ぶのに購入が必要か
 func needs_purchase(index: int) -> bool:
 	if premium or debug_unlock_all:

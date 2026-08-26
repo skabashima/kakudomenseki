@@ -45,7 +45,7 @@ DELIVERY = [
 
 # 掲載する順(Google Play は 8 枚まで)。最初の 3 枚で「何のアプリか」が伝わる並びにする
 PICKS = [
-    "01_title", "07_kid_map", "08_kid_tear", "14_story_map_hs", "03_problem_angle",
+    "01_title", "07_kid_map", "15_island", "08_kid_tear", "03_problem_angle",
     "05_calc", "11_stage_select_men", "12_store_iap",
 ]
 
@@ -85,6 +85,8 @@ SHOTS = [
      "街道図を三角点づたいに進み、21 章で国じゅうを測り終える", PLUM),
     ("14_story_map_hs.png", "高校生は\n星図をたどる",
      "探査機を飛ばしながら、方べき・余弦定理・積分で軌道を決める", BLUE),
+    ("15_island.png", "解いた答えの数だけ\n島の土地が広がる",
+     "カラスと陣地を取り合う戦略モード。24 の島・337 問", GOLD),
 ]
 
 # 掲載順にリネームするときの短い名前(01_ の数字は PICKS の並び)
@@ -103,6 +105,7 @@ NICE_NAME = {
     "12_store_iap": "unlock",
     "13_story_map_jhs": "story_jhs",
     "14_story_map_hs": "story_hs_map",
+    "15_island": "island",
 }
 
 

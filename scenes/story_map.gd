@@ -194,13 +194,19 @@ func _build_nodes() -> void:
 		var open := _unlocked(i)
 		var pos := _node_pos(i)
 		nodes.append({"pos": pos, "ch": ch, "index": i})
+		var paid := GameState.story_chapter_needs_purchase(mode, id)
 		var btn := Button.new()
 		btn.size = Vector2(132, 132)
 		btn.position = pos - Vector2(66, 66)
 		btn.flat = true
 		btn.focus_mode = Control.FOCUS_NONE
-		btn.disabled = not open
-		if open:
+		btn.disabled = not open and not paid
+		if paid:
+			btn.disabled = false
+			btn.pressed.connect(func() -> void:
+				GameState.play_sfx("tap")
+				GameState.change_scene("res://scenes/store.tscn"))
+		elif open:
 			btn.pressed.connect(func() -> void:
 				GameState.play_sfx("tap")
 				GameState.story_chapter = id
@@ -462,6 +468,11 @@ func _draw_nodes(c: Control) -> void:
 			c.draw_polyline(closed, edge, 3.5)
 		c.draw_string(font, p + Vector2(-16, 14 if mode == "hs" else 22), str(i + 1),
 			HORIZONTAL_ALIGNMENT_LEFT, -1, 30, edge)
+		if GameState.story_chapter_needs_purchase(mode, String(ch["id"])):
+			# かぎ(ここから先は 買い切りで 開く)
+			var k := p + Vector2(0, -34)
+			c.draw_arc(k + Vector2(0, -12), 9.0, PI, TAU, 16, th["accent"], 4.0)
+			c.draw_rect(Rect2(k + Vector2(-12, -5), Vector2(24, 19)), th["accent"])
 		if cleared:
 			c.draw_string(font, p + Vector2(24, -26), "✓",
 				HORIZONTAL_ALIGNMENT_LEFT, -1, 30, th["done"])

@@ -185,13 +185,20 @@ func _build_nodes() -> void:
 		var open := KidDefs.is_unlocked(uid, GameState.kid_clear)
 		var pos := _node_pos(i)
 		nodes.append({"pos": pos, "unit": u, "index": i})
+		var paid := GameState.kid_unit_needs_purchase(uid)
 		var btn := Button.new()
 		btn.size = Vector2(132, 132)
 		btn.position = pos - Vector2(66, 66)
 		btn.flat = true
 		btn.focus_mode = Control.FOCUS_NONE
-		btn.disabled = not open
-		if open:
+		btn.disabled = not open and not paid
+		if paid:
+			# 買い切りで 開く ところ。押したら 解放の 画面へ
+			btn.disabled = false
+			btn.pressed.connect(func() -> void:
+				GameState.play_sfx("tap")
+				GameState.change_scene("res://scenes/store.tscn"))
+		elif open:
 			btn.pressed.connect(func() -> void:
 				GameState.play_sfx("tap")
 				GameState.kid_unit = uid
@@ -413,10 +420,18 @@ func _draw_nodes(c: Control) -> void:
 			c.draw_line(p + Vector2(0, -6), p + Vector2(0, -54), INK, 5.0)
 			c.draw_colored_polygon(PackedVector2Array([
 				p + Vector2(2, -54), p + Vector2(48, -42), p + Vector2(2, -30)]), PATH)
+		var paid := GameState.kid_unit_needs_purchase(uid)
 		c.draw_string(font, p + Vector2(-14, 12), str(i + 1),
-			HORIZONTAL_ALIGNMENT_LEFT, -1, 34, INK if open else Color(0.55, 0.50, 0.42))
+			HORIZONTAL_ALIGNMENT_LEFT, -1, 34, INK if open and not paid
+			else Color(0.55, 0.50, 0.42))
+		if paid:
+			# かぎ(ここから先は 買い切りで 開く)
+			var k := p + Vector2(0, -6)
+			c.draw_arc(k + Vector2(0, -14), 10.0, PI, TAU, 16, INK, 4.0)
+			c.draw_rect(Rect2(k + Vector2(-14, -6), Vector2(28, 22)), GOLD)
+			c.draw_rect(Rect2(k + Vector2(-14, -6), Vector2(28, 22)), INK, false, 2.0)
 		# 名前は 開いているところだけ(小学生が読むので ふりがな つき)
-		if open:
+		if open or paid:
 			_draw_ruby(c, font, p + Vector2(0, 82), String((e["unit"] as Dictionary)["title"]))
 
 

@@ -75,7 +75,11 @@ func _card(r: Dictionary) -> Control:
 	btn.pressed.connect(func() -> void:
 		GameState.play_sfx("tap")
 		GameState.island_range = id
-		GameState.island_index = IslandDefs.first_open_in(id, GameState.island_clear)
+		var go := IslandDefs.first_open_in(id, GameState.island_clear)
+		if GameState.island_needs_purchase(go):
+			GameState.change_scene("res://scenes/store.tscn")
+			return
+		GameState.island_index = go
 		GameState.change_scene("res://scenes/island.tscn"))
 
 	var h := HBoxContainer.new()
@@ -113,7 +117,10 @@ func _card(r: Dictionary) -> Control:
 	sub.custom_minimum_size = Vector2(0, 34)
 	var lv := String(r["level"])
 	var got := GameState.island_stars_in(IslandDefs.islands_in(id))
-	sub.set_ruby_text("%s%d / %d の 島   ★ %d / %d" % ["%s ・ " % lv if lv != "" else "",
-		int(prog[0]), int(prog[1]), got, int(prog[1]) * 3], true)
+	var free_note := ""
+	if not GameState.premium and not GameState.debug_unlock_all:
+		free_note = "   ここから %d 島 まで 無料" % GameState.FREE_ISLANDS_PER_RANGE
+	sub.set_ruby_text("%s%d / %d の 島   ★ %d / %d%s" % ["%s ・ " % lv if lv != "" else "",
+		int(prog[0]), int(prog[1]), got, int(prog[1]) * 3, free_note], true)
 	v.add_child(sub)
 	return btn

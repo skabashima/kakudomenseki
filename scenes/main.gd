@@ -157,7 +157,11 @@ func _ready() -> void:
 	if not GameState.premium:
 		vbox.add_child(_spacer(10))
 		vbox.add_child(_menu_button(
-			"全ステージを解放", "残り %d ステージ・挑戦・チャレンジ" % GameState.paid_stage_count(),
+			"すべてを解放", "残り %d ステージ・ストーリー %d・島 %d・挑戦・チャレンジ" % [
+				int(GameState.paid_content_count()["stage"]),
+				int(GameState.paid_content_count()["kid"])
+					+ int(GameState.paid_content_count()["chapter"]),
+				int(GameState.paid_content_count()["island"])],
 			Color(0.78, 0.55, 0.15), func() -> void:
 				GameState.change_scene("res://scenes/store.tscn"), true))
 

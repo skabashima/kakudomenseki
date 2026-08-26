@@ -106,6 +106,10 @@ func _ready() -> void:
 	var in_range: Array = IslandDefs.islands_in(GameState.island_range)
 	if not in_range.has(isle):
 		isle = IslandDefs.first_open_in(GameState.island_range, GameState.island_clear)
+	if GameState.island_needs_purchase(isle):
+		# ここから先は 買い切りで 開く
+		GameState.change_scene.call_deferred("res://scenes/store.tscn")
+		return
 	isle_def = IslandDefs.of(isle)
 	W = int(isle_def["w"])
 	H = int(isle_def["h"])
@@ -883,9 +887,9 @@ func _build_quiz() -> void:
 ## 出す問題は **その島の 範囲**から。難しさで はばの 中の どこを 使うかが
 ## 変わり、難度ラダーの 段(解き方の 種類)も 毎回 ふり直す
 func _open_quiz(_tier: int) -> void:
+	# 島そのものが 買い切りの ゲートに なっているので、ここでは 範囲を そのまま 使う
 	var stages: Array = ProblemGen.stages_of(String(isle_def["course"]))
-	var limit: int = GameState.free_stage_limit()
-	var top := stages.size() if limit <= 0 else mini(limit, stages.size())
+	var top := stages.size()
 	var band: Array = IslandDefs.stage_range(isle, level)
 	var lo := clampi(int(band[0]), 0, top - 1)
 	var hi := clampi(int(band[1]), lo, top - 1)
@@ -1437,6 +1441,9 @@ func _show_result(mine_pct: int, crow_pct: int) -> void:
 		go.custom_minimum_size = Vector2(0, 96)
 		go.add_theme_font_size_override("font_size", 30)
 		GameState.style_button(go, Color(0.22, 0.55, 0.35))
+		if GameState.island_needs_purchase(nxt_i):
+			go.text = "つぎの島を ひらく"
+			GameState.style_button(go, Color(0.78, 0.55, 0.15))
 		go.pressed.connect(func() -> void:
 			GameState.play_sfx("tap")
 			GameState.island_index = nxt_i
