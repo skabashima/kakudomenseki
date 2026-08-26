@@ -112,7 +112,8 @@ func _card(r: Dictionary) -> Control:
 	sub.color = Color(1, 1, 1, 0.86)
 	sub.custom_minimum_size = Vector2(0, 34)
 	var lv := String(r["level"])
-	sub.set_ruby_text("%s%d / %d の 島" % ["%s ・ " % lv if lv != "" else "", int(prog[0]),
-		int(prog[1])], true)
+	var got := GameState.island_stars_in(IslandDefs.islands_in(id))
+	sub.set_ruby_text("%s%d / %d の 島   ★ %d / %d" % ["%s ・ " % lv if lv != "" else "",
+		int(prog[0]), int(prog[1]), got, int(prog[1]) * 3], true)
 	v.add_child(sub)
 	return btn

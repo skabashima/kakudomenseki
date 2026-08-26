@@ -219,13 +219,16 @@ func _check_variety(inst: Node) -> void:
 		if not inst.quiz.visible:
 			failures.append("むずかしい で 問題が 出ない")
 			return
-		seen[String(inst.problem["q"])] = true
+		# 問題文だけだと、角度の問題は 数が 文に 出ないので 同じに 見える。
+		# どの ステージの どの 段が 出たかで 数える
+		seen["%s|%d" % [String(inst.last_stage), int(inst.last_tier)]] = true
 		inst.quiz.visible = false
 		inst.need = 0
 		inst.marked.clear()
 		await _wait(1)
 	if seen.size() < 3:
-		failures.append("むずかしい を 6 回 えらんでも %d 種類しか 出ない(毎回 同じ)" % seen.size())
+		failures.append("むずかしい を 6 回 えらんでも %d 通りしか 出ない(毎回 同じ ステージと 段)"
+			% seen.size())
 
 
 func _check_reward(inst: Node) -> void:

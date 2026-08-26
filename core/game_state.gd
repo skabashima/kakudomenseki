@@ -117,6 +117,8 @@ var story_scene: int = 0
 
 ## 取った島の番号(島取り)。キーは str(番号)
 var island_clear: Dictionary = {}
+## 島ごとの ★(1〜3)。占有率で決まる。何度でも 挑んで 上を ねらえる
+var island_star: Dictionary = {}
 var island_index := 0
 ## 島取りの 出題の はんい("elem" / "jhs" / "hs" / "all")
 var island_range := "all"
@@ -129,6 +131,33 @@ func record_island_clear(i: int) -> bool:
 	island_clear[str(i)] = true
 	save_game()
 	return true
+
+
+## 占有率から ★ を つける。前より 良ければ 書きかえる。はじめてなら true
+func record_island_star(i: int, pct: int) -> bool:
+	var star := 0
+	if pct >= 85:
+		star = 3
+	elif pct >= 70:
+		star = 2
+	elif pct > 50:
+		star = 1
+	if star <= 0:
+		return false
+	var before := int(island_star.get(str(i), 0))
+	if star > before:
+		island_star[str(i)] = star
+		save_game()
+		return true
+	return false
+
+
+## その はんいで 集めた ★
+func island_stars_in(list: Array) -> int:
+	var n := 0
+	for i in list:
+		n += int(island_star.get(str(i), 0))
+	return n
 
 
 ## クリアした「たからの地図」の単元 id(小学生むけ)
@@ -554,6 +583,7 @@ func save_game() -> void:
 		"story_clear": story_clear,
 		"kid_clear": kid_clear,
 		"island_clear": island_clear,
+		"island_star": island_star,
 		"island_range": island_range,
 		"kid_unit": kid_unit,
 		"story_chapter": story_chapter,
@@ -584,6 +614,7 @@ func load_game() -> void:
 	story_clear = data.get("story_clear", {})
 	kid_clear = data.get("kid_clear", {})
 	island_clear = data.get("island_clear", {})
+	island_star = data.get("island_star", {})
 	island_range = String(data.get("island_range", "all"))
 	kid_unit = String(data.get("kid_unit", "k1"))
 	story_chapter = String(data.get("story_chapter", "ch1"))

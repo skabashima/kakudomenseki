@@ -92,6 +92,8 @@ var figure: FigureView
 var keypad: Keypad
 var q_lbl: RubyLabel
 var problem: Dictionary = {}
+var last_stage := ""           # いま 出している ステージと 段(検分で 使う)
+var last_tier := 0
 var input_text := ""
 var level := 1                      # いま えらんでいる 難しさ(0..2)
 var miss := 0                       # その問題で まちがえた回数
@@ -890,7 +892,9 @@ func _open_quiz(_tier: int) -> void:
 	var idx := prng.randi_range(lo, hi)
 	var base := int(LEVELS[level]["tier"])
 	var tier2 := clampi(base + prng.randi_range(0, 2), 0, 8)
-	problem = ProblemGen.generate(String(stages[idx]["id"]), prng, tier2)
+	last_stage = String(stages[idx]["id"])
+	last_tier = tier2
+	problem = ProblemGen.generate(last_stage, prng, tier2)
 	figure.set_spec(problem["fig"])
 	input_text = ""
 	keypad.answer_lbl.text = ""
@@ -1339,9 +1343,12 @@ func _auto_mark() -> void:
 ## 勝ち負けを ちゃんと 見せる。勝ったら つぎの島が 開く
 func _show_result(mine_pct: int, crow_pct: int) -> void:
 	var win := mine_pct > crow_pct
+	var star := 0
 	if win:
 		GameState.record_island_clear(isle)
 		GameState.bump_stat("island_clear")
+		GameState.record_island_star(isle, mine_pct)
+		star = int(GameState.island_star.get(str(isle), 0))
 	var layer := Control.new()
 	layer.set_anchors_preset(Control.PRESET_FULL_RECT)
 	add_child(layer)
@@ -1384,12 +1391,23 @@ func _show_result(mine_pct: int, crow_pct: int) -> void:
 	v.add_child(big)
 
 	var sub := Label.new()
-	sub.text = "%d島 %s   じぶん %d%%  ―  カラス %d%%" % [isle + 1, String(isle_def["name"]),
-		mine_pct, crow_pct]
+	var stars := ""
+	for k in 3:
+		stars += "★" if k < star else "☆"
+	sub.text = "%d島 %s   じぶん %d%%  ―  カラス %d%%%s" % [isle + 1, String(isle_def["name"]),
+		mine_pct, crow_pct, ("   " + stars) if win else ""]
 	sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	sub.add_theme_font_size_override("font_size", 26)
 	sub.add_theme_color_override("font_color", Color(0.88, 0.92, 1.0))
 	v.add_child(sub)
+
+	if win and star < 3:
+		var more := Label.new()
+		more.text = "もっと 広く 取ると ★が ふえる(70%で ★★ / 85%で ★★★)"
+		more.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		more.add_theme_font_size_override("font_size", 22)
+		more.add_theme_color_override("font_color", Color(0.80, 0.84, 0.96))
+		v.add_child(more)
 
 	var say := Label.new()
 	say.text = "「%s」" % (_crow_says("lose") if win else _crow_says("win"))
