@@ -371,6 +371,20 @@ tools/
   make_icons.gd    アイコン SVG → ストア用 PNG の書き出し
   icon_preview.gd  アイコン候補の比較シート作成
   build_aab.ps1    Android の AAB を書き出して検品する(署名まで)
+
+## Web で動かす(試し)
+
+`export_presets.cfg` の `Web` プリセットで書き出す。**スレッド無し**の変種を
+使うので、置き場所に COOP/COEP ヘッダを入れなくても iPad Safari で動く。
+
+```
+godot --headless --path . --export-release "Web" build/web/index.html
+python -m http.server 8765 --directory build/web   # http://localhost:8765
+```
+
+- 課金プラグイン(GDExtension)に wasm 版は無いので、Web では購入できない
+  (`Iap` はスタブとして動き、ゲートはそのまま。買うのはアプリ版)
+- 書き出しても iOS/Android のプリセットには影響しない(別プリセット)
 tests/
   gen_check.tscn         全ステージ × 多数シードの生成検証 (--headless 可)
   play_check.tscn        実際に解答してクリア/失敗/★の検証 (--headless 可)
