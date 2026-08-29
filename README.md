@@ -406,6 +406,9 @@ tests/
                          subpixel_positioning 0)も見張る (--headless 可)
   power_check.tscn       電池・発熱の出荷設定(低消費モード・fps 上限・物理の回数・
                          起動画面の色)と、画面差しかえで目が覚めるか (--headless 可)
+  consistency_check.gd   全体のつじつま。画面の行き先・データとコードの対応・
+                         セーブの読み書き・音や部品の名前・ストア文書の数が
+                         実装と合っているか (--headless 可)
   variation_report.tscn  ステージごとの問題バリエーション数を実測 (--headless 可)
   shots.tscn             全画面のスクリーンショット撮影(要描画環境)
   shot_one.tscn          1 ステージ・1 tier の図形だけ撮影するデバッグ用
@@ -426,4 +429,5 @@ godot --headless --path "<このフォルダ>" res://tests/story_play.tscn
 godot --headless --path "<このフォルダ>" -s tests/story_check.gd
 godot --headless --path "<このフォルダ>" -s tests/font_check.gd
 godot --headless --path "<このフォルダ>" -s tests/ruby_check.gd
+godot --headless --path "<このフォルダ>" -s tests/consistency_check.gd
 ```
