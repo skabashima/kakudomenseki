@@ -295,15 +295,15 @@ func _act_lead() -> String:
 		"fold":
 			return "点線で 折ってみよう。金色の ところを ゆびで つまんで、反対がわへ たおす。"
 		"diag":
-			return "金色の 点から、白い 点まで ゆびで なぞって 線を 引こう。三角形が いくつ できるかな?"
+			return "金色の 点から、白い 点まで ゆびで なぞって 線を 引こう。三角形 1 つで 180°。いくつに 分かれるかな?"
 		"clock":
 			match mini(tries, 2):
 				0:
-					return "金色の 針を ゆびで つまんで、12 から ぐるっと 1 しゅう まわそう。何 こ分に 分かれるかな?"
+					return "数字 1 つ分(1 じかん)は 30°。金色の 針を つまんで、12 から ぐるっと 1 しゅう まわそう。30° が 何 こ分かな?"
 				1:
-					return "こんどは 半分だけ。針が まっすぐに なる ところまで まわそう。"
+					return "こんどは 半分だけ。針が まっすぐに なる ところまで。30° が 何 こ分?"
 				_:
-					return "さいごは 直角(かどが 四角い ところ)まで。何 こ分かな?"
+					return "さいごは 直角(かどが 四角い ところ)まで。30° が 何 こ分?"
 		"grid":
 			return "金色の 点を つまんで、うすい 形に あわせよう。ますを 数えてみて。"
 		"cut":
@@ -333,11 +333,12 @@ func _act_after() -> String:
 		"fold":
 			return "ぴったり 重なった。ほかの 形でも そうかな?"
 		"diag":
-			return "三角形に 分けられた。角の 数が ちがっても 同じ やり方かな?"
+			return "三角形 %d こ × 180° ＝ %d° に 分けられた。角の 数が ちがっても 同じ やり方かな?" % [
+				int(st.get("tri", 3)), int(st.get("tri", 3)) * 180]
 		"clock":
 			if tries == 1:
-				return "1 しゅう 360° が 12 こ分に 分かれた。半分なら 何 こ分?"
-			return "まっすぐ 180° は 6 こ分。では 直角は?"
+				return "30° が 12 こで 1 しゅう 360° だった。半分なら 何 こ分?"
+			return "30° が 6 こで まっすぐ 180°。では 直角は?"
 		"grid":
 			return "ますの 数は たて × よこ に なっていた。ほかの 大きさでも 同じかな?"
 		"cut":
@@ -367,15 +368,16 @@ func _act_cheer() -> String:
 		"fold":
 			return "ぴったり 重なった！"
 		"diag":
-			return "三角形 %d こ ＝ %d°" % [int(st.get("tri", 3)), int(st.get("tri", 3)) * 180]
+			return "三角形 %d こ × 180° ＝ %d°" % [
+				int(st.get("tri", 3)), int(st.get("tri", 3)) * 180]
 		"clock":
 			match int(float(st.get("goal", 360.0))):
 				360:
-					return "1 しゅう ＝ 12 こ分 ＝ 360°"
+					return "30° × 12 ＝ 360°(1 しゅう)"
 				180:
-					return "まっすぐ ＝ 6 こ分 ＝ 180°"
+					return "30° × 6 ＝ 180°(まっすぐ)"
 				_:
-					return "直角 ＝ 3 こ分 ＝ 90°"
+					return "30° × 3 ＝ 90°(直角)"
 		"grid":
 			return "%d × %d ＝ %d ます" % [int(st.get("h", 1)), int(st.get("w", 1)),
 				int(st.get("w", 1)) * int(st.get("h", 1))]
@@ -508,6 +510,17 @@ func _line_y() -> float:
 func _tear_zone() -> Rect2:
 	var top := _line_y() - 170.0
 	return Rect2(12.0, top, maxf(map.size.x - 24.0, 1.0), maxf(map.size.y - top - 6.0, 1.0))
+
+
+## 図の 上に 数を 書く。ぬった 色や できた しるしの ○ と 重なっても 読めるよう、
+## 暗い 下じきを 敷いてから 書く(まん中ぞろえ)
+func _draw_tag(c: Control, at: Vector2, text: String, size: int, col: Color) -> void:
+	var f := ThemeDB.fallback_font
+	var w := f.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, size).x
+	var lt := at + Vector2(-w * 0.5, float(size) * 0.36)
+	c.draw_rect(Rect2(lt + Vector2(-6.0, -float(size) * 0.86),
+		Vector2(w + 12.0, float(size) * 1.18)), Color(0.06, 0.10, 0.18, 0.72))
+	c.draw_string(f, lt, text, HORIZONTAL_ALIGNMENT_LEFT, -1, size, col)
 
 
 ## 「ここへ はこぶ」の 矢じるし
@@ -835,21 +848,34 @@ func _draw_fold(c: Control) -> void:
 
 
 ## 多角形を 対角線で 三角形に 分ける
+## 対角線で 分けた 三角形は、1 つが かならず 180°。
+## 分けた 三角形を 1 つずつ 色分けして まん中に「180°」と 書き、下に
+## 「三角形 3 こ × 180° ＝ 540°」と 式のまま 出す ―― 数えた ものが
+## そのまま 式に なる ところまで、図の 中で 分かるようにする
 func _draw_diag(c: Control) -> void:
 	var n: int = st["n"]
 	var picked: Array = st["picked"]
-	var pts: Array = []
-	for i in n:
-		var th := TAU * float(i) / float(n) + PI * 0.5
-		pts.append(_to_screen(Vector2(cos(th), sin(th)) * 7.0))
+	var pts: Array = _diag_points()
+	var f := ThemeDB.fallback_font
 	var poly := PackedVector2Array()
 	for p in pts:
 		poly.append(p)
 	c.draw_colored_polygon(poly, Color(0.40, 0.60, 0.95, 0.28))
+	var made := _diag_triangles()
+	for j in made.size():
+		var i: int = made[j]
+		var col: Color = PIECE_COL[j % PIECE_COL.size()]
+		col.a = 0.45
+		c.draw_colored_polygon(PackedVector2Array([pts[0], pts[i], pts[i + 1]]), col)
 	for i in n:
 		c.draw_line(pts[i], pts[(i + 1) % n], INK, 4.0)
 	for i in picked:
 		c.draw_line(pts[0], pts[int(i)], GOLD, 3.5)
+	# できた 三角形の まん中に「180°」。三角形 1 つが 180° だと ここで 見せる
+	for j in made.size():
+		var i: int = made[j]
+		var mid: Vector2 = (pts[0] + pts[i] + pts[i + 1]) / 3.0
+		_draw_tag(c, mid, "180°", 26, Color(1.0, 0.97, 0.85))
 	# ゆびで なぞって いる とちゅうの 線
 	if dragging >= 0 and st.has("drag_pos"):
 		c.draw_line(pts[0], st["drag_pos"], Color(1, 0.85, 0.4, 0.7), 3.0)
@@ -863,9 +889,30 @@ func _draw_diag(c: Control) -> void:
 			c.draw_circle(pts[i], 11.0, Color(0.85, 0.9, 1.0))
 		else:
 			c.draw_circle(pts[i], 11.0, Color(0.85, 0.9, 1.0))
-	c.draw_string(ThemeDB.fallback_font, Vector2(24, c.size.y - 20),
-		"金色の 点から、白い 点まで ゆびで なぞろう(タップでも いいよ)",
+	var k := made.size()
+	var sum_msg := "三角形 1 つで 180°"
+	if k > 0:
+		sum_msg = "三角形 %d こ × 180° ＝ %d°" % [k, k * 180]
+	c.draw_string(f, Vector2(24, c.size.y - 58), sum_msg,
+		HORIZONTAL_ALIGNMENT_LEFT, -1, 30, GOLD if k >= n - 2 else Color(0.85, 0.9, 1.0))
+	c.draw_string(f, Vector2(24, c.size.y - 20),
+		"金色の 点から 白い 点まで なぞろう(タップでも いい)",
 		HORIZONTAL_ALIGNMENT_LEFT, -1, 26, DIM)
+
+
+## いま 分かれている 三角形。(0, i, i+1) の i を ならべて かえす。
+## 0-1 と 0-(n-1) は もとから ある 辺なので、その 2 つは 引かなくても いい
+func _diag_triangles() -> Array:
+	var n: int = st["n"]
+	var picked: Array = st["picked"]
+	var made: Array = []
+	for i in range(1, n - 1):
+		if not (i == 1 or picked.has(i)):
+			continue
+		if not (i + 1 == n - 1 or picked.has(i + 1)):
+			continue
+		made.append(i)
+	return made
 
 
 ## 時計の 文字ばん。針を まわした ぶんだけ 金色に ぬられ、
@@ -882,6 +929,7 @@ func _clock_radius() -> float:
 
 
 func _draw_clock(c: Control) -> void:
+	var f := ThemeDB.fallback_font
 	var center := _clock_center()
 	var r := _clock_radius()
 	var deg := float(st["deg"])
@@ -902,20 +950,40 @@ func _draw_clock(c: Control) -> void:
 		c.draw_colored_polygon(fan, Color(1.0, 0.78, 0.35, 0.34 if k % 2 == 0 else 0.20))
 		c.draw_line(center, center + Vector2(cos(a0), sin(a0)) * (r - 6.0),
 			Color(1, 0.9, 0.6, 0.55), 2.0)
-		# 何こめかを 中に 書く(1 こ分ずつ 数える ため)
+		# 1 こ分は かならず 30°。ぬった ところ ぜんぶに 書いて、
+		# 「数字 1 つ分 = 1 じかん = 30°」を 目で 分かるようにする。
+		# 何こめかは 上の「N こ分」で 数えられる
 		if 30.0 * float(k + 1) <= deg + 0.5:
 			var mid := deg_to_rad(-90.0 + 30.0 * float(k) + 15.0)
-			c.draw_string(ThemeDB.fallback_font,
-				center + Vector2(cos(mid), sin(mid)) * (r * 0.66) + Vector2(-9, 9),
-				str(k + 1), HORIZONTAL_ALIGNMENT_LEFT, -1, 24, Color(1, 0.95, 0.8))
+			# できた しるしの ○(_draw_ok の 半径)より 内がわに 置く
+			_draw_tag(c, center + Vector2(cos(mid), sin(mid)) * (r * 0.52), "30°", 22,
+				Color(1, 0.97, 0.85))
 	# 文字ばん
 	c.draw_arc(center, r, 0.0, TAU, 60, INK, 4.0)
 	for i in 12:
 		var th := deg_to_rad(-90.0 + 30.0 * float(i))
 		var d := Vector2(cos(th), sin(th))
 		c.draw_line(center + d * (r - 14.0), center + d * r, Color(0.8, 0.86, 1.0), 3.0)
-		c.draw_string(ThemeDB.fallback_font, center + d * (r + 26.0) + Vector2(-10, 9),
+		c.draw_string(f, center + d * (r + 26.0) + Vector2(-10, 9),
 			str(12 if i == 0 else i), HORIZONTAL_ALIGNMENT_LEFT, -1, 24, INK)
+	# まだ まわしていない うちは、12 から 1 までの 1 こ分が 30° だと 見せておく
+	# (まわしはじめれば、ぬった ところ ぜんぶに 30° が 出る)
+	if deg < 30.0:
+		var a0 := deg_to_rad(-90.0)
+		var a1 := deg_to_rad(-60.0)
+		var d0 := Vector2(cos(a0), sin(a0))
+		var d1 := Vector2(cos(a1), sin(a1))
+		var fan := PackedVector2Array([center])
+		for i in 11:
+			var t := a0 + (a1 - a0) * float(i) / 10.0
+			fan.append(center + Vector2(cos(t), sin(t)) * (r - 6.0))
+		c.draw_colored_polygon(fan, Color(SKY.r, SKY.g, SKY.b, 0.18))
+		c.draw_line(center, center + d0 * (r - 6.0), SKY, 3.0)
+		c.draw_line(center, center + d1 * (r - 6.0), SKY, 3.0)
+		c.draw_arc(center, r * 0.46, a0, a1, 14, SKY, 4.0)
+		var md := Vector2(cos(deg_to_rad(-75.0)), sin(deg_to_rad(-75.0)))
+		_draw_tag(c, center + md * (r * 0.70), "30°", 28, SKY)
+		_draw_tag(c, center + md * (r * 0.90), "1 こ分", 24, Color(SKY.r, SKY.g, SKY.b, 0.9))
 	# 目じるし(どこまで まわすか)
 	if not done:
 		var tg := deg_to_rad(-90.0 + goal)
@@ -937,9 +1005,15 @@ func _draw_clock(c: Control) -> void:
 			c.draw_arc(center, r + 12.0, 0.0, TAU, 60, Color(0.55, 0.85, 1.0, 0.8), 4.0)
 	# 何 こ分 まわしたかを 大きく
 	var whole := int(floor(deg / 30.0 + 0.01))
-	c.draw_string(ThemeDB.fallback_font, Vector2(0, 52), "%d こ分" % whole,
+	c.draw_string(f, Vector2(0, 52), "%d こ分" % whole,
 		HORIZONTAL_ALIGNMENT_CENTER, c.size.x, 44, GOLD if done else Color(0.85, 0.9, 1.0))
-	c.draw_string(ThemeDB.fallback_font, Vector2(24, c.size.y - 18), _clock_note(),
+	# 数えた 1 こ分(30°)が、そのまま 式に なる ところまで 出す
+	var sum_msg := "1 こ分 ＝ 30°"
+	if whole > 0:
+		sum_msg = "30° × %d こ ＝ %d°" % [whole, whole * 30]
+	c.draw_string(f, Vector2(24, c.size.y - 58), sum_msg,
+		HORIZONTAL_ALIGNMENT_LEFT, -1, 30, GOLD if done else Color(0.85, 0.9, 1.0))
+	c.draw_string(f, Vector2(24, c.size.y - 20), _clock_note(),
 		HORIZONTAL_ALIGNMENT_LEFT, -1, 26, GOLD if done else DIM)
 
 
@@ -947,18 +1021,18 @@ func _clock_note() -> String:
 	if bool(st["set"]):
 		match int(float(st["goal"])):
 			360:
-				return "1 しゅう ＝ 12 こ分。1 しゅうは 360°"
+				return "1 しゅう ＝ 12 こ分。30° が 12 こで 360°"
 			180:
-				return "半分 ＝ 6 こ分。まっすぐは 180°"
+				return "半分 ＝ 6 こ分。30° が 6 こで 180°"
 			_:
-				return "4 分の 1 ＝ 3 こ分。直角は 90°"
+				return "4 分の 1 ＝ 3 こ分。30° が 3 こで 90°"
 	match int(float(st["goal"])):
 		360:
-			return "金色の 針を 12 から ぐるっと 1 しゅう まわそう"
+			return "数字 1 つ分(1 じかん)が 30°。12 から ぐるっと 1 しゅう"
 		180:
-			return "こんどは 半分(6)まで。青い 点線まで まわそう"
+			return "1 こ分は 30°。半分(6)の 青い 点線まで まわそう"
 		_:
-			return "さいごは 3 まで。青い 点線まで まわそう"
+			return "1 こ分は 30°。3 の 青い 点線まで まわそう"
 
 
 ## 針を まわす。ぐるっと 1 しゅうも できるように、
