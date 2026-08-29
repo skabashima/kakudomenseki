@@ -11,6 +11,7 @@ const GOLD := Color(1.0, 0.85, 0.3)
 const SKY := Color(0.55, 0.85, 1.0)
 const INK := Color(0.95, 0.97, 1.0)
 const DIM := Color(0.66, 0.74, 0.88)
+const OK_COL := Color(0.45, 1.0, 0.62)   # できた しるしの ○
 const PIECE_COL := [Color(1.0, 0.78, 0.35), Color(0.55, 0.85, 1.0), Color(1.0, 0.60, 0.68),
 	Color(0.65, 0.95, 0.70), Color(0.85, 0.75, 1.0), Color(1.0, 0.85, 0.55)]
 
@@ -191,18 +192,21 @@ func _advance() -> void:
 		GameState.change_scene("res://scenes/kid_map.tscn")
 
 
-## 3 回できた
+## 1 回 できた(3 回 くりかえして たしかめる)
 func _act_done() -> void:
 	cheer = 1.0
 	tries += 1
+	st["done"] = true          # 図の 上に 大きな ○ を 出す しるし
 	GameState.play_sfx("clear" if tries >= 3 else "correct")
 	big.text = _act_cheer()
 	if tries >= 3:
-		talk.set_ruby_text("3 回とも 同じだった。%s" % String(unit["found"]), true)
+		talk.set_ruby_text("3 回とも 合っていた。%s" % String(unit["found"]), true)
 		act_btn.text = "しるしを 見る"
 	else:
-		talk.set_ruby_text(_act_after(), true)
-		act_btn.text = "もう いちど"
+		# 「もう いちど」だと、まちがえて やりなおしだと 思われた。
+		# 合っていた うえで つぎの 形を ためす、と 分かる ことばにする
+		talk.set_ruby_text("合っていたよ。" + _act_after(), true)
+		act_btn.text = "%d かいめを ためす" % (tries + 1)
 	act_btn.disabled = false
 
 
@@ -284,8 +288,8 @@ func _act_lead() -> String:
 	match String(unit["act"]):
 		"tear":
 			if String(unit["id"]) == "k7":
-				return "外がわの かどを 3 つ ならべよう。まん中の へこんだ かどと くらべて。"
-			return "三角形の かどを ゆびで つまんで、下の せんに ならべよう。3 つ ぜんぶ。"
+				return "外がわの かどを つまんで、下の わくの ○ へ はこぼう。3 つ ぜんぶ。まん中の へこんだ かどと くらべて。"
+			return "三角形の かどを ゆびで つまんで、下の わくの ○ へ はこぼう。3 つ ぜんぶ。"
 		"slide":
 			return "金色の かどを ゆびで つまんで、下の 線の 交わるところまで ずらそう。"
 		"fold":
@@ -498,6 +502,25 @@ func _line_y() -> float:
 	return map.size.y * 0.86
 
 
+## ちぎった かどを ならべる 台。
+## 「どこに 置けば いいのか 分からない」と 言われたので、当たり判定と ぴったり
+## 同じ わくを 絵にも 出す(ここを 変えたら 置ける ところも 一緒に 変わる)
+func _tear_zone() -> Rect2:
+	var top := _line_y() - 170.0
+	return Rect2(12.0, top, maxf(map.size.x - 24.0, 1.0), maxf(map.size.y - top - 6.0, 1.0))
+
+
+## 「ここへ はこぶ」の 矢じるし
+func _draw_arrow(c: Control, from: Vector2, to: Vector2, col: Color) -> void:
+	var d := to - from
+	if d.length() < 40.0:
+		return
+	var u := d.normalized()
+	c.draw_line(from, to - u * 20.0, col, 5.0)
+	var w := Vector2(-u.y, u.x) * 13.0
+	c.draw_colored_polygon(PackedVector2Array([to, to - u * 26.0 + w, to - u * 26.0 - w]), col)
+
+
 ## ちぎった かど(おうぎ形の紙きれ)
 func _draw_piece(c: Control, at: Vector2, base_dir: float, size_deg: float,
 		col: Color, radius: float) -> void:
@@ -555,6 +578,47 @@ func _draw_map() -> void:
 			_draw_pour(c)
 		_:
 			_draw_shadow(c)
+	_draw_rounds(c)
+	if bool(st.get("done", false)):
+		_draw_ok(c)
+
+
+## 3 回 たしかめる うちの 何回めか。
+## 「もう いちど」が 出るのを『まちがえた』と 取られたので、進みぐあいを 絵で 出す
+func _draw_rounds(c: Control) -> void:
+	var f := ThemeDB.fallback_font
+	var x := c.size.x - 22.0 - 3.0 * 30.0
+	var lab := "たしかめ"
+	var lw := f.get_string_size(lab, HORIZONTAL_ALIGNMENT_LEFT, -1, 22).x
+	c.draw_string(f, Vector2(x - lw - 12.0, 31.0), lab, HORIZONTAL_ALIGNMENT_LEFT, -1, 22, DIM)
+	for i in 3:
+		var at := Vector2(x + float(i) * 30.0 + 12.0, 24.0)
+		if i < tries:
+			c.draw_circle(at, 11.0, OK_COL)
+		else:
+			c.draw_arc(at, 11.0, 0.0, TAU, 20, Color(1, 1, 1, 0.30), 2.5)
+
+
+## できた しるしの ○。
+## 前は ことばだけで、ちゃんと 置けたのか 分からないと 言われた。
+## 大きな ○ を ぽんと 出して、合っていた ことを ひと目で 見せる
+func _draw_ok(c: Control) -> void:
+	var mid := Vector2(c.size.x * 0.5, c.size.y * 0.44)
+	var r := minf(c.size.x, c.size.y) * 0.29
+	# 出た しゅんかんだけ ぽんと 大きくなる(そのあとは 出したまま のこす)
+	var t := clampf(1.0 - cheer, 0.0, 1.0)
+	var pop := 1.0 if t >= 0.35 else 0.55 + t / 0.35 * 0.45
+	c.draw_arc(mid, r * pop * 1.12, 0.0, TAU, 64, Color(OK_COL.r, OK_COL.g, OK_COL.b,
+		0.16 + cheer * 0.30), 22.0)
+	c.draw_arc(mid, r * pop, 0.0, TAU, 64, Color(OK_COL.r, OK_COL.g, OK_COL.b, 0.95), 12.0)
+	# ことばは ○ の 上に。図と 重なっても 読めるように 下じきを 敷く
+	var f := ThemeDB.fallback_font
+	var s := "せいかい！" if tries < 3 else "3 回とも せいかい！"
+	var w := f.get_string_size(s, HORIZONTAL_ALIGNMENT_LEFT, -1, 32).x
+	var at := mid + Vector2(-w * 0.5, -r * pop - 20.0)
+	c.draw_rect(Rect2(at + Vector2(-14.0, -34.0), Vector2(w + 28.0, 46.0)),
+		Color(0.06, 0.10, 0.18, 0.80))
+	c.draw_string(f, at, s, HORIZONTAL_ALIGNMENT_LEFT, -1, 32, OK_COL)
 
 
 func _draw_tear(c: Control) -> void:
@@ -598,14 +662,62 @@ func _draw_tear(c: Control) -> void:
 			start = start + deg_to_rad(float(deg[i])) - deg_to_rad(360.0)
 		_draw_piece(c, at, start, float(deg[i]), PIECE_COL[i], 74.0)
 	var ly := _line_y()
-	c.draw_line(Vector2(20, ly), Vector2(c.size.x - 20, ly), Color(1, 1, 1, 0.85), 5.0)
 	var origin := Vector2(c.size.x * 0.5 - 130.0, ly)
+	var zone := _tear_zone()
+	var n_placed := 0
+	for i in 3:
+		if bool(placed[i]):
+			n_placed += 1
+	# ならべる 台(ここに 置けば いい)。ゆびが 台に 入ったら 色が 濃くなる
+	var hot := false
+	if dragging >= 0:
+		var finger: Vector2 = st.get("drag_pos", Vector2.ZERO)
+		hot = finger.y > zone.position.y
+	c.draw_rect(zone, Color(1.0, 0.85, 0.35, 0.20 if hot else 0.08))
+	c.draw_rect(zone, Color(1.0, 0.88, 0.45, 0.95 if hot else 0.45), false, 3.0)
+	var lab := "ここに ならべる"
+	if n_placed >= 3:
+		lab = "そろった！"
+	elif n_placed > 0:
+		lab = "つぎも ここへ(あと %d こ)" % (3 - n_placed)
+	c.draw_string(ThemeDB.fallback_font, zone.position + Vector2(16.0, 36.0), lab,
+		HORIZONTAL_ALIGNMENT_LEFT, -1, 28, GOLD)
+	c.draw_line(Vector2(20, ly), Vector2(c.size.x - 20, ly), Color(1, 1, 1, 0.85), 5.0)
 	var base := 0.0
 	for i in 3:
 		if not bool(placed[i]):
 			continue
 		_draw_piece(c, origin, deg_to_rad(base), float(deg[i]), PIECE_COL[i], 120.0)
 		base += float(deg[i])
+	# つぎの かどが 入る ところを うすい 形で 見せる。台の どこへ 置くのか、
+	# 「かどの とがった ところを ○ に あわせる」まで 分かるようにする
+	if n_placed < 3:
+		var nxt := -1
+		for i in 3:
+			if not bool(placed[i]) and i != dragging:
+				nxt = i
+				break
+		if nxt < 0:
+			nxt = dragging
+		if nxt >= 0:
+			var ghost: Color = PIECE_COL[nxt]
+			ghost.a = 0.50 if hot else 0.34
+			_draw_piece(c, origin, deg_to_rad(base), float(deg[nxt]), ghost, 120.0)
+		if dragging < 0 and nxt >= 0 and n_placed == 0:
+			# はじめの 1 こだけ、どの かどを どこへ 運ぶか 矢じるしで 見せる
+			# (2 こめからは うすい 形と ○ で 分かる。線が ごちゃつかない ように)
+			var from: Vector2 = sp[nxt]
+			var u := (origin - from).normalized()
+			_draw_arrow(c, from + u * 92.0, origin - u * 40.0, Color(1, 0.85, 0.4, 0.55))
+		var puls := 1.0 + sin(float(Time.get_ticks_msec()) * 0.005) * 0.12
+		c.draw_arc(origin, 26.0 * puls, 0.0, TAU, 26, Color(1, 0.85, 0.4, 0.95), 3.0)
+		c.draw_circle(origin, 7.0, GOLD)
+	elif not st.has("dent_at"):
+		# 3 つで まっすぐ に なった ことを、線と 数で 見せる
+		c.draw_line(origin - Vector2(126.0, 0), origin + Vector2(126.0, 0),
+			Color(1.0, 0.95, 0.5, 0.95), 7.0)
+		c.draw_string(ThemeDB.fallback_font, origin + Vector2(-40.0, 42.0), "180°",
+			HORIZONTAL_ALIGNMENT_LEFT, -1, 30, GOLD)
 	if dragging >= 0:
 		_draw_piece(c, st["drag_pos"], deg_to_rad(90.0 - float(deg[dragging]) * 0.5),
 			float(deg[dragging]), PIECE_COL[dragging], 88.0)
@@ -1307,7 +1419,7 @@ func _release(act: String, at: Vector2) -> void:
 			st["drag_pos"] = at
 			_tap_diag(at)
 		"tear":
-			if at.y > _line_y() - 170.0:
+			if at.y > _tear_zone().position.y:
 				var placed: Array = st["placed"]
 				placed[dragging] = true
 				GameState.play_sfx("correct")
