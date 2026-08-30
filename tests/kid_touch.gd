@@ -83,9 +83,15 @@ func _do_act(inst: Node, act: String) -> void:
 		"slide":
 			await _drag(inst, inst._slide_points()[0], inst._slide_target()[0])
 		"fold":
-			var br: Vector2 = inst._to_screen(Vector2(5.0, -3.5))
-			var bl: Vector2 = inst._to_screen(Vector2(-5.0, -3.5))
-			await _drag(inst, br, bl - Vector2(30.0, 0))
+			if bool(inst.st.get("tape", false)):
+				# 紙テープの ななめ折り(k8)。右はしを 折り返し先まで 運ぶ
+				var h: Vector2 = inst._tape_screen(inst._tape_handle())
+				var m: Vector2 = inst._tape_screen(inst._tape_fold_pt(inst._tape_handle(), 1.0))
+				await _drag(inst, h, m)
+			else:
+				var br: Vector2 = inst._to_screen(Vector2(5.0, -3.5))
+				var bl: Vector2 = inst._to_screen(Vector2(-5.0, -3.5))
+				await _drag(inst, br, bl - Vector2(30.0, 0))
 		"diag":
 			var pts: Array = inst._diag_points()
 			var n: int = inst.st["n"]
@@ -96,6 +102,13 @@ func _do_act(inst: Node, act: String) -> void:
 		"grid":
 			await _drag(inst, o + Vector2(s * 2.0, -s * 2.0),
 				o + Vector2(s * float(inst.st["tw"]), -s * float(inst.st["th"])))
+		"point":
+			# 中の 点を、2 ます いじょう はなれた ところへ 動かす
+			var pw: float = inst.st["pw"]
+			var px: float = inst.st["px"]
+			var to_x: float = 0.5 if px > pw * 0.5 else pw - 0.5
+			await _drag(inst, o + Vector2(s * px, -s * float(inst.st["py"])),
+				o + Vector2(s * to_x, -s * float(inst.st["py"])))
 		"cut":
 			var parts: Array = inst._cut_shapes()
 			var piece: PackedVector2Array = parts[1]

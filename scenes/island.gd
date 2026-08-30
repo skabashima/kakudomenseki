@@ -41,12 +41,17 @@ const SHRINE_GAIN := 2
 ## わり算だけで 決めると、答えが 小さい 問題(角度の 30° など)では
 ## むずかしい を 正解しても 3 マスしか もらえない ―― えらぶ 意味が 消える。
 ## だから 難しさごとに 下限と 上限を 置く(むずかしい は 必ず 8 マス以上)。
+##
+## span は tier を 毎回 どれだけ ふり直すか(tier 〜 tier + span)。
+## やさしい を えらんだのに 時計の「8 時 10 分の 角」など、
+## 上の 段の 問題が 出ていた ―― どの 段も +0〜2 と 同じだけ ふっていたため。
+## t=2 から 逆算や 分きざみが 始まるので、やさしい は 0〜1 までに とめる。
 const LEVELS := [
-	{"name": "やさしい", "star": "★", "tier": 0, "per": 12.0, "miss": 3,
+	{"name": "やさしい", "star": "★", "tier": 0, "span": 1, "per": 12.0, "miss": 3,
 		"low": 3, "high": 7, "color": Color(0.26, 0.50, 0.36)},
-	{"name": "ふつう", "star": "★★", "tier": 2, "per": 10.0, "miss": 2,
+	{"name": "ふつう", "star": "★★", "tier": 2, "span": 2, "per": 10.0, "miss": 2,
 		"low": 5, "high": 10, "color": Color(0.30, 0.42, 0.62)},
-	{"name": "むずかしい", "star": "★★★", "tier": 4, "per": 7.0, "miss": 1,
+	{"name": "むずかしい", "star": "★★★", "tier": 4, "span": 2, "per": 7.0, "miss": 1,
 		"low": 8, "high": 14, "color": Color(0.58, 0.30, 0.26)},
 ]
 ## となりの 4 方向(型を付けておかないと Vector2i の足し算が Variant になる)
@@ -895,7 +900,7 @@ func _open_quiz(_tier: int) -> void:
 	var hi := clampi(int(band[1]), lo, top - 1)
 	var idx := prng.randi_range(lo, hi)
 	var base := int(LEVELS[level]["tier"])
-	var tier2 := clampi(base + prng.randi_range(0, 2), 0, 8)
+	var tier2 := clampi(base + prng.randi_range(0, int(LEVELS[level]["span"])), 0, 8)
 	last_stage = String(stages[idx]["id"])
 	last_tier = tier2
 	problem = ProblemGen.generate(last_stage, prng, tier2)

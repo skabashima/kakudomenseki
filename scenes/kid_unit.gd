@@ -216,7 +216,10 @@ func _start_quiz() -> void:
 	figure.visible = true
 	var rng := RandomNumberGenerator.new()
 	rng.randomize()
-	problem = ProblemGen.generate(String(unit["stage"]), rng, 0)
+	# しるしの 問題は、その単元で 見つけた ことが そのまま 使える ものを 出す。
+	# 同じ ステージでも 問う ことが 何とおりか あるので、単元ごとに えらぶ
+	# (円の まわりを しらべたのに 円の 面積が 出る、が 起きていた)
+	problem = ProblemGen.generate(String(unit["stage"]), rng, int(unit.get("tier", 0)))
 	figure.set_spec(problem["fig"])
 	input_text = ""
 	keypad.answer_lbl.text = " "
@@ -293,6 +296,8 @@ func _act_lead() -> String:
 		"slide":
 			return "金色の かどを ゆびで つまんで、下の 線の 交わるところまで ずらそう。"
 		"fold":
+			if String(unit["id"]) == "k8":
+				return "紙テープを ななめの 点線で 折り返そう。右はしを ゆびで つまんで、○ まで はこぶよ。"
 			return "点線で 折ってみよう。金色の ところを ゆびで つまんで、反対がわへ たおす。"
 		"diag":
 			return "金色の 点から、白い 点まで ゆびで なぞって 線を 引こう。三角形 1 つで 180°。いくつに 分かれるかな?"
@@ -306,8 +311,16 @@ func _act_lead() -> String:
 					return "さいごは 直角(かどが 四角い ところ)まで。30° が 何 こ分?"
 		"grid":
 			return "金色の 点を つまんで、うすい 形に あわせよう。ますを 数えてみて。"
+		"point":
+			return "四角の 中の 金色の 点を、あちこちへ 動かしてみよう。4 つの 広さは どう 変わるかな?"
 		"cut":
-			return "金色の ところを つまんで、反対がわへ 運ぼう。"
+			match String(unit["id"]):
+				"k11":
+					return "点線で 切って、金色の 三角を 右へ 運ぼう。長方形に なるかな?"
+				"k14":
+					return "点線で 切って、金色の 四角を はなそう。知っている 形 2 つに 分かれるよ。"
+				_:
+					return "右の 金色の おうぎ形を、左へ 運んで 重ねよう。重なった ところが 葉っぱ。"
 		"roll":
 			return "円を 右へ ころがそう。1 まわりで さしわたし 何こ分 進むかな?"
 		"shift":
@@ -331,6 +344,8 @@ func _act_after() -> String:
 		"slide":
 			return "ずらしても かどの 大きさは 同じだった。ほかの ななめでも 同じ?"
 		"fold":
+			if String(unit["id"]) == "k8":
+				return "折り線を はさんで、同じ かどが 2 つ できた。ななめの むきを 変えても 同じかな?"
 			return "ぴったり 重なった。ほかの 形でも そうかな?"
 		"diag":
 			return "三角形 %d こ × 180° ＝ %d° に 分けられた。角の 数が ちがっても 同じ やり方かな?" % [
@@ -341,8 +356,17 @@ func _act_after() -> String:
 			return "30° が 6 こで まっすぐ 180°。では 直角は?"
 		"grid":
 			return "ますの 数は たて × よこ に なっていた。ほかの 大きさでも 同じかな?"
+		"point":
+			return "1 つずつは 変わるのに、上 + 下 も 左 + 右 も %d のまま。ほかの 場所でも 同じ?" % [
+				roundi(float(st.get("pw", 8.0)) * float(st.get("ph", 4.0)) * 0.5)]
 		"cut":
-			return "切って 運んでも 広さは 変わらない。ほかの 形でも 同じ?"
+			match String(unit["id"]):
+				"k11":
+					return "切って 運んでも 広さは 変わらない。長方形なら 底辺 × 高さ で 出せる。"
+				"k14":
+					return "知らない 形も、知っている 四角に 分ければ 出せる。ほかの 形でも 同じ?"
+				_:
+					return "おうぎ形 2 つの 重なりが 葉っぱ。大きさを 変えても 同じかな?"
 		"roll":
 			return "さしわたし 3 こ分と ちょっとだった。大きさを 変えても 同じかな?"
 		"shift":
@@ -366,6 +390,9 @@ func _act_cheer() -> String:
 		"slide":
 			return "ぴったり 重なった！"
 		"fold":
+			if String(unit["id"]) == "k8":
+				return "同じ かどが 2 つ！ %d° と %d°" % [
+					roundi(float(st.get("angle", 45.0))), roundi(float(st.get("angle", 45.0)))]
 			return "ぴったり 重なった！"
 		"diag":
 			return "三角形 %d こ × 180° ＝ %d°" % [
@@ -381,8 +408,17 @@ func _act_cheer() -> String:
 		"grid":
 			return "%d × %d ＝ %d ます" % [int(st.get("h", 1)), int(st.get("w", 1)),
 				int(st.get("w", 1)) * int(st.get("h", 1))]
+		"point":
+			return "上 + 下 ＝ 左 + 右 ＝ %d" % roundi(
+				float(st.get("pw", 8.0)) * float(st.get("ph", 4.0)) * 0.5)
 		"cut":
-			return "広さは そのまま！"
+			match String(unit["id"]):
+				"k11":
+					return "長方形に なった！ 広さは そのまま"
+				"k14":
+					return "四角 2 つに 分かれた！"
+				_:
+					return "重なった ところが 葉っぱ！"
 		"roll":
 			return "1 まわり ＝ さしわたし 3.14 こ分"
 		"shift":
@@ -444,12 +480,25 @@ func _reset_act() -> void:
 			st = {"slope": slope, "at": Vector2.ZERO, "moved": false, "gap": 7.0,
 				"step": mini(tries, 2)}
 		"fold":
-			st = {"angle": rng.randf_range(35.0, 70.0), "fold": 0.0}
+			if String(unit["id"]) == "k8":
+				# 「折り返した かど」は 本編の 問題が 長方形の 紙テープの ななめ折り。
+				# 二等辺三角形の 半分折り(k3)の 使い回しでは 問題と つながらないので、
+				# 同じ「テープを ななめの 線で 折り返す」を そのまま さわれるようにする。
+				# ななめの むきは 回ごとに 変える(45° は 本編の 問題と 同じ)
+				st = {"angle": [45.0, 58.0, 36.0][mini(tries, 2)], "fold": 0.0, "tape": true}
+			else:
+				st = {"angle": rng.randf_range(35.0, 70.0), "fold": 0.0}
 		"diag":
 			var n: int = [4, 5, 6][mini(tries, 2)]
 			st = {"n": n, "picked": [], "tri": n - 2}
 		"grid":
 			st = {"w": 2, "h": 2, "tw": rng.randi_range(3, 8), "th": rng.randi_range(2, 5)}
+		"point":
+			# よこ 8・たて 4 なら、0.5 ますきざみでも 4 つの 広さが ぜんぶ 整数に なる
+			# (上 + 下 も 左 + 右 も かならず 16 = 四角の 半分)
+			var sx := float(rng.randi_range(2, 14)) * 0.5
+			var sy := float(rng.randi_range(2, 6)) * 0.5
+			st = {"pw": 8.0, "ph": 4.0, "px": sx, "py": sy, "sx": sx, "sy": sy}
 		"cut":
 			st = {"moved": 0.0}
 		"roll":
@@ -577,6 +626,8 @@ func _draw_map() -> void:
 			_draw_clock(c)
 		"grid":
 			_draw_grid(c)
+		"point":
+			_draw_point(c)
 		"cut":
 			_draw_cut(c)
 		"roll":
@@ -826,7 +877,148 @@ func _slide_note() -> String:
 
 
 ## 二等辺三角形を まん中で 折る
+## 「折り返した かど」(k8)の 紙テープ。図の 中の 長さ(y は 上むき)
+const TAPE_HW := 6.0     # よこ半分
+const TAPE_HH := 2.0     # たて半分
+const TAPE_PX := -2.0    # 折り線が 下の辺と 交わる ところ
+
+
+## 折り線 PQ。P は 下の辺、Q は 上の辺
+func _tape_p() -> Vector2:
+	return Vector2(TAPE_PX, -TAPE_HH)
+
+
+func _tape_dir() -> Vector2:
+	var a := deg_to_rad(float(st["angle"]))
+	return Vector2(cos(a), sin(a))
+
+
+func _tape_q() -> Vector2:
+	var d := _tape_dir()
+	return _tape_p() + d * (TAPE_HH * 2.0 / maxf(d.y, 0.001))
+
+
+## つまむ ところ(折り返す 側の 右はしの まん中)
+func _tape_handle() -> Vector2:
+	return Vector2(TAPE_HW, 0.0)
+
+
+## PQ より 右(折り返す ぶぶん)
+func _tape_flap() -> Array:
+	return [_tape_p(), Vector2(TAPE_HW, -TAPE_HH), Vector2(TAPE_HW, TAPE_HH), _tape_q()]
+
+
+## 折り線 PQ を 軸に くるりと 回したときの 場所。
+## 真上から 見ると 線からの きょりは perp × cos で、とちゅうは 0 に なる ――
+## それだけだと 紙が 消えて 見えるので、立った ぶんを 上へ 持ち上げて 見せる。
+## t=0 と t=1 では 持ち上げが 0 に なるので、終わりは きっちり 鏡うつし
+func _tape_fold_pt(v: Vector2, t: float) -> Vector2:
+	var p := _tape_p()
+	var d := _tape_dir()
+	var n := Vector2(-d.y, d.x)
+	var r := v - p
+	var perp := r.dot(n)
+	return p + d * r.dot(d) + n * (perp * cos(PI * t)) \
+		+ Vector2(0.0, absf(perp) * sin(PI * t) * 0.5)
+
+
+## 折り返した ところまで ぜんぶ 入るように、この 図だけの 倍率で 置く。
+## 共通の _to_screen は たて 26 ますぶんを 見こむので、テープだと 小さすぎた
+func _tape_box() -> Array:
+	var pts: Array = [Vector2(-TAPE_HW, -TAPE_HH), Vector2(TAPE_HW, -TAPE_HH),
+		Vector2(TAPE_HW, TAPE_HH), Vector2(-TAPE_HW, TAPE_HH)]
+	for q in _tape_flap():
+		pts.append(_tape_fold_pt(q, 1.0))
+	var lo := Vector2(INF, INF)
+	var hi := Vector2(-INF, -INF)
+	for q in pts:
+		lo = lo.min(q)
+		hi = hi.max(q)
+	var pad := 46.0
+	var k := minf((map.size.x - pad * 2.0) / maxf(hi.x - lo.x, 0.001),
+		(map.size.y - pad * 2.0 - 46.0) / maxf(hi.y - lo.y, 0.001))
+	return [k, (lo + hi) * 0.5]
+
+
+func _tape_screen(v: Vector2) -> Vector2:
+	var box := _tape_box()
+	var k: float = box[0]
+	var mid: Vector2 = box[1]
+	return Vector2(map.size.x * 0.5 + (v.x - mid.x) * k,
+		map.size.y * 0.48 - (v.y - mid.y) * k)
+
+
+## 長方形の 紙テープを ななめの 線で 折り返す。
+## 折ると、折り線を はさんで 同じ 大きさの かどが もう 1 つ できる ――
+## 本編の 問題(角 x)が そのまま 手で たしかめられる
+func _draw_fold_tape(c: Control) -> void:
+	var t: float = st["fold"]
+	var ang: float = st["angle"]
+	var f := ThemeDB.fallback_font
+	var k: float = _tape_box()[0]
+	var p := _tape_p()
+	var sp := _tape_screen(p)
+	# テープ ぜんたいの わく(折っても もとの かたちが 分かるように のこす)
+	var rect := PackedVector2Array()
+	for v in [Vector2(-TAPE_HW, -TAPE_HH), Vector2(TAPE_HW, -TAPE_HH),
+			Vector2(TAPE_HW, TAPE_HH), Vector2(-TAPE_HW, TAPE_HH)]:
+		rect.append(_tape_screen(v))
+	c.draw_polyline(rect + PackedVector2Array([rect[0]]), Color(1, 1, 1, 0.30), 2.0)
+	# 折らない ぶぶん
+	var left := PackedVector2Array()
+	for v in [p, _tape_q(), Vector2(-TAPE_HW, TAPE_HH), Vector2(-TAPE_HW, -TAPE_HH)]:
+		left.append(_tape_screen(v))
+	c.draw_colored_polygon(left, Color(0.40, 0.60, 0.95, 0.30))
+	c.draw_polyline(left + PackedVector2Array([left[0]]), INK, 4.0)
+	# 折り返す ぶぶん
+	var flap := PackedVector2Array()
+	for v in _tape_flap():
+		flap.append(_tape_screen(_tape_fold_pt(v, t)))
+	c.draw_colored_polygon(flap, Color(1.0, 0.78, 0.35, 0.55))
+	c.draw_polyline(flap + PackedVector2Array([flap[0]]), GOLD, 3.0)
+	# 折り線。どこで 折るのかが ひと目で 分かるよう、テープの 外まで のばす
+	var ext := _tape_dir() * 0.9
+	var la := _tape_screen(p - ext)
+	var lb := _tape_screen(_tape_q() + ext)
+	if t > 0.95:
+		c.draw_line(la, lb, GOLD, 5.0)
+	else:
+		c.draw_dashed_line(la, lb, Color(1, 1, 1, 0.9), 4.0, 14.0)
+	# 折る前の かど(下の辺と 折り線の あいだ)。本編の 問題で 分かっている 角
+	c.draw_arc(sp, 2.2 * k, -deg_to_rad(ang), 0.0, 26, SKY, 4.0)
+	_draw_tag(c, sp + _dir_px(ang * 0.5, 3.2 * k), "%d°" % roundi(ang), 24, SKY)
+	if t > 0.95:
+		# 折ったら、折り線の 向こう側に 同じ かどが もう 1 つ できる
+		c.draw_arc(sp, 3.6 * k, -deg_to_rad(ang * 2.0), -deg_to_rad(ang), 26, GOLD, 4.0)
+		_draw_tag(c, sp + _dir_px(ang * 1.5, 4.6 * k), "%d°" % roundi(ang), 24, GOLD)
+	else:
+		# 運ぶ 先(ここまで 持ってくると ぴったり 折れる)
+		var goal := _tape_screen(_tape_fold_pt(_tape_handle(), 1.0))
+		var here := _tape_screen(_tape_fold_pt(_tape_handle(), t))
+		if dragging < 0:
+			# どこを つまんで どこへ 運ぶのか、はじめに 矢じるしで 見せる
+			var u := (goal - here).normalized()
+			_draw_arrow(c, here + u * 26.0, goal - u * 40.0, Color(1, 0.85, 0.4, 0.55))
+		var puls := 1.0 + sin(float(Time.get_ticks_msec()) * 0.005) * 0.12
+		c.draw_arc(goal, 30.0 * puls, 0.0, TAU, 26, Color(1, 0.85, 0.4, 0.85), 3.0)
+		c.draw_circle(goal, 6.0, GOLD)
+	# つまむ ところ
+	c.draw_circle(_tape_screen(_tape_fold_pt(_tape_handle(), t)), 13.0, GOLD)
+	c.draw_string(f, Vector2(24, c.size.y - 20),
+		"同じ かどが もう 1 つ できた" if t > 0.95 else "右はしを つまんで ○ まで 折り返そう",
+		HORIZONTAL_ALIGNMENT_LEFT, -1, 26, GOLD if t > 0.95 else DIM)
+
+
+## 図の 角度(y は 上むき)を、画面の 向き(y は 下むき)の ずれに 直す
+func _dir_px(deg: float, r: float) -> Vector2:
+	var a := deg_to_rad(deg)
+	return Vector2(cos(a), -sin(a)) * r
+
+
 func _draw_fold(c: Control) -> void:
+	if bool(st.get("tape", false)):
+		_draw_fold_tape(c)
+		return
 	var a: float = st["angle"]
 	var t: float = st["fold"]
 	var top := _to_screen(Vector2(0, 6.5))
@@ -1105,15 +1297,6 @@ func _draw_grid(c: Control) -> void:
 		c.draw_line(o + Vector2(0, 0), o + Vector2(s * w, -s * h), GOLD, 4.0)
 		c.draw_colored_polygon(PackedVector2Array([o, o + Vector2(s * w, 0),
 			o + Vector2(s * w, -s * h)]), Color(1.0, 0.78, 0.35, 0.35))
-	elif uid == "k15":
-		# 四角の 中の 点から 四すみへ
-		var p := o + Vector2(s * w * 0.42, -s * h * 0.6)
-		for corner in [o, o + Vector2(s * w, 0), o + Vector2(s * w, -s * h), o + Vector2(0, -s * h)]:
-			c.draw_line(p, corner, GOLD, 3.0)
-		c.draw_colored_polygon(PackedVector2Array([o, o + Vector2(s * w, 0), p]),
-			Color(0.55, 0.85, 1.0, 0.35))
-		c.draw_colored_polygon(PackedVector2Array([o + Vector2(0, -s * h),
-			o + Vector2(s * w, -s * h), p]), Color(0.55, 0.85, 1.0, 0.35))
 	elif uid == "k16":
 		# 底辺だけ のばす
 		c.draw_colored_polygon(PackedVector2Array([o, o + Vector2(s * w, 0),
@@ -1130,6 +1313,64 @@ func _draw_grid(c: Control) -> void:
 		HORIZONTAL_ALIGNMENT_LEFT, -1, 25, DIM)
 
 
+## 四角の 中の 点から 四すみへ 線を 引き、できた 4 つの 三角形を 見る。
+## 点を どこへ 動かしても 上 + 下 と 左 + 右 は どちらも 四角の 半分 ――
+## しるしの 問題(3 つ 分かっていて のこり 1 つ)が これだけで 解ける。
+## 前は k9 と 同じ「ますに あわせて 四角を つくる」の 使い回しで、
+## 問題に つながる ことを 何も さわっていなかった
+func _draw_point(c: Control) -> void:
+	var s := _cell()
+	var o := _grid_origin()
+	var w: float = st["pw"]
+	var h: float = st["ph"]
+	var px: float = st["px"]
+	var py: float = st["py"]
+	var f := ThemeDB.fallback_font
+	_draw_grid_bg(c, 9, 7)
+	var bl := o
+	var br := o + Vector2(s * w, 0)
+	var tr := o + Vector2(s * w, -s * h)
+	var tl := o + Vector2(0, -s * h)
+	var p := o + Vector2(s * px, -s * py)
+	var up := w * (h - py) * 0.5
+	var down := w * py * 0.5
+	var left := h * px * 0.5
+	var right := h * (w - px) * 0.5
+	c.draw_colored_polygon(PackedVector2Array([tl, tr, p]), Color(0.55, 0.85, 1.0, 0.45))
+	c.draw_colored_polygon(PackedVector2Array([bl, br, p]), Color(1.0, 0.78, 0.35, 0.45))
+	c.draw_colored_polygon(PackedVector2Array([bl, tl, p]), Color(1.0, 0.60, 0.68, 0.45))
+	c.draw_colored_polygon(PackedVector2Array([br, tr, p]), Color(0.65, 0.95, 0.70, 0.45))
+	for corner in [bl, br, tr, tl]:
+		c.draw_line(p, corner, Color(1, 1, 1, 0.7), 2.5)
+	c.draw_polyline(PackedVector2Array([bl, br, tr, tl, bl]), INK, 4.0)
+	# 広さは 三角形の 外(へり の むこう)に 出す。細い 三角形でも 読める
+	_draw_tag(c, Vector2((tl.x + tr.x) * 0.5, tl.y - 22.0),
+		"上 %d" % roundi(up), 24, Color(0.55, 0.85, 1.0))
+	_draw_tag(c, Vector2((bl.x + br.x) * 0.5, bl.y + 26.0),
+		"下 %d" % roundi(down), 24, Color(1.0, 0.78, 0.35))
+	_draw_tag(c, Vector2(bl.x - 52.0, (bl.y + tl.y) * 0.5),
+		"左 %d" % roundi(left), 24, Color(1.0, 0.60, 0.68))
+	_draw_tag(c, Vector2(br.x + 52.0, (br.y + tr.y) * 0.5),
+		"右 %d" % roundi(right), 24, Color(0.65, 0.95, 0.70))
+	# つまむ ところ
+	var puls := 1.0 + sin(float(Time.get_ticks_msec()) * 0.005) * 0.15
+	var moved := Vector2(px, py).distance_to(Vector2(float(st["sx"]), float(st["sy"])))
+	if moved < 2.0:
+		c.draw_arc(p, 30.0 * puls, 0.0, TAU, 26, Color(1, 0.85, 0.4, 0.7), 3.0)
+	c.draw_circle(p, 14.0, GOLD)
+	# 数えた ものを、そのまま 式に する
+	c.draw_string(f, Vector2(24, map.size.y - 94),
+		"上 %d ＋ 下 %d ＝ %d" % [roundi(up), roundi(down), roundi(up + down)],
+		HORIZONTAL_ALIGNMENT_LEFT, -1, 28, Color(0.85, 0.9, 1.0))
+	c.draw_string(f, Vector2(24, map.size.y - 58),
+		"左 %d ＋ 右 %d ＝ %d" % [roundi(left), roundi(right), roundi(left + right)],
+		HORIZONTAL_ALIGNMENT_LEFT, -1, 28, Color(0.85, 0.9, 1.0))
+	c.draw_string(f, Vector2(24, map.size.y - 20),
+		"どこへ 動かしても どちらも %d(四角の 半分)" % roundi(w * h * 0.5) if moved >= 2.0
+			else "金色の 点を つまんで、あちこちへ 動かそう",
+		HORIZONTAL_ALIGNMENT_LEFT, -1, 25, GOLD if moved >= 2.0 else DIM)
+
+
 ## 切って 反対がわへ 運ぶ。運んだ あとに もとの形が 残らないよう、
 ## 「切ったあとの のこり」と「運ぶ かけら」を 別々に 持つ
 func _cut_shapes() -> Array:
@@ -1137,16 +1378,22 @@ func _cut_shapes() -> Array:
 	var o := _grid_origin()
 	var uid := String(unit["id"])
 	if uid == "k11":
-		# かたむいた四角。左の三角を 切って 右へ
+		# 平行四辺形。左の三角を 切って 右へ 運ぶと 長方形に なる。
+		#   A(下左) B(下右) C(上右) D(上左) ―― 左右の 辺が 同じだけ かたむく。
+		# 前は 右の 辺が まっすぐで 台形に なっていた(平行四辺形では なかった)
 		var slant := s * 2.0
 		var w := s * 5.0
 		var h := s * 4.0
-		var a := o + Vector2(slant, 0)
-		var b := a + Vector2(w, 0)
-		var t := o + Vector2(slant, -h)
-		var d := o + Vector2(0, -h)
-		return [PackedVector2Array([a, b, b + Vector2(0, -h), t]),
-			PackedVector2Array([d, a, t]), Vector2(w, 0)]
+		var pa := o + Vector2(slant, 0)
+		var pb := pa + Vector2(w, 0)
+		var pc := pb + Vector2(-slant, -h)
+		var pd := o + Vector2(0, -h)
+		var pe := o + Vector2(slant, -h)       # 切る ところ(A の 真上)
+		# 切ったあと の のこり(A B C E)と、切りとる 三角(D A E)。
+		# 三角を 右へ w ずらすと D→C・A→B と ぴったり 合って 長方形に なる
+		return [PackedVector2Array([pa, pb, pc, pe]),
+			PackedVector2Array([pd, pa, pe]), Vector2(w, 0),
+			PackedVector2Array([pa, pe])]
 	if uid == "k14":
 		# L の字。下の 出っぱりを 切りはなす
 		var w2 := s * 4.0
@@ -1155,20 +1402,25 @@ func _cut_shapes() -> Array:
 				o + Vector2(0, -h2)]),
 			PackedVector2Array([o + Vector2(s * 3.0, 0), o + Vector2(s * 3.0 + w2, 0),
 				o + Vector2(s * 3.0 + w2, -s * 2.0), o + Vector2(s * 3.0, -s * 2.0)]),
-			Vector2(s * 1.2, s * 1.6)]
-	# 葉っぱ。右の おうぎ形を 左へ 重ねる
+			Vector2(s * 1.2, s * 1.6),
+			PackedVector2Array([o + Vector2(s * 3.0, 0), o + Vector2(s * 3.0, -s * 2.0)])]
+	# 葉っぱ。右に はなして 置いた おうぎ形を、左へ 運んで 重ねる。
+	# 前は 重なった ところに 置いてあり、動かすと はずれて いた
+	# ―― はじめから 葉っぱが できていて、運ぶと こわれる 向きだった
 	var r := s * 5.0
 	var corner := o
 	var fan1 := PackedVector2Array([corner])
 	for i in 13:
 		var th := deg_to_rad(-90.0 * float(i) / 12.0)
 		fan1.append(corner + Vector2(cos(th), sin(th)) * r)
-	var corner2 := o + Vector2(r, -r)
+	# 重ねたとき の 中心。ここから 右へ はなした ところが 出発点
+	var away := Vector2(r, 0)
+	var corner2 := o + Vector2(r, -r) + away
 	var fan2 := PackedVector2Array([corner2])
 	for i in 13:
 		var th2 := deg_to_rad(90.0 + 90.0 * float(i) / 12.0)
 		fan2.append(corner2 + Vector2(cos(th2), sin(th2)) * r)
-	return [fan1, fan2, Vector2(-s * 5.5, 0)]
+	return [fan1, fan2, -away, PackedVector2Array()]
 
 
 func _draw_cut(c: Control) -> void:
@@ -1180,11 +1432,12 @@ func _draw_cut(c: Control) -> void:
 	var shift: Vector2 = parts[2] * t
 	_draw_grid_bg(c, 9, 7)
 	if String(unit["id"]) == "k17":
-		# 葉っぱは「重ねる」ので、動かす前の 位置に うすく 出しておく
+		# 葉っぱは「重ねる」ので、運ぶ 先を 出しておく(どこへ 持って いくか)
 		var ghost := PackedVector2Array()
 		for p in piece:
 			ghost.append(p + parts[2])
-		c.draw_colored_polygon(ghost, Color(1, 1, 1, 0.06))
+		c.draw_colored_polygon(ghost, Color(1, 1, 1, 0.10))
+		c.draw_polyline(ghost + PackedVector2Array([ghost[0]]), Color(1, 1, 1, 0.35), 2.0)
 	c.draw_colored_polygon(rest, Color(0.40, 0.60, 0.95, 0.45))
 	c.draw_polyline(rest + PackedVector2Array([rest[0]]), INK, 4.0)
 	var moved := PackedVector2Array()
@@ -1192,19 +1445,35 @@ func _draw_cut(c: Control) -> void:
 		moved.append(p + shift)
 	c.draw_colored_polygon(moved, Color(1.0, 0.78, 0.35, 0.55))
 	c.draw_polyline(moved + PackedVector2Array([moved[0]]), GOLD, 3.0)
+	# どこで 切るのかを 点線で 出す。かけらの ふちに かくれないよう 上に 描く
+	var cut: PackedVector2Array = parts[3]
+	if cut.size() == 2 and t < 0.9:
+		c.draw_dashed_line(cut[0], cut[1], Color(1, 1, 1, 0.9), 4.0, 12.0)
+	var done := t > 0.9
+	if done and String(unit["id"]) == "k17":
+		# 「重なった ところが 葉っぱ」を そのまま 見せる。
+		# 2 つの 弧は 同じ 2 点を むすぶので、片方を 逆に たどれば 葉っぱに なる
+		# 弧の 両はし(2 点)は どちらの 弧にも あるので、片方では とばす。
+		# 同じ 点を 2 回 続けて 入れると 三角形に 分けられず 塗れない
+		var leaf := PackedVector2Array()
+		for i in range(1, rest.size()):
+			leaf.append(rest[i])
+		for i in range(piece.size() - 2, 1, -1):
+			leaf.append(piece[i] + parts[2])
+		c.draw_colored_polygon(leaf, Color(0.60, 0.92, 0.45, 0.55))
+		c.draw_polyline(leaf + PackedVector2Array([leaf[0]]), Color(0.80, 1.0, 0.65), 4.0)
 	# つまむ ところ
 	var grab := Vector2.ZERO
 	for p in moved:
 		grab += p
 	grab /= float(moved.size())
 	c.draw_circle(grab, 15.0, Color(1, 1, 1, 0.35))
-	var done := t > 0.9
-	var msg := "金色の ところを つまんで、反対がわへ 運ぼう"
+	var msg := "点線で 切って、金色の 三角を 右へ 運ぼう"
 	if String(unit["id"]) == "k14":
-		msg = "金色の ところを つまんで、切りはなそう"
+		msg = "点線で 切って、金色の 四角を はなそう"
 	elif String(unit["id"]) == "k17":
-		msg = "金色の おうぎ形を 左へ 運んで、重ねよう"
-	var done_msg := "ぴったり 四角に なった"
+		msg = "金色の おうぎ形を 左へ 運んで 重ねよう"
+	var done_msg := "ぴったり 長方形に なった(広さは そのまま)"
 	if String(unit["id"]) == "k14":
 		done_msg = "2 つの 四角に 分かれた"
 	elif String(unit["id"]) == "k17":
@@ -1419,6 +1688,10 @@ func _draw_shadow(c: Control) -> void:
 func _on_map_input(event: InputEvent) -> void:
 	if phase != 1:
 		return
+	# できた あとに もう一度 さわると、動かした ものが もとに もどってしまい
+	# 「できていない」ように 見えた。○ が 出ている あいだは 動かさない
+	if bool(st.get("done", false)):
+		return
 	var act := String(unit["act"])
 	if event is InputEventScreenTouch or event is InputEventMouseButton:
 		if event.pressed:
@@ -1522,6 +1795,12 @@ func _release(act: String, at: Vector2) -> void:
 			if int(st["w"]) == int(st["tw"]) and int(st["h"]) == int(st["th"]):
 				GameState.play_sfx("correct")
 				_act_done()
+		"point":
+			# じゅうぶん 動かして、広さが 変わっても 合計が 変わらないのを 見たら
+			if Vector2(float(st["px"]), float(st["py"])).distance_to(
+					Vector2(float(st["sx"]), float(st["sy"]))) >= 2.0:
+				GameState.play_sfx("correct")
+				_act_done()
 		"cut", "open":
 			var key := "moved" if act == "cut" else "open"
 			if float(st[key]) > 0.9:
@@ -1560,6 +1839,12 @@ func _drag_to(act: String, at: Vector2) -> void:
 		"grid":
 			st["w"] = clampi(int(round((at.x - o.x) / s)), 1, 9)
 			st["h"] = clampi(int(round((o.y - at.y) / s)), 1, 7)
+		"point":
+			# 0.5 ますきざみ。四角の 中(へりに つかない ところ)に とめる
+			var pw: float = st["pw"]
+			var ph: float = st["ph"]
+			st["px"] = clampf(round((at.x - o.x) / s * 2.0) * 0.5, 0.5, pw - 0.5)
+			st["py"] = clampf(round((o.y - at.y) / s * 2.0) * 0.5, 0.5, ph - 0.5)
 		"cut":
 			# かけらの もとの まん中から、運び先までの 進みぐあい
 			var parts := _cut_shapes()
@@ -1587,6 +1872,13 @@ func _drag_to(act: String, at: Vector2) -> void:
 
 ## 折る量(0..1)を 指の位置から決める
 func _fold_by(at: Vector2) -> void:
+	if bool(st.get("tape", false)):
+		# 紙テープは、右はしを つかんで 折り返し先(鏡うつしの 場所)まで 運ぶ
+		var from_p := _tape_screen(_tape_handle())
+		var to_p := _tape_screen(_tape_fold_pt(_tape_handle(), 1.0))
+		var v := to_p - from_p
+		st["fold"] = clampf((at - from_p).dot(v) / maxf(v.length_squared(), 1.0), 0.0, 1.0)
+		return
 	var bl := _to_screen(Vector2(-5.0, -3.5))
 	var br := _to_screen(Vector2(5.0, -3.5))
 	var t := clampf((br.x - at.x) / maxf(br.x - bl.x, 1.0), 0.0, 1.0)
