@@ -293,6 +293,8 @@ func _act_lead() -> String:
 		"slide":
 			return "金色の かどを ゆびで つまんで、下の 線の 交わるところまで ずらそう。"
 		"fold":
+			if String(unit["id"]) == "k8":
+				return "紙テープを ななめの 点線で 折り返そう。右はしを ゆびで つまんで、○ まで はこぶよ。"
 			return "点線で 折ってみよう。金色の ところを ゆびで つまんで、反対がわへ たおす。"
 		"diag":
 			return "金色の 点から、白い 点まで ゆびで なぞって 線を 引こう。三角形 1 つで 180°。いくつに 分かれるかな?"
@@ -331,6 +333,8 @@ func _act_after() -> String:
 		"slide":
 			return "ずらしても かどの 大きさは 同じだった。ほかの ななめでも 同じ?"
 		"fold":
+			if String(unit["id"]) == "k8":
+				return "折り線を はさんで、同じ かどが 2 つ できた。ななめの むきを 変えても 同じかな?"
 			return "ぴったり 重なった。ほかの 形でも そうかな?"
 		"diag":
 			return "三角形 %d こ × 180° ＝ %d° に 分けられた。角の 数が ちがっても 同じ やり方かな?" % [
@@ -366,6 +370,9 @@ func _act_cheer() -> String:
 		"slide":
 			return "ぴったり 重なった！"
 		"fold":
+			if String(unit["id"]) == "k8":
+				return "同じ かどが 2 つ！ %d° と %d°" % [
+					roundi(float(st.get("angle", 45.0))), roundi(float(st.get("angle", 45.0)))]
 			return "ぴったり 重なった！"
 		"diag":
 			return "三角形 %d こ × 180° ＝ %d°" % [
@@ -444,7 +451,14 @@ func _reset_act() -> void:
 			st = {"slope": slope, "at": Vector2.ZERO, "moved": false, "gap": 7.0,
 				"step": mini(tries, 2)}
 		"fold":
-			st = {"angle": rng.randf_range(35.0, 70.0), "fold": 0.0}
+			if String(unit["id"]) == "k8":
+				# 「折り返した かど」は 本編の 問題が 長方形の 紙テープの ななめ折り。
+				# 二等辺三角形の 半分折り(k3)の 使い回しでは 問題と つながらないので、
+				# 同じ「テープを ななめの 線で 折り返す」を そのまま さわれるようにする。
+				# ななめの むきは 回ごとに 変える(45° は 本編の 問題と 同じ)
+				st = {"angle": [45.0, 58.0, 36.0][mini(tries, 2)], "fold": 0.0, "tape": true}
+			else:
+				st = {"angle": rng.randf_range(35.0, 70.0), "fold": 0.0}
 		"diag":
 			var n: int = [4, 5, 6][mini(tries, 2)]
 			st = {"n": n, "picked": [], "tri": n - 2}
@@ -826,7 +840,148 @@ func _slide_note() -> String:
 
 
 ## 二等辺三角形を まん中で 折る
+## 「折り返した かど」(k8)の 紙テープ。図の 中の 長さ(y は 上むき)
+const TAPE_HW := 6.0     # よこ半分
+const TAPE_HH := 2.0     # たて半分
+const TAPE_PX := -2.0    # 折り線が 下の辺と 交わる ところ
+
+
+## 折り線 PQ。P は 下の辺、Q は 上の辺
+func _tape_p() -> Vector2:
+	return Vector2(TAPE_PX, -TAPE_HH)
+
+
+func _tape_dir() -> Vector2:
+	var a := deg_to_rad(float(st["angle"]))
+	return Vector2(cos(a), sin(a))
+
+
+func _tape_q() -> Vector2:
+	var d := _tape_dir()
+	return _tape_p() + d * (TAPE_HH * 2.0 / maxf(d.y, 0.001))
+
+
+## つまむ ところ(折り返す 側の 右はしの まん中)
+func _tape_handle() -> Vector2:
+	return Vector2(TAPE_HW, 0.0)
+
+
+## PQ より 右(折り返す ぶぶん)
+func _tape_flap() -> Array:
+	return [_tape_p(), Vector2(TAPE_HW, -TAPE_HH), Vector2(TAPE_HW, TAPE_HH), _tape_q()]
+
+
+## 折り線 PQ を 軸に くるりと 回したときの 場所。
+## 真上から 見ると 線からの きょりは perp × cos で、とちゅうは 0 に なる ――
+## それだけだと 紙が 消えて 見えるので、立った ぶんを 上へ 持ち上げて 見せる。
+## t=0 と t=1 では 持ち上げが 0 に なるので、終わりは きっちり 鏡うつし
+func _tape_fold_pt(v: Vector2, t: float) -> Vector2:
+	var p := _tape_p()
+	var d := _tape_dir()
+	var n := Vector2(-d.y, d.x)
+	var r := v - p
+	var perp := r.dot(n)
+	return p + d * r.dot(d) + n * (perp * cos(PI * t)) \
+		+ Vector2(0.0, absf(perp) * sin(PI * t) * 0.5)
+
+
+## 折り返した ところまで ぜんぶ 入るように、この 図だけの 倍率で 置く。
+## 共通の _to_screen は たて 26 ますぶんを 見こむので、テープだと 小さすぎた
+func _tape_box() -> Array:
+	var pts: Array = [Vector2(-TAPE_HW, -TAPE_HH), Vector2(TAPE_HW, -TAPE_HH),
+		Vector2(TAPE_HW, TAPE_HH), Vector2(-TAPE_HW, TAPE_HH)]
+	for q in _tape_flap():
+		pts.append(_tape_fold_pt(q, 1.0))
+	var lo := Vector2(INF, INF)
+	var hi := Vector2(-INF, -INF)
+	for q in pts:
+		lo = lo.min(q)
+		hi = hi.max(q)
+	var pad := 46.0
+	var k := minf((map.size.x - pad * 2.0) / maxf(hi.x - lo.x, 0.001),
+		(map.size.y - pad * 2.0 - 46.0) / maxf(hi.y - lo.y, 0.001))
+	return [k, (lo + hi) * 0.5]
+
+
+func _tape_screen(v: Vector2) -> Vector2:
+	var box := _tape_box()
+	var k: float = box[0]
+	var mid: Vector2 = box[1]
+	return Vector2(map.size.x * 0.5 + (v.x - mid.x) * k,
+		map.size.y * 0.48 - (v.y - mid.y) * k)
+
+
+## 長方形の 紙テープを ななめの 線で 折り返す。
+## 折ると、折り線を はさんで 同じ 大きさの かどが もう 1 つ できる ――
+## 本編の 問題(角 x)が そのまま 手で たしかめられる
+func _draw_fold_tape(c: Control) -> void:
+	var t: float = st["fold"]
+	var ang: float = st["angle"]
+	var f := ThemeDB.fallback_font
+	var k: float = _tape_box()[0]
+	var p := _tape_p()
+	var sp := _tape_screen(p)
+	# テープ ぜんたいの わく(折っても もとの かたちが 分かるように のこす)
+	var rect := PackedVector2Array()
+	for v in [Vector2(-TAPE_HW, -TAPE_HH), Vector2(TAPE_HW, -TAPE_HH),
+			Vector2(TAPE_HW, TAPE_HH), Vector2(-TAPE_HW, TAPE_HH)]:
+		rect.append(_tape_screen(v))
+	c.draw_polyline(rect + PackedVector2Array([rect[0]]), Color(1, 1, 1, 0.30), 2.0)
+	# 折らない ぶぶん
+	var left := PackedVector2Array()
+	for v in [p, _tape_q(), Vector2(-TAPE_HW, TAPE_HH), Vector2(-TAPE_HW, -TAPE_HH)]:
+		left.append(_tape_screen(v))
+	c.draw_colored_polygon(left, Color(0.40, 0.60, 0.95, 0.30))
+	c.draw_polyline(left + PackedVector2Array([left[0]]), INK, 4.0)
+	# 折り返す ぶぶん
+	var flap := PackedVector2Array()
+	for v in _tape_flap():
+		flap.append(_tape_screen(_tape_fold_pt(v, t)))
+	c.draw_colored_polygon(flap, Color(1.0, 0.78, 0.35, 0.55))
+	c.draw_polyline(flap + PackedVector2Array([flap[0]]), GOLD, 3.0)
+	# 折り線。どこで 折るのかが ひと目で 分かるよう、テープの 外まで のばす
+	var ext := _tape_dir() * 0.9
+	var la := _tape_screen(p - ext)
+	var lb := _tape_screen(_tape_q() + ext)
+	if t > 0.95:
+		c.draw_line(la, lb, GOLD, 5.0)
+	else:
+		c.draw_dashed_line(la, lb, Color(1, 1, 1, 0.9), 4.0, 14.0)
+	# 折る前の かど(下の辺と 折り線の あいだ)。本編の 問題で 分かっている 角
+	c.draw_arc(sp, 2.2 * k, -deg_to_rad(ang), 0.0, 26, SKY, 4.0)
+	_draw_tag(c, sp + _dir_px(ang * 0.5, 3.2 * k), "%d°" % roundi(ang), 24, SKY)
+	if t > 0.95:
+		# 折ったら、折り線の 向こう側に 同じ かどが もう 1 つ できる
+		c.draw_arc(sp, 3.6 * k, -deg_to_rad(ang * 2.0), -deg_to_rad(ang), 26, GOLD, 4.0)
+		_draw_tag(c, sp + _dir_px(ang * 1.5, 4.6 * k), "%d°" % roundi(ang), 24, GOLD)
+	else:
+		# 運ぶ 先(ここまで 持ってくると ぴったり 折れる)
+		var goal := _tape_screen(_tape_fold_pt(_tape_handle(), 1.0))
+		var here := _tape_screen(_tape_fold_pt(_tape_handle(), t))
+		if dragging < 0:
+			# どこを つまんで どこへ 運ぶのか、はじめに 矢じるしで 見せる
+			var u := (goal - here).normalized()
+			_draw_arrow(c, here + u * 26.0, goal - u * 40.0, Color(1, 0.85, 0.4, 0.55))
+		var puls := 1.0 + sin(float(Time.get_ticks_msec()) * 0.005) * 0.12
+		c.draw_arc(goal, 30.0 * puls, 0.0, TAU, 26, Color(1, 0.85, 0.4, 0.85), 3.0)
+		c.draw_circle(goal, 6.0, GOLD)
+	# つまむ ところ
+	c.draw_circle(_tape_screen(_tape_fold_pt(_tape_handle(), t)), 13.0, GOLD)
+	c.draw_string(f, Vector2(24, c.size.y - 20),
+		"同じ かどが もう 1 つ できた" if t > 0.95 else "右はしを つまんで ○ まで 折り返そう",
+		HORIZONTAL_ALIGNMENT_LEFT, -1, 26, GOLD if t > 0.95 else DIM)
+
+
+## 図の 角度(y は 上むき)を、画面の 向き(y は 下むき)の ずれに 直す
+func _dir_px(deg: float, r: float) -> Vector2:
+	var a := deg_to_rad(deg)
+	return Vector2(cos(a), -sin(a)) * r
+
+
 func _draw_fold(c: Control) -> void:
+	if bool(st.get("tape", false)):
+		_draw_fold_tape(c)
+		return
 	var a: float = st["angle"]
 	var t: float = st["fold"]
 	var top := _to_screen(Vector2(0, 6.5))
@@ -1587,6 +1742,13 @@ func _drag_to(act: String, at: Vector2) -> void:
 
 ## 折る量(0..1)を 指の位置から決める
 func _fold_by(at: Vector2) -> void:
+	if bool(st.get("tape", false)):
+		# 紙テープは、右はしを つかんで 折り返し先(鏡うつしの 場所)まで 運ぶ
+		var from_p := _tape_screen(_tape_handle())
+		var to_p := _tape_screen(_tape_fold_pt(_tape_handle(), 1.0))
+		var v := to_p - from_p
+		st["fold"] = clampf((at - from_p).dot(v) / maxf(v.length_squared(), 1.0), 0.0, 1.0)
+		return
 	var bl := _to_screen(Vector2(-5.0, -3.5))
 	var br := _to_screen(Vector2(5.0, -3.5))
 	var t := clampf((br.x - at.x) / maxf(br.x - bl.x, 1.0), 0.0, 1.0)
