@@ -216,7 +216,10 @@ func _start_quiz() -> void:
 	figure.visible = true
 	var rng := RandomNumberGenerator.new()
 	rng.randomize()
-	problem = ProblemGen.generate(String(unit["stage"]), rng, 0)
+	# しるしの 問題は、その単元で 見つけた ことが そのまま 使える ものを 出す。
+	# 同じ ステージでも 問う ことが 何とおりか あるので、単元ごとに えらぶ
+	# (円の まわりを しらべたのに 円の 面積が 出る、が 起きていた)
+	problem = ProblemGen.generate(String(unit["stage"]), rng, int(unit.get("tier", 0)))
 	figure.set_spec(problem["fig"])
 	input_text = ""
 	keypad.answer_lbl.text = " "
