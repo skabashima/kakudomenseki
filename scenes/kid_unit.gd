@@ -309,7 +309,13 @@ func _act_lead() -> String:
 		"grid":
 			return "金色の 点を つまんで、うすい 形に あわせよう。ますを 数えてみて。"
 		"cut":
-			return "金色の ところを つまんで、反対がわへ 運ぼう。"
+			match String(unit["id"]):
+				"k11":
+					return "点線で 切って、金色の 三角を 右へ 運ぼう。長方形に なるかな?"
+				"k14":
+					return "点線で 切って、金色の 四角を はなそう。知っている 形 2 つに 分かれるよ。"
+				_:
+					return "右の 金色の おうぎ形を、左へ 運んで 重ねよう。重なった ところが 葉っぱ。"
 		"roll":
 			return "円を 右へ ころがそう。1 まわりで さしわたし 何こ分 進むかな?"
 		"shift":
@@ -346,7 +352,13 @@ func _act_after() -> String:
 		"grid":
 			return "ますの 数は たて × よこ に なっていた。ほかの 大きさでも 同じかな?"
 		"cut":
-			return "切って 運んでも 広さは 変わらない。ほかの 形でも 同じ?"
+			match String(unit["id"]):
+				"k11":
+					return "切って 運んでも 広さは 変わらない。長方形なら 底辺 × 高さ で 出せる。"
+				"k14":
+					return "知らない 形も、知っている 四角に 分ければ 出せる。ほかの 形でも 同じ?"
+				_:
+					return "おうぎ形 2 つの 重なりが 葉っぱ。大きさを 変えても 同じかな?"
 		"roll":
 			return "さしわたし 3 こ分と ちょっとだった。大きさを 変えても 同じかな?"
 		"shift":
@@ -389,7 +401,13 @@ func _act_cheer() -> String:
 			return "%d × %d ＝ %d ます" % [int(st.get("h", 1)), int(st.get("w", 1)),
 				int(st.get("w", 1)) * int(st.get("h", 1))]
 		"cut":
-			return "広さは そのまま！"
+			match String(unit["id"]):
+				"k11":
+					return "長方形に なった！ 広さは そのまま"
+				"k14":
+					return "四角 2 つに 分かれた！"
+				_:
+					return "重なった ところが 葉っぱ！"
 		"roll":
 			return "1 まわり ＝ さしわたし 3.14 こ分"
 		"shift":
@@ -1292,16 +1310,22 @@ func _cut_shapes() -> Array:
 	var o := _grid_origin()
 	var uid := String(unit["id"])
 	if uid == "k11":
-		# かたむいた四角。左の三角を 切って 右へ
+		# 平行四辺形。左の三角を 切って 右へ 運ぶと 長方形に なる。
+		#   A(下左) B(下右) C(上右) D(上左) ―― 左右の 辺が 同じだけ かたむく。
+		# 前は 右の 辺が まっすぐで 台形に なっていた(平行四辺形では なかった)
 		var slant := s * 2.0
 		var w := s * 5.0
 		var h := s * 4.0
-		var a := o + Vector2(slant, 0)
-		var b := a + Vector2(w, 0)
-		var t := o + Vector2(slant, -h)
-		var d := o + Vector2(0, -h)
-		return [PackedVector2Array([a, b, b + Vector2(0, -h), t]),
-			PackedVector2Array([d, a, t]), Vector2(w, 0)]
+		var pa := o + Vector2(slant, 0)
+		var pb := pa + Vector2(w, 0)
+		var pc := pb + Vector2(-slant, -h)
+		var pd := o + Vector2(0, -h)
+		var pe := o + Vector2(slant, -h)       # 切る ところ(A の 真上)
+		# 切ったあと の のこり(A B C E)と、切りとる 三角(D A E)。
+		# 三角を 右へ w ずらすと D→C・A→B と ぴったり 合って 長方形に なる
+		return [PackedVector2Array([pa, pb, pc, pe]),
+			PackedVector2Array([pd, pa, pe]), Vector2(w, 0),
+			PackedVector2Array([pa, pe])]
 	if uid == "k14":
 		# L の字。下の 出っぱりを 切りはなす
 		var w2 := s * 4.0
@@ -1310,20 +1334,25 @@ func _cut_shapes() -> Array:
 				o + Vector2(0, -h2)]),
 			PackedVector2Array([o + Vector2(s * 3.0, 0), o + Vector2(s * 3.0 + w2, 0),
 				o + Vector2(s * 3.0 + w2, -s * 2.0), o + Vector2(s * 3.0, -s * 2.0)]),
-			Vector2(s * 1.2, s * 1.6)]
-	# 葉っぱ。右の おうぎ形を 左へ 重ねる
+			Vector2(s * 1.2, s * 1.6),
+			PackedVector2Array([o + Vector2(s * 3.0, 0), o + Vector2(s * 3.0, -s * 2.0)])]
+	# 葉っぱ。右に はなして 置いた おうぎ形を、左へ 運んで 重ねる。
+	# 前は 重なった ところに 置いてあり、動かすと はずれて いた
+	# ―― はじめから 葉っぱが できていて、運ぶと こわれる 向きだった
 	var r := s * 5.0
 	var corner := o
 	var fan1 := PackedVector2Array([corner])
 	for i in 13:
 		var th := deg_to_rad(-90.0 * float(i) / 12.0)
 		fan1.append(corner + Vector2(cos(th), sin(th)) * r)
-	var corner2 := o + Vector2(r, -r)
+	# 重ねたとき の 中心。ここから 右へ はなした ところが 出発点
+	var away := Vector2(r, 0)
+	var corner2 := o + Vector2(r, -r) + away
 	var fan2 := PackedVector2Array([corner2])
 	for i in 13:
 		var th2 := deg_to_rad(90.0 + 90.0 * float(i) / 12.0)
 		fan2.append(corner2 + Vector2(cos(th2), sin(th2)) * r)
-	return [fan1, fan2, Vector2(-s * 5.5, 0)]
+	return [fan1, fan2, -away, PackedVector2Array()]
 
 
 func _draw_cut(c: Control) -> void:
@@ -1335,11 +1364,12 @@ func _draw_cut(c: Control) -> void:
 	var shift: Vector2 = parts[2] * t
 	_draw_grid_bg(c, 9, 7)
 	if String(unit["id"]) == "k17":
-		# 葉っぱは「重ねる」ので、動かす前の 位置に うすく 出しておく
+		# 葉っぱは「重ねる」ので、運ぶ 先を 出しておく(どこへ 持って いくか)
 		var ghost := PackedVector2Array()
 		for p in piece:
 			ghost.append(p + parts[2])
-		c.draw_colored_polygon(ghost, Color(1, 1, 1, 0.06))
+		c.draw_colored_polygon(ghost, Color(1, 1, 1, 0.10))
+		c.draw_polyline(ghost + PackedVector2Array([ghost[0]]), Color(1, 1, 1, 0.35), 2.0)
 	c.draw_colored_polygon(rest, Color(0.40, 0.60, 0.95, 0.45))
 	c.draw_polyline(rest + PackedVector2Array([rest[0]]), INK, 4.0)
 	var moved := PackedVector2Array()
@@ -1347,19 +1377,35 @@ func _draw_cut(c: Control) -> void:
 		moved.append(p + shift)
 	c.draw_colored_polygon(moved, Color(1.0, 0.78, 0.35, 0.55))
 	c.draw_polyline(moved + PackedVector2Array([moved[0]]), GOLD, 3.0)
+	# どこで 切るのかを 点線で 出す。かけらの ふちに かくれないよう 上に 描く
+	var cut: PackedVector2Array = parts[3]
+	if cut.size() == 2 and t < 0.9:
+		c.draw_dashed_line(cut[0], cut[1], Color(1, 1, 1, 0.9), 4.0, 12.0)
+	var done := t > 0.9
+	if done and String(unit["id"]) == "k17":
+		# 「重なった ところが 葉っぱ」を そのまま 見せる。
+		# 2 つの 弧は 同じ 2 点を むすぶので、片方を 逆に たどれば 葉っぱに なる
+		# 弧の 両はし(2 点)は どちらの 弧にも あるので、片方では とばす。
+		# 同じ 点を 2 回 続けて 入れると 三角形に 分けられず 塗れない
+		var leaf := PackedVector2Array()
+		for i in range(1, rest.size()):
+			leaf.append(rest[i])
+		for i in range(piece.size() - 2, 1, -1):
+			leaf.append(piece[i] + parts[2])
+		c.draw_colored_polygon(leaf, Color(0.60, 0.92, 0.45, 0.55))
+		c.draw_polyline(leaf + PackedVector2Array([leaf[0]]), Color(0.80, 1.0, 0.65), 4.0)
 	# つまむ ところ
 	var grab := Vector2.ZERO
 	for p in moved:
 		grab += p
 	grab /= float(moved.size())
 	c.draw_circle(grab, 15.0, Color(1, 1, 1, 0.35))
-	var done := t > 0.9
-	var msg := "金色の ところを つまんで、反対がわへ 運ぼう"
+	var msg := "点線で 切って、金色の 三角を 右へ 運ぼう"
 	if String(unit["id"]) == "k14":
-		msg = "金色の ところを つまんで、切りはなそう"
+		msg = "点線で 切って、金色の 四角を はなそう"
 	elif String(unit["id"]) == "k17":
-		msg = "金色の おうぎ形を 左へ 運んで、重ねよう"
-	var done_msg := "ぴったり 四角に なった"
+		msg = "金色の おうぎ形を 左へ 運んで 重ねよう"
+	var done_msg := "ぴったり 長方形に なった(広さは そのまま)"
 	if String(unit["id"]) == "k14":
 		done_msg = "2 つの 四角に 分かれた"
 	elif String(unit["id"]) == "k17":
@@ -1573,6 +1619,10 @@ func _draw_shadow(c: Control) -> void:
 
 func _on_map_input(event: InputEvent) -> void:
 	if phase != 1:
+		return
+	# できた あとに もう一度 さわると、動かした ものが もとに もどってしまい
+	# 「できていない」ように 見えた。○ が 出ている あいだは 動かさない
+	if bool(st.get("done", false)):
 		return
 	var act := String(unit["act"])
 	if event is InputEventScreenTouch or event is InputEventMouseButton:
