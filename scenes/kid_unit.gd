@@ -311,6 +311,8 @@ func _act_lead() -> String:
 					return "さいごは 直角(かどが 四角い ところ)まで。30° が 何 こ分?"
 		"grid":
 			return "金色の 点を つまんで、うすい 形に あわせよう。ますを 数えてみて。"
+		"point":
+			return "四角の 中の 金色の 点を、あちこちへ 動かしてみよう。4 つの 広さは どう 変わるかな?"
 		"cut":
 			match String(unit["id"]):
 				"k11":
@@ -354,6 +356,9 @@ func _act_after() -> String:
 			return "30° が 6 こで まっすぐ 180°。では 直角は?"
 		"grid":
 			return "ますの 数は たて × よこ に なっていた。ほかの 大きさでも 同じかな?"
+		"point":
+			return "1 つずつは 変わるのに、上 + 下 も 左 + 右 も %d のまま。ほかの 場所でも 同じ?" % [
+				roundi(float(st.get("pw", 8.0)) * float(st.get("ph", 4.0)) * 0.5)]
 		"cut":
 			match String(unit["id"]):
 				"k11":
@@ -403,6 +408,9 @@ func _act_cheer() -> String:
 		"grid":
 			return "%d × %d ＝ %d ます" % [int(st.get("h", 1)), int(st.get("w", 1)),
 				int(st.get("w", 1)) * int(st.get("h", 1))]
+		"point":
+			return "上 + 下 ＝ 左 + 右 ＝ %d" % roundi(
+				float(st.get("pw", 8.0)) * float(st.get("ph", 4.0)) * 0.5)
 		"cut":
 			match String(unit["id"]):
 				"k11":
@@ -485,6 +493,12 @@ func _reset_act() -> void:
 			st = {"n": n, "picked": [], "tri": n - 2}
 		"grid":
 			st = {"w": 2, "h": 2, "tw": rng.randi_range(3, 8), "th": rng.randi_range(2, 5)}
+		"point":
+			# よこ 8・たて 4 なら、0.5 ますきざみでも 4 つの 広さが ぜんぶ 整数に なる
+			# (上 + 下 も 左 + 右 も かならず 16 = 四角の 半分)
+			var sx := float(rng.randi_range(2, 14)) * 0.5
+			var sy := float(rng.randi_range(2, 6)) * 0.5
+			st = {"pw": 8.0, "ph": 4.0, "px": sx, "py": sy, "sx": sx, "sy": sy}
 		"cut":
 			st = {"moved": 0.0}
 		"roll":
@@ -612,6 +626,8 @@ func _draw_map() -> void:
 			_draw_clock(c)
 		"grid":
 			_draw_grid(c)
+		"point":
+			_draw_point(c)
 		"cut":
 			_draw_cut(c)
 		"roll":
@@ -1281,15 +1297,6 @@ func _draw_grid(c: Control) -> void:
 		c.draw_line(o + Vector2(0, 0), o + Vector2(s * w, -s * h), GOLD, 4.0)
 		c.draw_colored_polygon(PackedVector2Array([o, o + Vector2(s * w, 0),
 			o + Vector2(s * w, -s * h)]), Color(1.0, 0.78, 0.35, 0.35))
-	elif uid == "k15":
-		# 四角の 中の 点から 四すみへ
-		var p := o + Vector2(s * w * 0.42, -s * h * 0.6)
-		for corner in [o, o + Vector2(s * w, 0), o + Vector2(s * w, -s * h), o + Vector2(0, -s * h)]:
-			c.draw_line(p, corner, GOLD, 3.0)
-		c.draw_colored_polygon(PackedVector2Array([o, o + Vector2(s * w, 0), p]),
-			Color(0.55, 0.85, 1.0, 0.35))
-		c.draw_colored_polygon(PackedVector2Array([o + Vector2(0, -s * h),
-			o + Vector2(s * w, -s * h), p]), Color(0.55, 0.85, 1.0, 0.35))
 	elif uid == "k16":
 		# 底辺だけ のばす
 		c.draw_colored_polygon(PackedVector2Array([o, o + Vector2(s * w, 0),
@@ -1304,6 +1311,64 @@ func _draw_grid(c: Control) -> void:
 	c.draw_string(font, Vector2(24, map.size.y - 18),
 		"金色の 点を つまんで、うすい 形に あわせよう(たて %d よこ %d)" % [th, tw],
 		HORIZONTAL_ALIGNMENT_LEFT, -1, 25, DIM)
+
+
+## 四角の 中の 点から 四すみへ 線を 引き、できた 4 つの 三角形を 見る。
+## 点を どこへ 動かしても 上 + 下 と 左 + 右 は どちらも 四角の 半分 ――
+## しるしの 問題(3 つ 分かっていて のこり 1 つ)が これだけで 解ける。
+## 前は k9 と 同じ「ますに あわせて 四角を つくる」の 使い回しで、
+## 問題に つながる ことを 何も さわっていなかった
+func _draw_point(c: Control) -> void:
+	var s := _cell()
+	var o := _grid_origin()
+	var w: float = st["pw"]
+	var h: float = st["ph"]
+	var px: float = st["px"]
+	var py: float = st["py"]
+	var f := ThemeDB.fallback_font
+	_draw_grid_bg(c, 9, 7)
+	var bl := o
+	var br := o + Vector2(s * w, 0)
+	var tr := o + Vector2(s * w, -s * h)
+	var tl := o + Vector2(0, -s * h)
+	var p := o + Vector2(s * px, -s * py)
+	var up := w * (h - py) * 0.5
+	var down := w * py * 0.5
+	var left := h * px * 0.5
+	var right := h * (w - px) * 0.5
+	c.draw_colored_polygon(PackedVector2Array([tl, tr, p]), Color(0.55, 0.85, 1.0, 0.45))
+	c.draw_colored_polygon(PackedVector2Array([bl, br, p]), Color(1.0, 0.78, 0.35, 0.45))
+	c.draw_colored_polygon(PackedVector2Array([bl, tl, p]), Color(1.0, 0.60, 0.68, 0.45))
+	c.draw_colored_polygon(PackedVector2Array([br, tr, p]), Color(0.65, 0.95, 0.70, 0.45))
+	for corner in [bl, br, tr, tl]:
+		c.draw_line(p, corner, Color(1, 1, 1, 0.7), 2.5)
+	c.draw_polyline(PackedVector2Array([bl, br, tr, tl, bl]), INK, 4.0)
+	# 広さは 三角形の 外(へり の むこう)に 出す。細い 三角形でも 読める
+	_draw_tag(c, Vector2((tl.x + tr.x) * 0.5, tl.y - 22.0),
+		"上 %d" % roundi(up), 24, Color(0.55, 0.85, 1.0))
+	_draw_tag(c, Vector2((bl.x + br.x) * 0.5, bl.y + 26.0),
+		"下 %d" % roundi(down), 24, Color(1.0, 0.78, 0.35))
+	_draw_tag(c, Vector2(bl.x - 52.0, (bl.y + tl.y) * 0.5),
+		"左 %d" % roundi(left), 24, Color(1.0, 0.60, 0.68))
+	_draw_tag(c, Vector2(br.x + 52.0, (br.y + tr.y) * 0.5),
+		"右 %d" % roundi(right), 24, Color(0.65, 0.95, 0.70))
+	# つまむ ところ
+	var puls := 1.0 + sin(float(Time.get_ticks_msec()) * 0.005) * 0.15
+	var moved := Vector2(px, py).distance_to(Vector2(float(st["sx"]), float(st["sy"])))
+	if moved < 2.0:
+		c.draw_arc(p, 30.0 * puls, 0.0, TAU, 26, Color(1, 0.85, 0.4, 0.7), 3.0)
+	c.draw_circle(p, 14.0, GOLD)
+	# 数えた ものを、そのまま 式に する
+	c.draw_string(f, Vector2(24, map.size.y - 94),
+		"上 %d ＋ 下 %d ＝ %d" % [roundi(up), roundi(down), roundi(up + down)],
+		HORIZONTAL_ALIGNMENT_LEFT, -1, 28, Color(0.85, 0.9, 1.0))
+	c.draw_string(f, Vector2(24, map.size.y - 58),
+		"左 %d ＋ 右 %d ＝ %d" % [roundi(left), roundi(right), roundi(left + right)],
+		HORIZONTAL_ALIGNMENT_LEFT, -1, 28, Color(0.85, 0.9, 1.0))
+	c.draw_string(f, Vector2(24, map.size.y - 20),
+		"どこへ 動かしても どちらも %d(四角の 半分)" % roundi(w * h * 0.5) if moved >= 2.0
+			else "金色の 点を つまんで、あちこちへ 動かそう",
+		HORIZONTAL_ALIGNMENT_LEFT, -1, 25, GOLD if moved >= 2.0 else DIM)
 
 
 ## 切って 反対がわへ 運ぶ。運んだ あとに もとの形が 残らないよう、
@@ -1730,6 +1795,12 @@ func _release(act: String, at: Vector2) -> void:
 			if int(st["w"]) == int(st["tw"]) and int(st["h"]) == int(st["th"]):
 				GameState.play_sfx("correct")
 				_act_done()
+		"point":
+			# じゅうぶん 動かして、広さが 変わっても 合計が 変わらないのを 見たら
+			if Vector2(float(st["px"]), float(st["py"])).distance_to(
+					Vector2(float(st["sx"]), float(st["sy"]))) >= 2.0:
+				GameState.play_sfx("correct")
+				_act_done()
 		"cut", "open":
 			var key := "moved" if act == "cut" else "open"
 			if float(st[key]) > 0.9:
@@ -1768,6 +1839,12 @@ func _drag_to(act: String, at: Vector2) -> void:
 		"grid":
 			st["w"] = clampi(int(round((at.x - o.x) / s)), 1, 9)
 			st["h"] = clampi(int(round((o.y - at.y) / s)), 1, 7)
+		"point":
+			# 0.5 ますきざみ。四角の 中(へりに つかない ところ)に とめる
+			var pw: float = st["pw"]
+			var ph: float = st["ph"]
+			st["px"] = clampf(round((at.x - o.x) / s * 2.0) * 0.5, 0.5, pw - 0.5)
+			st["py"] = clampf(round((o.y - at.y) / s * 2.0) * 0.5, 0.5, ph - 0.5)
 		"cut":
 			# かけらの もとの まん中から、運び先までの 進みぐあい
 			var parts := _cut_shapes()

@@ -102,6 +102,13 @@ func _do_act(inst: Node, act: String) -> void:
 		"grid":
 			await _drag(inst, o + Vector2(s * 2.0, -s * 2.0),
 				o + Vector2(s * float(inst.st["tw"]), -s * float(inst.st["th"])))
+		"point":
+			# 中の 点を、2 ます いじょう はなれた ところへ 動かす
+			var pw: float = inst.st["pw"]
+			var px: float = inst.st["px"]
+			var to_x: float = 0.5 if px > pw * 0.5 else pw - 0.5
+			await _drag(inst, o + Vector2(s * px, -s * float(inst.st["py"])),
+				o + Vector2(s * to_x, -s * float(inst.st["py"])))
 		"cut":
 			var parts: Array = inst._cut_shapes()
 			var piece: PackedVector2Array = parts[1]
