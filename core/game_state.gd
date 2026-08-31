@@ -200,6 +200,15 @@ func record_story_clear(id: String) -> bool:
 const FREE_STAGES_PER_COURSE := 4
 ## 購入(または復元)済みなら true。全ステージとチャレンジが解放される
 var premium: bool = false
+## まちがえた 問題の 覚え書き [{"s": ステージ id, "t": 段}]。
+## つぎに その単元を 開いたとき、1 問めに 出す
+var review: Array = []
+
+## 今日の図形: さいごに 解いた 日(1970 年から の 日数)と れんぞく日数
+var daily_day := 0
+var daily_streak := 0
+var daily_best := 0            # れんぞくの 最高記録
+
 ## BGM を 鳴らすか(切った 状態は 保存する)
 var bgm_on: bool = true
 
@@ -661,6 +670,10 @@ func save_game() -> void:
 		"debug_unlock_all": debug_unlock_all,
 		"premium": premium,
 		"bgm_on": bgm_on,
+		"review": review,
+		"daily_day": daily_day,
+		"daily_streak": daily_streak,
+		"daily_best": daily_best,
 		"story_clear": story_clear,
 		"kid_clear": kid_clear,
 		"island_clear": island_clear,
@@ -693,6 +706,10 @@ func load_game() -> void:
 	debug_unlock_all = bool(data.get("debug_unlock_all", false))
 	premium = bool(data.get("premium", false))
 	bgm_on = bool(data.get("bgm_on", true))
+	review = data.get("review", [])
+	daily_day = int(data.get("daily_day", 0))
+	daily_streak = int(data.get("daily_streak", 0))
+	daily_best = int(data.get("daily_best", 0))
 	story_clear = data.get("story_clear", {})
 	kid_clear = data.get("kid_clear", {})
 	island_clear = data.get("island_clear", {})
@@ -701,6 +718,69 @@ func load_game() -> void:
 	kid_unit = String(data.get("kid_unit", "k1"))
 	story_chapter = String(data.get("story_chapter", "ch1"))
 	story_scene = int(data.get("story_scene", 0))
+
+
+# ---------------------------------------------------------
+# まちがえた 問題を 覚えておく(復習)
+#
+# まちがえたまま 流れていくと、同じ ところで 何度でも つまずく。
+# つぎに その単元を 開いたとき、まず それを 出す。
+# ---------------------------------------------------------
+
+const REVIEW_MAX := 40
+
+
+## 今日の 分を 解いたか
+func daily_done() -> bool:
+	return daily_day == Daily.day_number()
+
+
+## 今日の 分を 解いた。きのうから 続いていれば れんぞくを のばす
+func record_daily() -> void:
+	var today := Daily.day_number()
+	if daily_day == today:
+		return
+	daily_streak = daily_streak + 1 if daily_day == today - 1 else 1
+	daily_day = today
+	daily_best = maxi(daily_best, daily_streak)
+	bump_stat("daily")
+	save_game()
+
+
+func add_review(stage_id: String, tier: int) -> void:
+	for r in review:
+		if String(r["s"]) == stage_id and int(r["t"]) == tier:
+			return                      # 同じ ものは ためない
+	review.append({"s": stage_id, "t": tier})
+	while review.size() > REVIEW_MAX:
+		review.pop_front()
+	save_game()
+
+
+## その単元に たまっている 復習の 数
+func review_count(stage_id: String) -> int:
+	var n := 0
+	for r in review:
+		if String(r["s"]) == stage_id:
+			n += 1
+	return n
+
+
+## その単元の 復習を 1 つ 見る(消さない)。無ければ -1
+func peek_review(stage_id: String) -> int:
+	for r in review:
+		if String(r["s"]) == stage_id:
+			return int(r["t"])
+	return -1
+
+
+## 解けたので 覚え書きから 消す
+func clear_review(stage_id: String, tier: int) -> void:
+	for i in range(review.size() - 1, -1, -1):
+		var r: Dictionary = review[i]
+		if String(r["s"]) == stage_id and int(r["t"]) == tier:
+			review.remove_at(i)
+	save_game()
 
 
 # ---------------------------------------------------------

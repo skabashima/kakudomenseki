@@ -82,13 +82,24 @@ func _ready() -> void:
 	vbox.add_child(rank)
 
 	vbox.add_child(_spacer(6))
+	var story_side := clampf(get_viewport_rect().size.x * 0.11, 40.0, 160.0)
+
+	# ■ 今日の図形(1 日 1 問。みんな 同じ 問題)
+	var done_today := GameState.daily_done()
+	vbox.add_child(_narrow(_story_card("今日の図形",
+		"きょうの 1 問" if not done_today else "できた!",
+		"%d日れんぞく" % GameState.daily_streak,
+		Color(0.62, 0.42, 0.20) if not done_today else Color(0.30, 0.45, 0.34),
+		Icons.star(64.0, Color(1, 1, 1, 0.95)), func() -> void:
+			GameState.change_scene("res://scenes/daily.tscn")), story_side))
+	vbox.add_child(_spacer(4))
+
 	# ■ 主役は 3 つの ストーリー。学年で えらぶ
 	vbox.add_child(_band("― ストーリー ―"))
 	var kid_done := 0
 	for u in KidDefs.UNITS:
 		if GameState.kid_clear.has(String(u["id"])):
 			kid_done += 1
-	var story_side := clampf(get_viewport_rect().size.x * 0.11, 40.0, 160.0)
 	vbox.add_child(_narrow(_story_card("たからのちず", "小学生",
 		"%d / %d" % [kid_done, KidDefs.UNITS.size()], Color(0.52, 0.30, 0.34),
 		Icons.flag(64.0, Color(1, 1, 1, 0.95)), func() -> void:

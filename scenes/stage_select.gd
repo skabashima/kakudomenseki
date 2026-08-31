@@ -145,6 +145,16 @@ func _stage_card(index: int, stage: Dictionary, col: Color) -> Control:
 	d.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	d.set_ruby_text("全ステージ解放で遊べます" if paid else String(stage["desc"]), kids)
 	mid.add_child(d)
+	# 前に まちがえた 問題が たまっていたら 知らせる(つぎに 開くと 1 問めに 出る)
+	var back := GameState.review_count(String(stage["id"]))
+	if back > 0 and not paid:
+		var rv := RubyLabel.new()
+		rv.font_size = 20
+		rv.ruby_size = 11
+		rv.color = Color(1.0, 0.85, 0.45)
+		rv.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		rv.set_ruby_text("まちがえた 問題 %d" % back, kids)
+		mid.add_child(rv)
 
 	var right := VBoxContainer.new()
 	right.size_flags_vertical = Control.SIZE_SHRINK_CENTER

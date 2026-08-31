@@ -42,6 +42,8 @@ var score_lbl: Label
 var combo_lbl: Label
 var progress_lbl: Label
 var figure: FigureView
+var is_review := false         # いま 出しているのが 復習の 問題か
+var cur_tier := 0              # いま 出している 段
 var question_lbl: RubyLabel
 var hint_lbl: RubyLabel
 var answer_lbl: Label
@@ -288,6 +290,7 @@ func _next_question(first := false) -> void:
 	hints_used = 0
 	input_text = ""
 	locked = false
+	is_review = false
 	var sid: String
 	var tier: int
 	if GameState.mode == "gauntlet":
@@ -298,6 +301,12 @@ func _next_question(first := false) -> void:
 	elif GameState.mode == "normal":
 		sid = stage_id
 		tier = q_index
+		# 1 問めは、前に まちがえた ものが あれば それを 出す
+		if q_index == 0:
+			var back := GameState.peek_review(stage_id)
+			if back >= 0:
+				tier = back
+				is_review = true
 	else:
 		# チャレンジ: 正解数が増えるほど難しいステージ・難しいバリエーションが出る
 		var ramp := clampf(challenge_count / 15.0, 0.0, 1.0)
@@ -305,13 +314,18 @@ func _next_question(first := false) -> void:
 		sid = ProblemGen.random_stage(GameState.challenge_course, rng, ramp,
 			GameState.free_stage_limit())
 		tier = rng.randi_range(0, mini(2 + int(ramp * 7.0), 9))
+	cur_tier = tier
 	problem = ProblemGen.generate(sid, rng, tier)
 	figure.set_spec(problem["fig"])
 	question_lbl.set_ruby_text(_short(String(problem["q"])), Ruby.needed(stage_id))
 	# 電卓と補助線の存在をそっと知らせる(ヒントを出すと上書きされる)
-	hint_lbl.color = Color(0.55, 0.62, 0.75, 0.8)
-	hint_lbl.set_ruby_text(
-		"式のまま答えてOK(例: 12×8÷2)。図は指でなぞって書ける(「補助線」でまっすぐな線)", false)
+	if is_review:
+		hint_lbl.color = Color(1.0, 0.85, 0.45)
+		hint_lbl.set_ruby_text("前に まちがえた 問題。もう一度。", Ruby.needed(stage_id))
+	else:
+		hint_lbl.color = Color(0.55, 0.62, 0.75, 0.8)
+		hint_lbl.set_ruby_text(
+			"式のまま答えてOK(例: 12×8÷2)。図は指でなぞって書ける(「補助線」でまっすぐな線)", false)
 	unit_lbl.text = String(problem["unit"])
 	if not _stage_based():
 		title_lbl.text = ("タイムアタック  " if GameState.mode == "time" else "サバイバル  ") \
@@ -542,6 +556,8 @@ func _submit() -> void:
 
 func _on_correct() -> void:
 	locked = true
+	if is_review:
+		GameState.clear_review(stage_id, cur_tier)
 	GameState.play_correct()      # コンボが のびるほど 高い 音
 	_cheer()
 	var seconds := (Time.get_ticks_msec() - q_start_msec) / 1000.0
@@ -579,6 +595,8 @@ func _on_correct() -> void:
 
 func _on_wrong() -> void:
 	locked = true
+	if _stage_based():
+		GameState.add_review(stage_id, cur_tier)
 	GameState.play_sfx("fail")
 	GameState.combo = 0
 	_shake_answer()

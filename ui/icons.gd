@@ -166,6 +166,25 @@ static func undo(sz: float, col: Color) -> Control:
 		c.draw_colored_polygon(head, col))
 	return c
 
+## 今日の図形むけ: 光が さす 星
+static func star(sz: float, col: Color) -> Control:
+	var c := _base(sz)
+	c.draw.connect(func() -> void:
+		var m := sz * 0.5
+		var pts := PackedVector2Array()
+		for i in 10:
+			var r := sz * (0.46 if i % 2 == 0 else 0.20)
+			var a := -PI * 0.5 + PI * float(i) / 5.0
+			pts.append(Vector2(m, m) + Vector2(cos(a), sin(a)) * r)
+		c.draw_colored_polygon(pts, col)
+		for i in 4:
+			var a2 := PI * 0.25 + PI * 0.5 * float(i)
+			c.draw_line(Vector2(m, m) + Vector2(cos(a2), sin(a2)) * sz * 0.30,
+				Vector2(m, m) + Vector2(cos(a2), sin(a2)) * sz * 0.46,
+				Color(col.r, col.g, col.b, 0.7), sz * 0.05))
+	return c
+
+
 static func _base(sz: float) -> Control:
 	var c := Control.new()
 	c.custom_minimum_size = Vector2(sz, sz)
