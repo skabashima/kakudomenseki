@@ -209,8 +209,20 @@ func _build_talk() -> void:
 		frame.size_flags_vertical = Control.SIZE_EXPAND_FILL
 		frame.add_child(art)
 		body.add_child(frame)
+	# だれが しゃべっているかを 絵で 見せる。名前だけの 文字だと、
+	# 敵役の カラスが いても 顔が 見えない。
+	# 「…」の 行を、直前に 出てきた 人の せりふ として 出す
+	var who := ""
 	for line in scene_data["lines"]:
-		_add_label(_kids(String(line)), 29, BODY)
+		var text := _kids(String(line))
+		if text.begins_with("「") and who != "":
+			body.add_child(_said(who, text))
+			continue
+		_add_label(text, 29, BODY)
+		if text.contains("カラス"):
+			who = "crow"
+		elif text.contains("トト"):
+			who = "hero"
 	_add_next("つぎへ ▶")
 
 
@@ -416,6 +428,35 @@ func _pick_answer(v: float, ans: float) -> void:
 # =========================================================
 # 部品
 # =========================================================
+
+## 顔つきの ひとこと。左に 絵、右に 文
+func _said(who: String, text: String) -> Control:
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 12)
+	var art := Control.new()
+	art.custom_minimum_size = Vector2(96, 108)
+	art.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	art.draw.connect(func() -> void:
+		var foot := Vector2(48, 104)
+		if who == "crow":
+			Chars.crow(art, foot, 96.0, "calm", float(Time.get_ticks_msec()) * 0.001)
+		else:
+			Chars.hero(art, foot, 92.0, "calm", float(Time.get_ticks_msec()) * 0.001))
+	row.add_child(art)
+	var panel := PanelContainer.new()
+	panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	panel.add_theme_stylebox_override("panel", GameState.flat_style(
+		Color(0.14, 0.13, 0.20) if who == "crow" else Color(0.12, 0.19, 0.28), 14))
+	var lbl := Label.new()
+	lbl.text = text
+	lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	lbl.add_theme_font_size_override("font_size", 27)
+	lbl.add_theme_color_override("font_color",
+		Color(0.92, 0.88, 0.80) if who == "crow" else Color(0.88, 0.94, 1.0))
+	panel.add_child(lbl)
+	row.add_child(panel)
+	return row
+
 
 func _add_label(text: String, size: int, col: Color) -> Label:
 	var l := Label.new()

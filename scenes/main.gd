@@ -164,6 +164,16 @@ func _ready() -> void:
 		Icons.chart(52.0, Color(1, 1, 1, 0.92)), func() -> void:
 			GameState.change_scene("res://scenes/records.tscn")))
 
+	# 図鑑 ― 見つけた 決まりが たまる
+	var zk := Zukan.progress(GameState.kid_clear, GameState.story_clear)
+	var row2 := HBoxContainer.new()
+	row2.add_theme_constant_override("separation", 10)
+	vbox.add_child(row2)
+	row2.add_child(_small_card("図鑑", Color(0.42, 0.34, 0.52),
+		Icons.book(52.0, Color(1, 1, 1, 0.92)), func() -> void:
+			GameState.change_scene("res://scenes/zukan.tscn"),
+		"見つけた 決まり %d / %d" % [int(zk[0]), int(zk[1])]))
+
 
 	# 未購入のときだけ解放の入口を出す(買い切り 1 商品・広告なし)
 	if not GameState.premium:
