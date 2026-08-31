@@ -171,9 +171,23 @@ static func _e22(rng: RandomNumberGenerator, kind: int) -> Dictionary:
 			ProblemGen.label(ProblemGen.proj3(Vector3(af, 0, 0)) + Vector2(0.5, -1.0), "B",
 				ProblemGen.COL_DIM, 26),
 		]
+		var pa22: Vector2 = ProblemGen.proj3(Vector3(0, 0, 0))
+		var pc22: Vector2 = ProblemGen.proj3(Vector3(af, af, 0))
+		var pf22: Vector2 = ProblemGen.proj3(Vector3(af, 0, af))
+		var pb22: Vector2 = ProblemGen.proj3(Vector3(af, 0, 0))
 		if ask_area:
 			var area := 0.865 * af * af       # (√3 / 2) × a × a、√3 = 1.73
+			var steps22 := [
+				{"say": "AC・CF・FA は どれも 正方形の 面の 対角線。長さは 1 辺 × 1.41 = %s cm。" % ProblemGen.fmt(af * 1.41),
+					"add": [ProblemGen.seg(pa22, pc22, Color(1.0, 0.85, 0.3, 0.95), 4.0),
+						ProblemGen.seg(pc22, pf22, Color(1.0, 0.85, 0.3, 0.95), 4.0),
+						ProblemGen.seg(pf22, pa22, Color(1.0, 0.85, 0.3, 0.95), 4.0)]},
+				{"say": "3 辺 とも 同じ 長さ ― つまり 切り口は 正三角形だ。",
+					"add": [ProblemGen.poly([pa22, pc22, pf22], Color(0.45, 1.0, 0.6, 0.30))]},
+				{"say": "正三角形の 面積 = 1 辺 × 1 辺 × 1.73 ÷ 4 = %s cm²。入力してみよう!" % ProblemGen.fmt(area)},
+			]
 			return {
+				"steps": steps22,
 				"q": "1 辺 %d cm の立方体 ABCD-EFGH を、3 点 A・C・F を通る平面で切ります。切り口の面積を求めなさい。√3 = 1.73 とします。" % a,
 				"answer": area, "unit": "cm²", "tol": 0.05,
 				"hint1": "AC・CF・FA はどれも面の対角線。切り口は正三角形になるよ。",
@@ -183,7 +197,18 @@ static func _e22(rng: RandomNumberGenerator, kind: int) -> Dictionary:
 				"fig": {"shapes": shapes},
 			}
 		var vol := af * af * af / 6.0
+		var steps22b := [
+			{"say": "頂点 B に 集まる 3 本の 辺 BA・BC・BF は、たがいに 垂直。",
+				"add": [ProblemGen.seg(pb22, pa22, Color(1.0, 0.85, 0.3, 0.95), 4.0),
+					ProblemGen.seg(pb22, pc22, Color(1.0, 0.85, 0.3, 0.95), 4.0),
+					ProblemGen.seg(pb22, pf22, Color(1.0, 0.85, 0.3, 0.95), 4.0)]},
+			{"say": "だから これは 三角錐。底面 ABC は %d × %d ÷ 2、高さは BF の %d cm。" % [a, a, a],
+				"add": [ProblemGen.poly([pa22, pb22, pc22], Color(0.45, 1.0, 0.6, 0.30))]},
+			{"say": "%d × %d ÷ 2 × %d ÷ 3 = %s cm³(立方体の 6 分の 1)。入力してみよう!" % [
+				a, a, a, ProblemGen.fmt(vol)]},
+		]
 		return {
+			"steps": steps22b,
 			"q": "1 辺 %d cm の立方体 ABCD-EFGH を、3 点 A・C・F を通る平面で切ります。頂点 B をふくむ方の立体の体積を求めなさい。" % a,
 			"answer": vol, "unit": "cm³",
 			"hint1": "B に集まる 3 辺 BA・BC・BF はどれも垂直。三角錐の公式が使えるよ。",
@@ -341,9 +366,19 @@ static func _e23(rng: RandomNumberGenerator, kind: int) -> Dictionary:
 				txt = "?"
 			shapes += _cell(p.x, p.y, s, s,
 				ProblemGen.FILL_ACCENT if i == 2 else ProblemGen.FILL_MAIN, txt)
+		var steps23 := [
+			{"say": "十字の 展開図では、1 つ とばした 先の 面どうしが 向かい合う。",
+				"add": [ProblemGen.poly([Vector2(0, 0), Vector2(s, 0), Vector2(s, s),
+					Vector2(0, s)], Color(1.0, 0.85, 0.3, 0.30))]},
+			{"say": "%d の 面から 1 つ とばすと、ちょうど 「?」の 面に なる。" % shown,
+				"add": [ProblemGen.poly([Vector2(s * 2, 0), Vector2(s * 3, 0),
+					Vector2(s * 3, s), Vector2(s * 2, s)], Color(0.45, 1.0, 0.6, 0.30))]},
+			{"say": "向かい合う 面の 和は 7。7 − %d = %d。入力してみよう!" % [shown, ans]},
+		]
 		return {
 			"q": "サイコロの展開図です。向かい合う面の目の和はいつも 7 になります。%d の面と向かい合う「?」の面の目はいくつですか。" % shown,
 			"answer": float(ans), "unit": "",
+			"steps": steps23,
 			"hint1": "展開図で 1 つおいた先にある面どうしが、組み立てると向かい合うよ。",
 			"hint2": "7 − %d" % shown,
 			"expl": "向かい合う面の和は 7 なので %d です。" % ans,
@@ -485,9 +520,18 @@ static func _j17(rng: RandomNumberGenerator, kind: int) -> Dictionary:
 			ProblemGen.label(m + Vector2(0.3, -1.0), "M", ProblemGen.COL_YELLOW, 26),
 		]
 		if ask_len:
+			var steps17 := [
+				{"say": "A と B から 同じ 開きで 弧を 引くと、交わる 2 点が できる。",
+					"add": [ProblemGen.seg(a, m, Color(1.0, 0.85, 0.3, 0.95), 4.0),
+						ProblemGen.seg(m, b, Color(1.0, 0.85, 0.3, 0.95), 4.0)]},
+				{"say": "その 2 点を つないだ 線が 垂直二等分線。AB を まん中で 分け、直角に 交わる。"},
+				{"say": "M は AB の まん中 なので AM = %d ÷ 2 = %s cm。入力してみよう!" % [
+					ab, ProblemGen.fmt(ab * 0.5)]},
+			]
 			return {
 				"q": "長さ %d cm の線分 AB の垂直二等分線をコンパスと定規で作図しました。垂直二等分線と AB の交点を M とするとき、AM の長さを求めなさい。" % ab,
 				"answer": float(ab) * 0.5, "unit": "cm",
+				"steps": steps17,
 				"hint1": "垂直二等分線は、その名のとおり線分をまん中で 2 つに分ける線だよ。",
 				"hint2": "AM = %d ÷ 2" % ab,
 				"expl": "M は AB の中点なので AM = %s cm です。" % ProblemGen.fmt(ab * 0.5),
@@ -692,9 +736,15 @@ static func _j18(rng: RandomNumberGenerator, kind: int) -> Dictionary:
 		else:
 			ans = f
 			q = "頂点が %d 個、辺が %d 本の多面体の面の数" % [v, e]
+		var steps18 := [
+			{"say": "どんな 多面体でも (頂点) − (辺) + (面) = 2。これが オイラーの きまり。"},
+			{"say": "この 立体は %s。分かっている 数を 入れて、足りない ものを 出す。" % name},
+			{"say": "%d − %d + %d = 2 に なる。答えは %d。入力してみよう!" % [v, e, f, ans]},
+		]
 		return {
 			"q": "オイラーの多面体定理を使います。%s を求めなさい。" % q,
 			"answer": float(ans), "unit": "",
+			"steps": steps18,
 			"hint1": "どんな多面体でも (頂点) − (辺) + (面) = 2 が成り立つよ。",
 			"hint2": "v − e + f = 2 に、分かっている数を入れて解こう。",
 			"expl": "%d − %d + %d = 2 になっている(%s)。答えは %d です。" % [v, e, f, name, ans],

@@ -226,18 +226,44 @@ static func _e18(rng: RandomNumberGenerator, kind: int) -> Dictionary:
 			_edge_label(Vector3(w, 0, float(h) * 1.5), Vector3(w, 0, h), "%d cm" % h, Vector2(1.5, 0)),
 			_edge_label(Vector3(w, 0, 0), Vector3(w, d, 0), "%d cm" % d, Vector2(0.9, -0.7)),
 		]
+		var base_face: Array = [ProblemGen.proj3(Vector3(0, 0, 0)),
+			ProblemGen.proj3(Vector3(w, 0, 0)), ProblemGen.proj3(Vector3(w, d, 0)),
+			ProblemGen.proj3(Vector3(0, d, 0))]
+		var side_face: Array = [ProblemGen.proj3(Vector3(0, 0, 0)),
+			ProblemGen.proj3(Vector3(w, 0, 0)), ProblemGen.proj3(Vector3(w, 0, h)),
+			ProblemGen.proj3(Vector3(0, 0, h))]
 		if ask_vol:
+			var steps18 := [
+				{"say": "まず 下の 面(底面)の 広さ。%d × %d = %d cm²。" % [d, w, w * d],
+					"add": [ProblemGen.poly(base_face, Color(1.0, 0.85, 0.3, 0.35))]},
+				{"say": "その 面が、高さ %d cm ぶん つみ上がって いる。" % h,
+					"add": [ProblemGen.seg(ProblemGen.proj3(Vector3(w, 0, 0)),
+						ProblemGen.proj3(Vector3(w, 0, h)),
+						Color(0.45, 1.0, 0.6, 0.95), 4.0)]},
+				{"say": "%d × %d × %d = %d cm³。入力してみよう!" % [d, w, h, vol]},
+			]
 			return {
 				"q": "たて %d cm、よこ %d cm、高さ %d cm の直方体の体積を求めなさい。" % [d, w, h],
 				"answer": float(vol), "unit": "cm³",
+				"steps": steps18,
 				"hint1": "直方体の体積は たて × よこ × 高さ。",
 				"hint2": "%d × %d × %d" % [d, w, h],
 				"expl": "体積 = %d × %d × %d = %d cm³ です。" % [d, w, h, vol],
 				"fig": {"shapes": shapes},
 			}
+		var steps18b := [
+			{"say": "面は 6 つ。まず 上下の 面 ― %d × %d = %d が 2 まい。" % [d, w, w * d],
+				"add": [ProblemGen.poly(base_face, Color(1.0, 0.85, 0.3, 0.35))]},
+			{"say": "つぎに 手前と おくの 面 ― %d × %d = %d が 2 まい。のこりの 横の 面は %d × %d = %d が 2 まい。" % [
+				w, h, w * h, d, h, d * h],
+				"add": [ProblemGen.poly(side_face, Color(0.45, 1.0, 0.6, 0.35))]},
+			{"say": "(%d + %d + %d) × 2 = %d cm²。入力してみよう!" % [
+				w * d, d * h, h * w, surf]},
+		]
 		return {
 			"q": "たて %d cm、よこ %d cm、高さ %d cm の直方体の表面積を求めなさい。" % [d, w, h],
 			"answer": float(surf), "unit": "cm²",
+			"steps": steps18b,
 			"hint1": "面は 6 つ。向かい合う面は同じ大きさだから、3 種類を求めて 2 倍しよう。",
 			"hint2": "(%d×%d + %d×%d + %d×%d) × 2" % [w, d, d, h, h, w],
 			"expl": "(%d + %d + %d) × 2 = %d cm² です。" % [w * d, d * h, h * w, surf],
@@ -366,10 +392,20 @@ static func _e19(rng: RandomNumberGenerator, kind: int) -> Dictionary:
 		var lv := rng.randi_range(2, 8)
 		var h := lv + rng.randi_range(2, 6)
 		var vol := w * d * lv
+		var steps19 := [
+			{"say": "水の 形も 直方体。下の 面は 水そうと 同じ %d × %d = %d cm²。" % [
+				d, w, w * d],
+				"add": [ProblemGen.poly([ProblemGen.proj3(Vector3(0, 0, 0)),
+					ProblemGen.proj3(Vector3(w, 0, 0)), ProblemGen.proj3(Vector3(w, d, 0)),
+					ProblemGen.proj3(Vector3(0, d, 0))], Color(1.0, 0.85, 0.3, 0.35))]},
+			{"say": "底面積 × 深さ = 水の 体積 %d cm³ に なる。深さを 求めよう。" % vol},
+			{"say": "%d ÷ %d = %d cm。入力してみよう!" % [vol, w * d, lv]},
+		]
 		return {
 			"q": "たて %d cm、よこ %d cm、高さ %d cm の直方体の水そうに、%d cm³ の水を入れました。水の深さは何 cm になりますか。" % [
 				d, w, h, vol],
 			"answer": float(lv), "unit": "cm",
+			"steps": steps19,
 			"hint1": "水の形も直方体。底面積 × 深さ = 水の体積 だよ。",
 			"hint2": "深さ = %d ÷ (%d × %d)" % [vol, w, d],
 			"expl": "底面積は %d cm²。%d ÷ %d = %d cm です。" % [w * d, vol, w * d, lv],
@@ -483,10 +519,20 @@ static func _e20(rng: RandomNumberGenerator, kind: int) -> Dictionary:
 				"止まっている長方形", ProblemGen.COL_DIM, 24),
 			ProblemGen.label(Vector2(mv_x + 0.2, -1.2), "動く長方形", ProblemGen.COL_YELLOW, 24),
 		]}
+		var steps20 := [
+			{"say": "%d 秒間に 動く 長方形は %d × %d = %d cm 進む。" % [t, v, t, over],
+				"add": [ProblemGen.arrow(Vector2(fix_x, hgt + 0.6),
+					Vector2(fix_x + over, hgt + 0.6), Color(0.45, 1.0, 0.6, 0.95))]},
+			{"say": "重なった ところは いつも 長方形。よこ %d cm、たては %d cm の まま。" % [
+				over, hgt],
+				"add": [ProblemGen.poly(ov, Color(1.0, 0.85, 0.3, 0.40))]},
+			{"say": "%d × %d = %d cm²。入力してみよう!" % [over, hgt, area]},
+		]
 		return {
 			"q": "たて %d cm、よこ %d cm の長方形が、毎秒 %d cm で右へ動いて、止まっている長方形(たて %d cm、よこ %d cm)に重なっていきます。重なり始めてから %d 秒後の重なった部分の面積を求めなさい。" % [
 				hgt, w_move, v, hgt, w_fix, t],
 			"answer": float(area), "unit": "cm²",
+			"steps": steps20,
 			"hint1": "重なった部分はいつも長方形。たては変わらないので、よこの長さだけ考えよう。",
 			"hint2": "よこ = %d × %d = %d cm。面積 = %d × %d" % [v, t, over, over, hgt],
 			"expl": "%d 秒で %d cm 進むので、重なりは よこ %d cm・たて %d cm。面積 %d cm² です。" % [
@@ -620,10 +666,20 @@ static func _e21(rng: RandomNumberGenerator, kind: int) -> Dictionary:
 			ProblemGen.side_label(b, c, "%d cm" % bc, -1.0, 0.9),
 			ProblemGen.side_label(d, e, "x", 1.0, 0.8),
 		]}
+		var steps21 := [
+			{"say": "DE と BC は 平行。だから 三角形 ADE は、ABC を 小さく した 同じ 形。",
+				"add": [ProblemGen.poly([a, d, e], Color(1.0, 0.85, 0.3, 0.35))]},
+			{"say": "AD : AB = %d : %d だから、辺は ぜんぶ %d/%d の 大きさ。" % [
+				m, m + n, m, m + n],
+				"add": [ProblemGen.seg(a, b, Color(0.45, 1.0, 0.6, 0.9), 3.0),
+					ProblemGen.seg(a, d, Color(1.0, 0.85, 0.3, 0.95), 5.0)]},
+			{"say": "x = %d × %d ÷ %d = %d cm。入力してみよう!" % [bc, m, m + n, de]},
+		]
 		return {
 			"q": "三角形 ABC で、辺 AB 上の点 D と辺 AC 上の点 E を結んだ DE が BC と平行です。AD:DB = %d:%d、BC = %d cm のとき、DE の長さ x を求めなさい。" % [
 				m, n, bc],
 			"answer": float(de), "unit": "cm",
+			"steps": steps21,
 			"hint1": "三角形 ADE と三角形 ABC は同じ形(相似)。辺の比は AD:AB になるよ。",
 			"hint2": "AD:AB = %d:%d なので x = %d × %d ÷ %d" % [m, m + n, bc, m, m + n],
 			"expl": "相似比は %d:%d。x = %d × %d/%d = %d cm です。" % [
@@ -752,9 +808,16 @@ static func _j13(rng: RandomNumberGenerator, kind: int) -> Dictionary:
 			_edge_label(Vector3(-a * 0.5, -a * 0.5, 0), Vector3(a * 0.5, -a * 0.5, 0),
 				"%d" % a, Vector2(0, -1.0)),
 		]
+		var steps13 := [
+			{"say": "まず 底面の 広さを 出す。1 辺 %d の 正方形 なので %d cm²。" % [a, a * a]},
+			{"say": "同じ 底面・同じ 高さの 角柱に 入れると、角錐は ちょうど その 3 分の 1。"},
+			{"say": "体積 = %d × %d ÷ 3 = %s cm³。入力してみよう!" % [
+				a * a, h, ProblemGen.fmt(vol)]},
+		]
 		return {
 			"q": "底面が 1 辺 %d cm の正方形、高さが %d cm の正四角錐の体積を求めなさい。" % [a, h],
 			"answer": vol, "unit": "cm³",
+			"steps": steps13,
 			"hint1": "角錐の体積は 底面積 × 高さ ÷ 3。同じ底面と高さの角柱の 3 分の 1 だよ。",
 			"hint2": "%d × %d × %d ÷ 3" % [a, a, h],
 			"expl": "底面積 %d cm²。体積 = %d × %d ÷ 3 = %s cm³ です。" % [
@@ -887,9 +950,22 @@ static func _j14(rng: RandomNumberGenerator, kind: int) -> Dictionary:
 			_edge_label(Vector3(a, 0, 0), Vector3(a, b, 0), "%d" % b, Vector2(0.9, -0.7)),
 			_edge_label(Vector3(a, b, 0), Vector3(a, b, c), "%d" % c, Vector2(1.2, 0)),
 		]
+		var steps14 := [
+			{"say": "まず 底面の 対角線。三平方で √(%d² + %d²) = √%d。" % [a, b, a * a + b * b],
+				"add": [ProblemGen.seg(ProblemGen.proj3(Vector3(0, 0, 0)),
+					ProblemGen.proj3(Vector3(a, b, 0)), Color(1.0, 0.85, 0.3, 0.95), 4.0)]},
+			{"say": "その 対角線と 高さ %d で、もう一度 三平方(立てた 直角三角形)。" % c,
+				"add": [ProblemGen.seg(ProblemGen.proj3(Vector3(a, b, 0)),
+						ProblemGen.proj3(Vector3(a, b, c)), Color(0.45, 1.0, 0.6, 0.95), 4.0),
+					ProblemGen.seg(ProblemGen.proj3(Vector3(0, 0, 0)),
+						ProblemGen.proj3(Vector3(a, b, c)), Color(0.45, 1.0, 0.6, 0.95), 4.0)]},
+			{"say": "対角線 = √(%d + %d + %d) = %d cm。入力してみよう!" % [
+				a * a, b * b, c * c, diag]},
+		]
 		return {
 			"q": "たて %d cm、よこ %d cm、高さ %d cm の直方体の対角線の長さを求めなさい。" % [b, a, c],
 			"answer": float(diag), "unit": "cm",
+			"steps": steps14,
 			"hint1": "まず底面の対角線を三平方で出して、それと高さでもう一度三平方を使おう。",
 			"hint2": "対角線 = √(%d + %d + %d)" % [a * a, b * b, c * c],
 			"expl": "対角線 = √(%d² + %d² + %d²) = √%d = %d cm です。" % [
@@ -986,10 +1062,19 @@ static func _j15(rng: RandomNumberGenerator, kind: int) -> Dictionary:
 			ProblemGen.side_label(a, e, "%d cm" % ae, 1.0, 0.8),
 			ProblemGen.side_label(e, c, "x", 1.0, 0.8),
 		]}
+		var steps15 := [
+			{"say": "DE と BC が 平行だから、三角形 ADE と 三角形 ABC は 同じ かたち(相似)。",
+				"add": [ProblemGen.poly([a, d, e], Color(1.0, 0.85, 0.3, 0.22),
+					Color(1.0, 0.85, 0.3, 0.9), 3.0)]},
+			{"say": "だから 2 つの 辺は 同じ 比に 分かれる ― AD:DB = AE:EC = %d:%d。" % [m, n]},
+			{"say": "%d:%d = %d:x なので x = %d × %d ÷ %d = %d cm。入力してみよう!" % [
+				m, n, ae, ae, n, m, ec]},
+		]
 		return {
 			"q": "三角形 ABC で DE と BC が平行です。AD:DB = %d:%d、AE = %d cm のとき、EC の長さ x を求めなさい。" % [
 				m, n, ae],
 			"answer": float(ec), "unit": "cm",
+			"steps": steps15,
 			"hint1": "平行な線で切ると、2 つの辺は同じ比に分かれる(AD:DB = AE:EC)。",
 			"hint2": "%d:%d = %d:x を解こう。" % [m, n, ae],
 			"expl": "AE:EC = %d:%d なので x = %d × %d ÷ %d = %d cm です。" % [m, n, ae, n, m, ec],
@@ -1131,10 +1216,18 @@ static func _j16(rng: RandomNumberGenerator, kind: int) -> Dictionary:
 		var shapes: Array = _box(3.0, 2.0, 2.5)
 		var k := float(n) / float(m)
 		shapes += _box(3.0 * k, 2.0 * k, 2.5 * k, ProblemGen.COL_YELLOW)
+		var steps16 := [
+			{"say": "長さの 比が %d:%d の とき、たて・よこ・高さ の 3 つとも その 比に なる。" % [m, n]},
+			{"say": "だから 体積は %d × %d × %d と %d × %d × %d の 比 ― %d : %d。" % [
+				m, m, m, n, n, n, m * m * m, n * n * n]},
+			{"say": "%d × %d ÷ %d = %d cm³。入力してみよう!" % [
+				small, n * n * n, m * m * m, big]},
+		]
 		return {
 			"q": "相似比が %d:%d の 2 つの立体があります。小さい方の体積が %d cm³ のとき、大きい方の体積を求めなさい。" % [
 				m, n, small],
 			"answer": float(big), "unit": "cm³",
+			"steps": steps16,
 			"hint1": "長さが k 倍になると、体積は k を 3 回かけた分だけ大きくなるよ。",
 			"hint2": "体積比 = %d:%d。%d × %d ÷ %d" % [m * m * m, n * n * n, small, n * n * n, m * m * m],
 			"expl": "体積比は %d:%d なので %d cm³ です。" % [m * m * m, n * n * n, big],

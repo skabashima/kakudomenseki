@@ -140,12 +140,26 @@ static func _j1(rng: RandomNumberGenerator, kind: int) -> Dictionary:
 		ProblemGen.ang(v[0], v[1], v[2], "%d°" % b),
 		ProblemGen.ang(v[2], v[0], far, "x"),
 	]}
+	# 解き方: となり合わない 2 つの内角を ぬって、外角と 同じだと 見せる
+	var d_c := rad_to_deg(atan2(v[0].y - v[2].y, v[0].x - v[2].x))
+	var d_b := rad_to_deg(atan2(v[2].y - v[1].y, v[2].x - v[1].x))
+	var steps := [
+		{"say": "となり合わない 2 つの内角に色をつける。ここが x の正体!",
+			"add": [ProblemGen.sector(v[2], 2.2, d_c, d_c + float(a),
+					Color(1.0, 0.85, 0.3, 0.35)),
+				ProblemGen.sector(v[1], 2.2, d_b - float(b), d_b,
+					Color(1.0, 0.85, 0.3, 0.35))]},
+		{"say": "外角は、この 2 つを合わせた 大きさに なる(内角の和 180° から 出せる)。",
+			"add": [ProblemGen.seg(v[0], far, Color(0.45, 1.0, 0.6, 0.9), 3.0, true)]},
+		{"say": "x = %d + %d = %d°。入力してみよう!" % [a, b, ext]},
+	]
 	return {
 		"q": "図の三角形で、外角 x は何度ですか。",
 		"answer": float(ext), "unit": "度",
 		"hint1": "外角は、となり合わない 2 つの内角の和。180 から引かなくても一発で出るよ。",
 		"hint2": "x = %d + %d" % [a, b],
 		"expl": "外角の定理より x = %d + %d = %d° です。" % [a, b, ext],
+		"steps": steps,
 		"fig": fig,
 	}
 
@@ -215,9 +229,19 @@ static func _j3(rng: RandomNumberGenerator, tier: int) -> Dictionary:
 			ProblemGen.ang(Vector2.ZERO, pa, pb, "%d°" % c),
 			ProblemGen.ang(pt, pa, pb, "x"),
 		]}
+		var steps := [
+			{"say": "まず、x が どの 弧を 見ている 角なのかを たしかめる。A と B の 間の 弧だ。",
+				"add": [ProblemGen.arc(Vector2.ZERO, r, 270.0 - c * 0.5, 270.0 + c * 0.5,
+					Color(1.0, 0.85, 0.3, 0.95), 5.0)]},
+			{"say": "中心 O から 見た 角(%d°)と、円の ふちから 見た 角(x)は、同じ 弧を 見ている。" % c,
+				"add": [ProblemGen.seg(pt, pa, Color(0.45, 1.0, 0.6, 0.9), 3.0, true),
+					ProblemGen.seg(pt, pb, Color(0.45, 1.0, 0.6, 0.9), 3.0, true)]},
+			{"say": "円周角は 中心角の 半分。x = %d ÷ 2 = %d°。入力してみよう!" % [c, x]},
+		]
 		return {
 			"q": "円 O で、中心角が %d° のとき、同じ弧に対する円周角 x は何度ですか。" % c,
 			"answer": float(x), "unit": "度",
+			"steps": steps,
 			"hint1": "円周角は中心角の半分だよ。",
 			"hint2": "x = %d ÷ 2" % c,
 			"expl": "円周角の定理より x = %d ÷ 2 = %d° です。" % [c, x],
@@ -263,9 +287,16 @@ static func _j3(rng: RandomNumberGenerator, tier: int) -> Dictionary:
 			ProblemGen.ang(pb, pt, pa, "x"),
 			ProblemGen.right(pt, pa, pb),
 		]}
+		var steps3 := [
+			{"say": "AB は 直径。直径に 立つ 円周角は いつでも 90°(タレスの定理)。",
+				"add": [ProblemGen.seg(pa, pb, Color(1.0, 0.85, 0.3, 0.95), 4.0)]},
+			{"say": "これで 三角形の 角が 2 つ わかった ― 90° と %d°。" % a2},
+			{"say": "内角の和は 180°。x = 180 − 90 − %d = %d°。入力してみよう!" % [a2, x2]},
+		]
 		return {
 			"q": "AB は円 O の直径です。角 A が %d° のとき、角 x は何度ですか。" % a2,
 			"answer": float(x2), "unit": "度",
+			"steps": steps3,
 			"hint1": "直径に対する円周角は 90°(タレスの定理)。頂点の角は直角だよ。",
 			"hint2": "x = 180 − 90 − %d" % a2,
 			"expl": "直径に立つ円周角は 90°。三角形の内角の和から x = 90 − %d = %d° です。" % [a2, x2],
@@ -294,9 +325,18 @@ static func _j4(rng: RandomNumberGenerator, tier: int) -> Dictionary:
 			ProblemGen.ang(pb, pc, pa, "%d°" % a),
 			ProblemGen.ang(pd, pa, pc, "x"),
 		]}
+		var steps4a := [
+			{"say": "四角形の 4 つの 頂点が ぜんぶ 円の 上に ある(内接している)。",
+				"add": [ProblemGen.circle(Vector2.ZERO, r, null,
+					Color(1.0, 0.85, 0.3, 0.8), 3.0)]},
+			{"say": "この とき、向かい合う 角の 和は かならず 180° に なる。",
+				"add": [ProblemGen.seg(pa, pc, Color(0.45, 1.0, 0.6, 0.7), 2.5, true)]},
+			{"say": "x = 180 − %d = %d°。入力してみよう!" % [a, 180 - a]},
+		]
 		return {
 			"q": "四角形は円に内接しています。1 つの角が %d° のとき、向かいの角 x は何度ですか。" % a,
 			"answer": float(180 - a), "unit": "度",
+			"steps": steps4a,
 			"hint1": "円に内接する四角形は、向かい合う角の和が 180° だよ。",
 			"hint2": "x = 180 − %d" % a,
 			"expl": "内接四角形の対角の和は 180°。x = 180 − %d = %d° です。" % [a, 180 - a],
@@ -321,9 +361,19 @@ static func _j4(rng: RandomNumberGenerator, tier: int) -> Dictionary:
 		ProblemGen.ang(p, q2, q1, "%d°" % a2),
 		ProblemGen.ang(Vector2.ZERO, q1, q2, "x"),
 	]}
+	var steps4 := [
+		{"say": "接線と 半径は、さわった ところで かならず 直角(90°)。2 か所とも だ。",
+			"add": [ProblemGen.seg(Vector2.ZERO, q1, Color(1.0, 0.85, 0.3, 0.95), 4.0),
+				ProblemGen.seg(Vector2.ZERO, q2, Color(1.0, 0.85, 0.3, 0.95), 4.0)]},
+		{"say": "O・接点・P・接点 で 四角形が できる。四角形の 内角の和は 360°。",
+			"add": [ProblemGen.poly([Vector2.ZERO, q1, p, q2], Color(0.45, 1.0, 0.6, 0.18),
+				Color(0.45, 1.0, 0.6, 0.9), 3.0)]},
+		{"say": "x = 360 − 90 − 90 − %d = %d°。入力してみよう!" % [a2, 180 - a2]},
+	]
 	return {
 		"q": "点 P から円 O に 2 本の接線を引きました。接線の間の角が %d° のとき、中心角 x は何度ですか。" % a2,
 		"answer": float(180 - a2), "unit": "度",
+		"steps": steps4,
 		"hint1": "接線と半径は接点で垂直(90°)。四角形の内角の和 360° を使おう。",
 		"hint2": "x = 360 − 90 − 90 − %d" % a2,
 		"expl": "接点の角は 2 つとも 90°。四角形の内角の和から x = 360 − 180 − %d = %d° です。" % [a2, 180 - a2],
@@ -347,9 +397,22 @@ static func _j5(rng: RandomNumberGenerator, tier: int) -> Dictionary:
 			ProblemGen.side_label(v[0], v[1], str(a), -1.0),
 			ProblemGen.side_label(v[2], v[0], "x", -1.0),
 		]}
+		var steps := [
+			{"say": "直角を はさむ 2 辺で、それぞれ 正方形を 描いてみる。",
+				"add": [ProblemGen.poly([v[1], v[0], v[0] + Vector2(-float(a), 0),
+						v[1] + Vector2(-float(a), 0)], Color(1.0, 0.85, 0.3, 0.25),
+						Color(1.0, 0.85, 0.3, 0.9), 3.0),
+					ProblemGen.poly([v[1], v[2], v[2] + Vector2(0, -float(b)),
+						v[1] + Vector2(0, -float(b))], Color(0.35, 0.75, 1.0, 0.25),
+						Color(0.35, 0.75, 1.0, 0.9), 3.0)]},
+			{"say": "この 2 つの 正方形の 広さを 足すと、斜辺の 正方形の 広さに なる ― これが 三平方の定理。"},
+			{"say": "x² = %d² + %d² = %d + %d = %d。x = %d。入力してみよう!" % [
+				a, b, a * a, b * b, c * c, c]},
+		]
 		return {
 			"q": "直角をはさむ 2 辺が %d と %d の直角三角形で、斜辺 x の長さを求めなさい。" % [a, b],
 			"answer": float(c), "unit": "",
+			"steps": steps,
 			"hint1": "三平方の定理: (斜辺)² = (1辺)² + (もう1辺)² だよ。",
 			"hint2": "x² = %d² + %d² = %d" % [a, b, c * c],
 			"expl": "x² = %d² + %d² = %d + %d = %d。x = %d です。" % [a, b, a * a, b * b, c * c, c],
@@ -406,9 +469,18 @@ static func _j6(rng: RandomNumberGenerator, tier: int) -> Dictionary:
 				ProblemGen.side_label(vv[1], vv[2], "x", -1.0),
 				ProblemGen.tick(vv[0], vv[1]), ProblemGen.tick(vv[0], vv[2]),
 			]}
+			var steps_h := [
+				{"say": "直角二等辺三角形は、辺の 比が いつでも 1 : 1 : √2。",
+					"add": [ProblemGen.seg(vv[0], vv[1], Color(1.0, 0.85, 0.3, 0.95), 4.0),
+						ProblemGen.seg(vv[0], vv[2], Color(1.0, 0.85, 0.3, 0.95), 4.0),
+						ProblemGen.seg(vv[1], vv[2], Color(0.45, 1.0, 0.6, 0.95), 4.0)]},
+				{"say": "だから 斜辺 = 1 辺 × √2。√2 は だいたい 1.41。"},
+				{"say": "x = %d × 1.41 = %s。入力してみよう!" % [leg, ProblemGen.fmt(ans_h)]},
+			]
 			return {
 				"q": "直角をはさむ 2 辺がどちらも %d の直角二等辺三角形で、斜辺 x を求めなさい。√2 = 1.41 として小数で答えなさい。" % leg,
 				"answer": ans_h, "unit": "", "tol": 0.02,
+				"steps": steps_h,
 				"hint1": "辺の比は 1 : 1 : √2。斜辺 = 1辺 × √2 だよ。",
 				"hint2": "x = %d × 1.41" % leg,
 				"expl": "x = %d × √2 = %d × 1.41 = %s です。" % [leg, leg, ProblemGen.fmt(ans_h)],
@@ -485,9 +557,18 @@ static func _j6(rng: RandomNumberGenerator, tier: int) -> Dictionary:
 		ProblemGen.right(v[2], v[0], v[1]),
 		ProblemGen.side_label(v[0], v[1], str(h), 1.0),
 	]}
+	var steps6 := [
+		{"say": "斜辺を 下の 辺と 見て、てっぺんから まっすぐ 下ろす。",
+			"add": [ProblemGen.seg(v[2], Vector2(half, 0.0),
+				Color(1.0, 0.85, 0.3, 0.95), 3.0, true)]},
+		{"say": "直角二等辺 なので、この 高さは 斜辺の ちょうど 半分(%s)。" % ProblemGen.fmt(half)},
+		{"say": "面積 = %d × %s ÷ 2 = %s。入力してみよう!" % [
+			h, ProblemGen.fmt(half), ProblemGen.fmt(h * h / 4.0)]},
+	]
 	return {
 		"q": "斜辺が %d の直角二等辺三角形の面積を求めなさい。" % h,
 		"answer": h * h / 4.0, "unit": "",
+		"steps": steps6,
 		"hint1": "斜辺を底辺と見ると、高さは斜辺の半分になるよ。",
 		"hint2": "面積 = %d × %d ÷ 2" % [h, h / 2],
 		"expl": "高さは斜辺の半分の %s。面積 = %d × %s ÷ 2 = %s です。" % [ProblemGen.fmt(half), h, ProblemGen.fmt(half), ProblemGen.fmt(h * h / 4.0)],
@@ -514,9 +595,21 @@ static func _j7(rng: RandomNumberGenerator, tier: int) -> Dictionary:
 		ProblemGen.label(Vector2(r * 0.6, -0.9), "%dcm" % r),
 	]}
 	if kind == 0:
+		var steps7 := [
+			{"say": "まず 円ぜんぶの まわり(円周)を 出す。2 × 3.14 × %d = %s cm。" % [
+				r, ProblemGen.fmt(2.0 * 3.14 * r)],
+				"add": [ProblemGen.circle(Vector2.ZERO, float(r), null,
+					Color(0.45, 1.0, 0.6, 0.7), 3.0)]},
+			{"say": "おうぎ形は その %d/360 の ぶん。弧も 同じ 割合。" % th,
+				"add": [ProblemGen.arc(Vector2.ZERO, float(r), 0.0, float(th),
+					Color(1.0, 0.85, 0.3, 0.95), 5.0)]},
+			{"say": "弧 = %s × %d/360 = %s cm。入力してみよう!" % [
+				ProblemGen.fmt(2.0 * 3.14 * r), th, ProblemGen.fmt(arc_len)]},
+		]
 		return {
 			"q": "半径 %dcm、中心角 %d° のおうぎ形の弧の長さは何 cm ですか。円周率は 3.14 とします。" % [r, th],
 			"answer": arc_len, "unit": "cm", "tol": 0.02,
+			"steps": steps7,
 			"hint1": "弧の長さ = 円周 × (中心角 ÷ 360) だよ。",
 			"hint2": "2 × 3.14 × %d × %d/360" % [r, th],
 			"expl": "弧 = 2 × 3.14 × %d × %d/360 = %s cm です。" % [r, th, ProblemGen.fmt(arc_len)],
@@ -567,9 +660,18 @@ static func _j8(rng: RandomNumberGenerator, tier: int) -> Dictionary:
 			ProblemGen.poly([m01, m12, m20], ProblemGen.FILL_ACCENT, Color.WHITE, 3.0),
 			ProblemGen.label(Vector2(4.5, 5.8), "全体 %d" % s),
 		]}
+		var steps8 := [
+			{"say": "中点を つなぐと、まわりに 同じ 大きさの 三角形が 3 つ できる。",
+				"add": [ProblemGen.poly([v[0], m01, m20], Color(1.0, 0.85, 0.3, 0.22)),
+					ProblemGen.poly([m01, v[1], m12], Color(1.0, 0.85, 0.3, 0.22)),
+					ProblemGen.poly([m20, m12, v[2]], Color(1.0, 0.85, 0.3, 0.22))]},
+			{"say": "まん中と あわせて 4 つ。どれも 同じ 大きさ なので、まん中は 全体の 4 分の 1。"},
+			{"say": "%d ÷ 4 = %s。入力してみよう!" % [s, ProblemGen.fmt(s / 4.0)]},
+		]
 		return {
 			"q": "三角形の 3 辺の中点を結んで小さな三角形を作りました。もとの三角形の面積が %d のとき、小さな三角形の面積を求めなさい。" % s,
 			"answer": s / 4.0, "unit": "",
+			"steps": steps8,
 			"hint1": "中点を結んだ三角形は、もとの三角形と相似で相似比は 1:2。面積比は 2 乗だよ。",
 			"hint2": "%d ÷ 4" % s,
 			"expl": "相似比 1:2 → 面積比 1:4。%d ÷ 4 = %s です。" % [s, ProblemGen.fmt(s / 4.0)],
@@ -592,9 +694,18 @@ static func _j8(rng: RandomNumberGenerator, tier: int) -> Dictionary:
 		ProblemGen.label(Vector2(8.0 + 3.0 * scale, -1.2), "面積 x"),
 		ProblemGen.label(Vector2(7.2, 6.5), "相似比 %d : %d" % [m, n]),
 	]}
+	var steps8b := [
+		{"say": "まず 小さい ほうの 三角形。面積は %d と 分かっている。" % small,
+			"add": [ProblemGen.poly(v1, Color(1.0, 0.85, 0.3, 0.25))]},
+		{"say": "辺の 長さが %d : %d なら、たて も よこ も %d/%d 倍。広さは その 2 回ぶんで %d : %d。" % [
+			m, n, n, m, m * m, n * n],
+			"add": [ProblemGen.poly(v2, Color(0.45, 1.0, 0.6, 0.25))]},
+		{"say": "x = %d × %d ÷ %d = %d。入力してみよう!" % [small, n * n, m * m, big]},
+	]
 	return {
 		"q": "相似比が %d : %d の相似な三角形があります。小さい方の面積が %d のとき、大きい方の面積 x を求めなさい。" % [m, n, small],
 		"answer": float(big), "unit": "",
+		"steps": steps8b,
 		"hint1": "相似比が %d : %d なら、面積比はその 2 乗で %d : %d だよ。" % [m, n, m * m, n * n],
 		"hint2": "x = %d × %d ÷ %d" % [small, n * n, m * m],
 		"expl": "面積比は %d² : %d² = %d : %d。x = %d × %d/%d = %d です。" % [m, n, m * m, n * n, small, n * n, m * m, big],
@@ -617,9 +728,20 @@ static func _j9(rng: RandomNumberGenerator, tier: int) -> Dictionary:
 			ProblemGen.label(Vector2(a, -0.7), "(%d, 0)" % a),
 			ProblemGen.label(Vector2(cx, cy + 0.8), "(%d, %d)" % [cx, cy]),
 		]}
+		var steps9a := [
+			{"say": "x 軸に のっている OA を 底辺と 見る。長さは %d。" % a,
+				"add": [ProblemGen.seg(Vector2(0, 0), Vector2(a, 0),
+					Color(1.0, 0.85, 0.3, 0.95), 4.0)]},
+			{"say": "高さは B から 底辺までの まっすぐな 長さ ― B の y 座標 %d。" % cy,
+				"add": [ProblemGen.seg(Vector2(cx, cy), Vector2(cx, 0),
+					Color(0.45, 1.0, 0.6, 0.95), 3.0, true)]},
+			{"say": "面積 = %d × %d ÷ 2 = %s。入力してみよう!" % [
+				a, cy, ProblemGen.fmt(a * cy / 2.0)]},
+		]
 		return {
 			"q": "3 点 O(0, 0)、A(%d, 0)、B(%d, %d) を結んだ三角形 OAB の面積を求めなさい。" % [a, cx, cy],
 			"answer": a * cy / 2.0, "unit": "",
+			"steps": steps9a,
 			"hint1": "OA を底辺と見ると、高さは B の y 座標だよ。",
 			"hint2": "%d × %d ÷ 2" % [a, cy],
 			"expl": "底辺 OA = %d、高さ = %d。面積 = %d × %d ÷ 2 = %s です。" % [a, cy, a, cy, ProblemGen.fmt(a * cy / 2.0)],
@@ -641,9 +763,23 @@ static func _j9(rng: RandomNumberGenerator, tier: int) -> Dictionary:
 		ProblemGen.label(Vector2(-0.6, -0.6), "O"),
 		ProblemGen.label(Vector2(xi + 1.2, q * 0.35), "y = −%dx + %d" % [p, q] if p > 1 else "y = −x + %d" % q),
 	]}
+	var steps9 := [
+		{"say": "y = 0 を 入れると x 軸との 交点、x = 0 を 入れると y 軸との 交点が 出る。",
+			"add": [ProblemGen.circle(Vector2(float(xi), 0), 0.35, Color(1.0, 0.85, 0.3, 0.95)),
+				ProblemGen.circle(Vector2(0, float(q)), 0.35, Color(1.0, 0.85, 0.3, 0.95)),
+				ProblemGen.label(Vector2(float(xi), -1.1), "(%d, 0)" % xi,
+					Color(1.0, 0.85, 0.3, 0.95), 24),
+				ProblemGen.label(Vector2(1.6, float(q) + 0.9), "(0, %d)" % q,
+					Color(1.0, 0.85, 0.3, 0.95), 24)]},
+		{"say": "この 2 点と 原点で 直角三角形。底辺 %d、高さ %d だ。" % [xi, q],
+			"add": [ProblemGen.poly([Vector2(0, 0), Vector2(float(xi), 0), Vector2(0, float(q))],
+				Color(0.45, 1.0, 0.6, 0.22), Color(0.45, 1.0, 0.6, 0.9), 3.0)]},
+		{"say": "面積 = %d × %d ÷ 2 = %s。入力してみよう!" % [xi, q, ProblemGen.fmt(ans)]},
+	]
 	return {
 		"q": "直線 y = %sx + %d と x 軸、y 軸で囲まれた三角形の面積を求めなさい。" % ["−%d" % p if p > 1 else "−", q],
 		"answer": ans, "unit": "",
+		"steps": steps9,
 		"hint1": "x 軸との交点(y = 0)と、y 軸との交点(x = 0)を求めよう。",
 		"hint2": "交点は (%d, 0) と (0, %d)。面積 = %d × %d ÷ 2" % [xi, q, xi, q],
 		"expl": "x 切片 %d、y 切片 %d。面積 = %d × %d ÷ 2 = %s です。" % [xi, q, xi, q, ProblemGen.fmt(ans)],
@@ -666,9 +802,22 @@ static func _j10(rng: RandomNumberGenerator, tier: int) -> Dictionary:
 			ProblemGen.label(_on_circle(float(r_out), 40.0) * 0.6 + Vector2(0.4, -0.6), str(r_out)),
 			ProblemGen.label(Vector2(-r_in * 0.5, 0.7), str(r_in)),
 		]}
+		var steps10a := [
+			{"say": "まず 大きい 円ぜんぶの 広さ。3.14 × %d × %d = %s。" % [
+				r_out, r_out, ProblemGen.fmt(3.14 * r_out * r_out)],
+				"add": [ProblemGen.circle(Vector2.ZERO, float(r_out),
+					Color(1.0, 0.85, 0.3, 0.20))]},
+			{"say": "そこから、くりぬいた 小さい 円の 広さ(3.14 × %d × %d = %s)を 引く。" % [
+				r_in, r_in, ProblemGen.fmt(3.14 * r_in * r_in)],
+				"add": [ProblemGen.circle(Vector2.ZERO, float(r_in),
+					Color(0.45, 1.0, 0.6, 0.30))]},
+			{"say": "3.14 × (%d² − %d²) = %s。入力してみよう!" % [
+				r_out, r_in, ProblemGen.fmt(ans)]},
+		]
 		return {
 			"q": "半径 %d の円から半径 %d の円をくりぬいたドーナツ形の面積を求めなさい。円周率は 3.14 とします。" % [r_out, r_in],
 			"answer": ans, "unit": "", "tol": 0.02,
+			"steps": steps10a,
 			"hint1": "大きい円の面積から小さい円の面積を引こう。",
 			"hint2": "3.14 × (%d² − %d²)" % [r_out, r_in],
 			"expl": "3.14 × (%d − %d) = 3.14 × %d = %s です。" % [r_out * r_out, r_in * r_in, r_out * r_out - r_in * r_in, ProblemGen.fmt(ans)],
@@ -745,9 +894,22 @@ static func _j11(rng: RandomNumberGenerator, kind: int) -> Dictionary:
 	for i in 5:
 		var lbl := "x" if i == 4 else "%d°" % int(tips[i])
 		shapes.append(ProblemGen.ang(pts[i], pts[(i + 2) % 5], pts[(i + 3) % 5], lbl))
+	# 解き方: とがった 角を 順に ぬって、5 つで まっすぐ(180°)に なると 見せる
+	var lit: Array = []
+	for i in 4:
+		lit.append(ProblemGen.poly([pts[i], pts[(i + 2) % 5],
+			(pts[i] + pts[(i + 3) % 5]) * 0.5], Color(1.0, 0.85, 0.3, 0.25)))
+	var steps11 := [
+		{"say": "とがった 角を 4 つ ぬってみる。この 5 つの 角には きまりが ある。",
+			"add": lit},
+		{"say": "星形の とがった 5 つの 角を 集めると、いつでも まっすぐ(180°)に なる。"},
+		{"say": "x = 180 − (%d + %d + %d + %d) = %d°。入力してみよう!" % [
+			tips[0], tips[1], tips[2], tips[3], x]},
+	]
 	return {
 		"q": "星形の 5 つのとがった角のうち 4 つが図の通りのとき、角 x は何度ですか。",
 		"answer": float(x), "unit": "度",
+		"steps": steps11,
 		"hint1": "星形五角形のとがった 5 つの角の和は、いつでも 180° だよ。",
 		"hint2": "x = 180 − (%d + %d + %d + %d)" % [tips[0], tips[1], tips[2], tips[3]],
 		"expl": "とがった角の和は 180°。x = 180 − %d = %d° です。" % [180 - x, x],
@@ -791,9 +953,17 @@ static func _j12(rng: RandomNumberGenerator, _kind: int) -> Dictionary:
 		ProblemGen.label(Vector2(cos(deg_to_rad(mid_ca)), sin(deg_to_rad(mid_ca))) * (rr + 0.9), str(r), ProblemGen.COL_YELLOW, 26),
 		ProblemGen.ang(pc, pa, pb, "x"),
 	]}
+	var steps12a := [
+		{"say": "x(∠ACB)が 見ている のは、向かいの 弧 AB。まず そこを 光らせる。",
+			"add": [ProblemGen.arc(Vector2.ZERO, rr, deg_a, deg_b,
+				Color(1.0, 0.85, 0.3, 0.95), 5.0)]},
+		{"say": "円周角は 弧の 長さに 比例する。円ぜんぶ(%d)で 180°、弧 AB は %d ぶん。" % [sum, p]},
+		{"say": "x = 180 × %d ÷ %d = %d°。入力してみよう!" % [p, sum, x]},
+	]
 	return {
 		"q": "円周上の点 A・B・C は、弧の長さの比が AB : BC : CA = %d : %d : %d になっています。角 x(∠ACB)は何度ですか。" % [p, q, r],
 		"answer": float(x), "unit": "度",
+		"steps": steps12a,
 		"hint1": "円周角は弧の長さに比例する。円周ぜんぶの弧に対する円周角の合計は 180° だよ。",
 		"hint2": "x = 180 × %d ÷ (%d + %d + %d)" % [p, p, q, r],
 		"expl": "∠ACB は弧 AB に対する円周角。x = 180 × %d/%d = %d° です。" % [p, sum, x],
@@ -1284,9 +1454,18 @@ static func _j12_other(rng: RandomNumberGenerator) -> Dictionary:
 		ProblemGen.label(_on_circle(rr + 0.9, mid_ca), str(r), ProblemGen.COL_YELLOW, 26),
 		ProblemGen.ang(pa, pb, pc, "x"),
 	]}
+	var steps12 := [
+		{"say": "x(∠BAC)が 見ている のは、向かいの 弧 BC。まず そこを 光らせる。",
+			"add": [ProblemGen.arc(Vector2.ZERO, rr, deg_b, deg_c,
+				Color(1.0, 0.85, 0.3, 0.95), 5.0)]},
+		{"say": "円周角は 弧の 長さに 比例する。円ぜんぶ(%d)で 180°、弧 BC は %d ぶん。" % [
+			sum, q]},
+		{"say": "x = 180 × %d ÷ %d = %d°。入力してみよう!" % [q, sum, x]},
+	]
 	return {
 		"q": "円周上の点 A・B・C は、弧の長さの比が AB : BC : CA = %d : %d : %d になっています。角 x(∠BAC)は何度ですか。" % [p, q, r],
 		"answer": float(x), "unit": "度",
+		"steps": steps12,
 		"hint1": "∠BAC は弧 BC に対する円周角。どの弧を見ている角なのかに注意!",
 		"hint2": "x = 180 × %d ÷ %d(弧 BC の割合)" % [q, sum],
 		"expl": "∠BAC は弧 BC に対する円周角なので x = 180 × %d/%d = %d° です。" % [q, sum, x],
