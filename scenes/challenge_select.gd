@@ -2,6 +2,7 @@ extends Control
 ## チャレンジ選択。タイムアタック(コース別/全部)とサバイバル。
 
 func _ready() -> void:
+	GameState.play_bgm("map")
 	var bg := ColorRect.new()
 	bg.color = Color(0.1, 0.14, 0.26)
 	bg.set_anchors_preset(Control.PRESET_FULL_RECT)

@@ -63,6 +63,7 @@ func _q_total() -> int:
 
 
 func _ready() -> void:
+	GameState.play_bgm("think")
 	rng.randomize()
 	course = ProblemGen.course_by_id(GameState.current_course)
 	if _stage_based():
@@ -541,7 +542,8 @@ func _submit() -> void:
 
 func _on_correct() -> void:
 	locked = true
-	GameState.play_sfx("correct")
+	GameState.play_correct()      # コンボが のびるほど 高い 音
+	_cheer()
 	var seconds := (Time.get_ticks_msec() - q_start_msec) / 1000.0
 	# 解き方アニメを見た問題は学習扱いで 0 点(正解の練習にはなる)
 	var pts := 0 if wt_used else GameState.question_score(tries, hints_used, seconds, GameState.combo)
@@ -621,10 +623,30 @@ func _shake_answer() -> void:
 
 
 ## 画面中央に一瞬メッセージを出す
+## 正解の 手ざわり。図が ぱっと 光り、コンボが のびるほど 強く 弾む。
+## 音・光・動きが そろうと「効いた」感じに なる
+func _cheer() -> void:
+	var n := mini(GameState.combo, 6)
+	var glow := ColorRect.new()
+	glow.color = Color(0.55, 1.0, 0.65, 0.0)
+	glow.set_anchors_preset(Control.PRESET_FULL_RECT)
+	glow.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	figure.add_child(glow)
+	var tw := create_tween()
+	tw.tween_property(glow, "color:a", 0.16 + 0.03 * float(n), 0.08)
+	tw.tween_property(glow, "color:a", 0.0, 0.32)
+	tw.tween_callback(glow.queue_free)
+	# 図が ふわっと 大きくなって 戻る
+	figure.pivot_offset = figure.size * 0.5
+	var tw2 := create_tween()
+	tw2.tween_property(figure, "scale", Vector2.ONE * (1.02 + 0.006 * float(n)), 0.09)
+	tw2.tween_property(figure, "scale", Vector2.ONE, 0.16)
+
+
 func _show_flash(text: String, color: Color) -> void:
 	var lbl := Label.new()
 	lbl.text = text
-	lbl.add_theme_font_size_override("font_size", 56)
+	lbl.add_theme_font_size_override("font_size", 56 + mini(GameState.combo, 6) * 4)
 	lbl.add_theme_color_override("font_color", color)
 	lbl.add_theme_color_override("font_outline_color", Color(0.05, 0.08, 0.14))
 	lbl.add_theme_constant_override("outline_size", 10)

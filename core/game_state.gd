@@ -200,6 +200,8 @@ func record_story_clear(id: String) -> bool:
 const FREE_STAGES_PER_COURSE := 4
 ## 購入(または復元)済みなら true。全ステージとチャレンジが解放される
 var premium: bool = false
+## BGM を 鳴らすか(切った 状態は 保存する)
+var bgm_on: bool = true
 
 
 func set_premium(v: bool) -> void:
@@ -349,6 +351,7 @@ func _ready() -> void:
 	_update_ui_scale()
 	get_window().size_changed.connect(_update_ui_scale)
 	_init_sfx()
+	_init_bgm()
 	load_game()
 	_low_wanted = bool(ProjectSettings.get_setting("application/run/low_processor_mode", false))
 	# 起動直後の 画面の 切りかわりが いちばん あぶない。長めに 起こしておく
@@ -481,6 +484,18 @@ func play_sfx(sfx_name: String) -> void:
 		_sfx_players[sfx_name].play()
 
 
+## 正解の 音。コンボが のびるほど 高い 音に する(のびている 実感)
+func play_correct() -> void:
+	if combo >= 6:
+		play_sfx("combo3")
+	elif combo >= 4:
+		play_sfx("combo2")
+	elif combo >= 2:
+		play_sfx("combo1")
+	else:
+		play_sfx("correct")
+
+
 func _init_sfx() -> void:
 	var defs := {
 		"tap": _make_tone([880.0], 0.08, 25.0),
@@ -490,6 +505,15 @@ func _init_sfx() -> void:
 		"star": _make_tone([1318.5], 0.22, 9.0),
 		"fail": _make_jingle([233.08, 207.65], 0.22),
 		"hint": _make_tone([440.0, 554.37], 0.14, 14.0),
+		# --- ここから 足した 音 ---
+		"combo1": _make_tone([659.25], 0.10, 22.0),      # コンボ 2〜3
+		"combo2": _make_tone([783.99], 0.10, 22.0),      # コンボ 4〜5
+		"combo3": _make_tone([987.77], 0.11, 20.0),      # コンボ 6 以上
+		"win": _make_jingle([523.25, 659.25, 783.99, 1046.5, 1318.5], 0.10),
+		"lose": _make_jingle([392.0, 349.23, 293.66], 0.20),
+		"land": _make_tone([523.25, 784.0], 0.09, 26.0),  # 島取り: 土地を 取る
+		"shrine": _make_jingle([659.25, 987.77], 0.13),   # 島取り: 石碑を 取る
+		"open": _make_jingle([440.0, 587.33, 880.0], 0.12),  # つぎが 開く
 	}
 	for sfx_name in defs:
 		var p := AudioStreamPlayer.new()
@@ -636,6 +660,7 @@ func save_game() -> void:
 		"gauntlet_best": gauntlet_best,
 		"debug_unlock_all": debug_unlock_all,
 		"premium": premium,
+		"bgm_on": bgm_on,
 		"story_clear": story_clear,
 		"kid_clear": kid_clear,
 		"island_clear": island_clear,
@@ -667,6 +692,7 @@ func load_game() -> void:
 	gauntlet_best = data.get("gauntlet_best", {})
 	debug_unlock_all = bool(data.get("debug_unlock_all", false))
 	premium = bool(data.get("premium", false))
+	bgm_on = bool(data.get("bgm_on", true))
 	story_clear = data.get("story_clear", {})
 	kid_clear = data.get("kid_clear", {})
 	island_clear = data.get("island_clear", {})
@@ -675,3 +701,113 @@ func load_game() -> void:
 	kid_unit = String(data.get("kid_unit", "k1"))
 	story_chapter = String(data.get("story_chapter", "ch1"))
 	story_scene = int(data.get("story_scene", 0))
+
+
+# ---------------------------------------------------------
+# BGM(その場で 作る。音の ファイルは 持たない)
+#
+# 音は 気持ちよさの 半分。無音だと 同じ 遊びでも「作業」に 見える。
+# ただし 勉強に 使うので、うるさくない ゆっくりした ループにして、
+# いつでも 切れるようにする(切った 状態は 保存する)。
+#
+# ※ 音ごとに 専用の プレイヤーを 作り、stream は 生成時に 一度だけ 入れる。
+#    鳴っている プレイヤーに stream を 入れ直すと Android で 落ちる
+# ---------------------------------------------------------
+
+const BGM_RATE := 22050
+
+var _bgm_players: Dictionary = {}
+var _bgm_now := ""
+
+
+## いまの 画面に あわせて 流す。同じ 曲なら 何もしない
+func play_bgm(name: String) -> void:
+	if not bgm_on:
+		return
+	if _bgm_now == name and _bgm_players.has(name) \
+			and (_bgm_players[name] as AudioStreamPlayer).playing:
+		return
+	stop_bgm()
+	if _bgm_players.has(name):
+		_bgm_now = name
+		(_bgm_players[name] as AudioStreamPlayer).play()
+
+
+func stop_bgm() -> void:
+	for k in _bgm_players:
+		var p: AudioStreamPlayer = _bgm_players[k]
+		if p.playing:
+			p.stop()
+	_bgm_now = ""
+
+
+func set_bgm_on(v: bool) -> void:
+	if bgm_on == v:
+		return
+	bgm_on = v
+	save_game()
+	if not v:
+		var keep := _bgm_now
+		stop_bgm()
+		_bgm_now = keep          # 入れ直したら 同じ 曲から 戻す
+	elif _bgm_now != "":
+		var again := _bgm_now
+		_bgm_now = ""
+		play_bgm(again)
+
+
+func _init_bgm() -> void:
+	# 5 度と 3 度を 積んだ ゆっくりした 分散和音。1 小節 2 秒 × 8 小節
+	var defs := {
+		# タイトル・地図: あたたかい 長調
+		"map": _make_loop([
+			[261.63, 329.63, 392.00], [293.66, 349.23, 440.00],
+			[261.63, 329.63, 392.00], [246.94, 311.13, 392.00]], 2.0, 0.10),
+		# 問題を 解く 画面: 静かで じゃまを しない
+		"think": _make_loop([
+			[220.00, 277.18, 329.63], [196.00, 246.94, 293.66],
+			[174.61, 220.00, 261.63], [196.00, 246.94, 293.66]], 2.4, 0.07),
+		# 島取り: 少し 張った 短調
+		"battle": _make_loop([
+			[196.00, 233.08, 293.66], [174.61, 220.00, 261.63],
+			[196.00, 233.08, 293.66], [155.56, 196.00, 233.08]], 1.8, 0.12),
+	}
+	for name in defs:
+		var p := AudioStreamPlayer.new()
+		p.stream = defs[name]
+		p.volume_db = -20.0
+		add_child(p)
+		_bgm_players[name] = p
+
+
+## 和音を 順に ならす ループ。1 音ずつ ぽろんと 鳴らして 余韻を 重ねる
+func _make_loop(chords: Array, bar: float, vol: float) -> AudioStreamWAV:
+	var total := int(bar * float(chords.size()) * BGM_RATE)
+	var buf := PackedFloat32Array()
+	buf.resize(total)
+	var bar_n := int(bar * BGM_RATE)
+	for ci in chords.size():
+		var chord: Array = chords[ci]
+		for ni in chord.size():
+			var f: float = chord[ni]
+			# 1 小節を 音の数で 割って、順に 置く
+			var at := ci * bar_n + int(float(ni) * float(bar_n) / float(chord.size()))
+			var dur := int(1.6 * float(BGM_RATE))
+			for i in dur:
+				var idx := at + i
+				if idx >= total:
+					break
+				var t := float(i) / float(BGM_RATE)
+				var env := exp(-1.6 * t) * (1.0 - exp(-40.0 * t))
+				# 基音 + 少しの 倍音
+				var v := sin(TAU * f * t) * 0.7 + sin(TAU * f * 2.0 * t) * 0.18
+				buf[idx] += v * env * vol
+	var data := PackedByteArray()
+	data.resize(total * 2)
+	for i in total:
+		data.encode_s16(i * 2, int(clampf(buf[i], -1.0, 1.0) * 32767.0))
+	var wav := _wav(data, BGM_RATE)
+	wav.loop_mode = AudioStreamWAV.LOOP_FORWARD
+	wav.loop_begin = 0
+	wav.loop_end = total - 1
+	return wav

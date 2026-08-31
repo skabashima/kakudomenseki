@@ -46,6 +46,7 @@ var walk_t := -1.0             # 0.0 → 1.0。-1 は 歩いていない
 
 
 func _ready() -> void:
+	GameState.play_bgm("map")
 	var bg := ColorRect.new()
 	bg.color = PAPER
 	bg.set_anchors_preset(Control.PRESET_FULL_RECT)

@@ -8,6 +8,7 @@ const HEAD := Color(1.0, 0.88, 0.45)
 
 
 func _ready() -> void:
+	GameState.play_bgm("map")
 	var bg := ColorRect.new()
 	bg.color = Color(0.08, 0.11, 0.2)
 	bg.set_anchors_preset(Control.PRESET_FULL_RECT)

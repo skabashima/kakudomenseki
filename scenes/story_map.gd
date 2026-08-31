@@ -46,6 +46,7 @@ var walk_t := -1.0
 
 
 func _ready() -> void:
+	GameState.play_bgm("map")
 	mode = GameState.story_mode
 	if not THEME.has(mode):
 		mode = "jhs"

@@ -5,6 +5,7 @@ var course: Dictionary
 
 
 func _ready() -> void:
+	GameState.play_bgm("map")
 	course = ProblemGen.course_by_id(GameState.current_course)
 	var col: Color = course["color"]
 

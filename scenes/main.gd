@@ -24,6 +24,7 @@ func _process(delta: float) -> void:
 
 
 func _ready() -> void:
+	GameState.play_bgm("map")
 	var bg := ColorRect.new()
 	bg.color = Color(0.11, 0.16, 0.3)
 	bg.set_anchors_preset(Control.PRESET_FULL_RECT)

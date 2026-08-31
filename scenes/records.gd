@@ -2,6 +2,7 @@ extends Control
 ## 記録画面。段位・総得点・コース別の★・チャレンジ自己ベスト。
 
 func _ready() -> void:
+	GameState.play_bgm("map")
 	var bg := ColorRect.new()
 	bg.color = Color(0.1, 0.14, 0.26)
 	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
@@ -94,6 +95,23 @@ func _ready() -> void:
 	var chv := VBoxContainer.new()
 	chv.add_theme_constant_override("separation", 4)
 	ch.add_child(chv)
+
+	# 音の 入り切り(ここに 置くのが いちばん 見つけやすい)
+	var snd := Button.new()
+	snd.toggle_mode = true
+	snd.button_pressed = GameState.bgm_on
+	snd.text = "♪ BGM: " + ("入" if GameState.bgm_on else "切")
+	snd.custom_minimum_size = Vector2(0, 76)
+	snd.focus_mode = Control.FOCUS_NONE
+	snd.add_theme_font_size_override("font_size", 26)
+	GameState.style_button(snd, Color(0.30, 0.40, 0.56))
+	snd.toggled.connect(func(on: bool) -> void:
+		GameState.play_sfx("tap")
+		GameState.set_bgm_on(on)
+		snd.text = "♪ BGM: " + ("入" if on else "切")
+		if on:
+			GameState.play_bgm("map"))
+	list.add_child(snd)
 	_lbl(chv, "チャレンジ自己ベスト", 26, Color(0.8, 0.87, 1.0))
 	var any := false
 	for c in ProblemGen.COURSES:

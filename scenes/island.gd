@@ -107,6 +107,7 @@ var claim_row: HBoxContainer        # なぞる ときの ボタン
 
 
 func _ready() -> void:
+	GameState.play_bgm("battle")
 	isle = clampi(GameState.island_index, 0, IslandDefs.count() - 1)
 	var in_range: Array = IslandDefs.islands_in(GameState.island_range)
 	if not in_range.has(isle):
@@ -681,7 +682,7 @@ func _on_act() -> void:
 
 ## 取った土地を 自分のものにする
 func _take_marked() -> void:
-	GameState.play_sfx("clear")
+	GameState.play_sfx("land")
 	var got_spring := 0
 	var got_ruin := 0
 	var got_shrine := 0
@@ -705,6 +706,7 @@ func _take_marked() -> void:
 	if got_shrine > 0:
 		extra += "  石碑を %d こ 取った! 毎ターン +%d マス" % [got_shrine,
 			got_shrine * SHRINE_GAIN]
+		GameState.play_sfx("shrine")
 	msg.set_ruby_text("土地を広げた。" + extra, true)
 	# ここで待たせない。待つと「カラスの番」が遅れて、
 	# 先に つぎの問題を開けてしまう(カラスが 一度も 広げられなかった)
@@ -1484,4 +1486,4 @@ func _show_result(mine_pct: int, crow_pct: int) -> void:
 		GameState.play_sfx("tap")
 		GameState.change_scene("res://scenes/island_select.tscn"))
 	v.add_child(back)
-	GameState.play_sfx("clear" if win else "fail")
+	GameState.play_sfx("win" if win else "lose")

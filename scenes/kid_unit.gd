@@ -40,6 +40,7 @@ var figure: FigureView
 
 
 func _ready() -> void:
+	GameState.play_bgm("think")
 	unit = KidDefs.by_id(GameState.kid_unit)
 	if unit.is_empty():
 		unit = KidDefs.UNITS[0]
@@ -265,7 +266,7 @@ func _submit() -> void:
 		big.text = "数を いれてね"
 		return
 	if absf(v - float(problem["answer"])) < maxf(float(problem.get("tol", 0.01)), 0.01):
-		GameState.play_sfx("clear")
+		GameState.play_sfx("win")
 		big.text = "あたり！"
 		talk.set_ruby_text("しるしが とけた。%s" % String(unit["found"]), true)
 		keypad.visible = false

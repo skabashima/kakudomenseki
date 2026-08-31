@@ -37,6 +37,7 @@ var problem: Dictionary = {}
 
 
 func _ready() -> void:
+	GameState.play_bgm("think")
 	# そのモードの並びから取り出す(高校生モードは文が差し替わっている)
 	var list: Array = StoryDefs.chapters_of(GameState.story_mode)
 	chapter = StoryDefs.chapter_in(list, GameState.story_chapter)
