@@ -13,7 +13,7 @@ App Store Connect に入力する内容を 1 か所にまとめたもの。
 | SKU | `kakudomenseki`(任意。Bundle ID と同じで可) | ― |
 | Apple Team ID | `R6TSKT9T8L` | `export_presets.cfg` |
 | プライマリ言語 | 日本語 | `CFBundleDevelopmentRegion` を ja にパッチ済 |
-| バージョン | `1.1` | `application/short_version`(1.0 は審査提出済みのため 1.1 から) |
+| バージョン | `1.2` | `application/short_version`(1.0 は審査提出済みのため 1.1 → 1.2) |
 | ビルド番号 | Codemagic の `BUILD_NUMBER` で毎回自動採番 | `codemagic.yaml` |
 | 対応 OS | iOS 17.0 以降 | `application/min_ios_version` |
 | 対応デバイス | iPhone / iPad(ユニバーサル) | `targeted_device_family=2` ※下の「要判断」参照 |

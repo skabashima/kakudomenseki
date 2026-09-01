@@ -16,7 +16,7 @@ import sys
 import unicodedata
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-DOCS = ["ストア掲載情報.md", "APPSTORE.md"]
+DOCS = ["ストア掲載情報.md", "APPSTORE.md", "リリースノート.md"]
 
 # 弾かれる字の範囲(絵文字とその仲間)。ここに入る字は書かない
 NG_RANGES = [
