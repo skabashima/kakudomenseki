@@ -10,6 +10,7 @@ extends Node
 ##   ・ストーリー 3 つと 島取りも「入口だけ無料、続きは買い切り」に なっているか
 ##     (ここが 抜けていて、ストーリーが 3 つとも 完全無料に なっていた)
 ##   ・Iap(オートロード)がスタブとして安全に動く(PC では購入不可)
+##   ・「課金の しらべ」画面が 組み上がり、題を 7 回 たたくと そこへ 行く
 
 var failures: Array = []
 
@@ -29,6 +30,7 @@ func _ready() -> void:
 	_check_challenge_pool()
 	_check_premium_opens_all()
 	_check_iap_stub()
+	await _check_iap_check_screen()
 
 	GameState.premium = saved_premium
 	GameState.debug_unlock_all = saved_debug
@@ -170,3 +172,30 @@ func _check_island_gate() -> void:
 				failures.append("島取り(%s): %d 島めが 無料で ない" % [id, k + 1])
 			if k >= free_n and not need:
 				failures.append("島取り(%s): %d 島めが 無料に なっている" % [id, k + 1])
+
+
+## 「課金の しらべ」画面(解放画面の 題を 7 回 たたくと 出る)
+## 実機で 買えないと 言われたときに、原因を その場で 見るための 画面。
+## ここが 壊れていると 気づけないので、組み上がることと 数え方を 見張る。
+func _check_iap_check_screen() -> void:
+	var scene := (load("res://scenes/iap_check.tscn") as PackedScene).instantiate()
+	add_child(scene)
+	await get_tree().process_frame
+	var txt := String(scene.report_text())
+	_ok(txt.find(String(Iap.PRODUCT_ID)) >= 0, "しらべ画面の 文に 商品ID が 無い")
+	_ok(txt.find("記録") >= 0, "しらべ画面の 文に 記録が 無い")
+	_ok(scene.body != null and scene.body.get_child_count() > 5,
+		"しらべ画面の 中身が 組み上がっていない")
+	scene.queue_free()
+
+	# 数え方: 6 回では 行かず、7 回めで 行く。間が あいたら 数え直し。
+	var store := (load("res://scenes/store.tscn") as PackedScene).instantiate()
+	add_child(store)
+	await get_tree().process_frame
+	for i in 6:
+		store._on_title_tap()
+	_ok(int(store._taps) == 6, "6 回 たたいた ところで 数えが %d" % int(store._taps))
+	store._last_tap = -100.0    # 間が あいた ことに する
+	store._on_title_tap()
+	_ok(int(store._taps) == 1, "間が あいたのに 数えが 続いている")
+	store.queue_free()

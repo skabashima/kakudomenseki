@@ -32,21 +32,44 @@ var _connected := false               # Android/OpenIAP: 課金サービス接�
 var _restoring := false               # 復元操作の最中か(購入イベントを復元完了として扱う)
 var _openiap := false                 # iOS で OpenIAP プラグイン(GodotIapPlugin/StoreKit2)を使うか
 
+# ══════════ 記録(実機で 何が 起きたかを その場で 見る)══════════
+## 課金は 実機でしか 動かず、落ちるときは 静かに 落ちる。
+## 「SKU not found」のような ストア側の 返事を 後から 読めるように、
+## 節目を ここに 残す(scenes/iap_check.tscn が 画面に 出す)。
+const LOG_MAX := 60
+var _log: Array = []
+var last_error := {}          # 直近の 失敗(code / message)
+
 # ══════════ 初期化 ══════════
+func note(msg: String) -> void:
+	_log.append("[%.1fs] %s" % [Time.get_ticks_msec() / 1000.0, msg])
+	if _log.size() > LOG_MAX:
+		_log.remove_at(0)
+	print("[Iap] " + msg)
+
+
+func log_lines() -> Array:
+	return _log.duplicate()
+
+
 func _ready() -> void:
+	note("起動 OS=%s" % OS.get_name())
 	if Engine.has_singleton(_AND_SINGLETON):
 		_platform = "android"
 		_plugin = Engine.get_singleton(_AND_SINGLETON)
+		note("Google Play Billing を 見つけた")
 		_setup_android()
 	elif OS.get_name() == "iOS" and get_node_or_null("/root/GodotIapPlugin") != null:
 		# iOS は OpenIAP プラグイン(GodotIapPlugin autoload・StoreKit2)を使う
 		_platform = "ios"
 		_openiap = true
 		_plugin = get_node_or_null("/root/GodotIapPlugin")
+		note("iOS の OpenIAP プラグイン(StoreKit2)を 見つけた")
 		_setup_openiap()
 	elif Engine.has_singleton(_IOS_SINGLETON):
 		_platform = "ios"
 		_plugin = Engine.get_singleton(_IOS_SINGLETON)
+		note("iOS の 旧 InAppStore を 見つけた")
 		_setup_ios()
 
 func _setup_android() -> void:
@@ -89,6 +112,7 @@ func _oi_connect() -> void:
 		_connected = bool(ok)
 	else:
 		_connected = true
+	note("ストアへの 接続: %s" % ("できた" if _connected else "できなかった"))
 	if _connected:
 		query_price()
 		_oi_boot_check()   # 起動時のサイレント所有確認(再インストール等の復元)
@@ -132,7 +156,10 @@ func _oi_fetch_price() -> void:
 		price_ready.emit.call_deferred(price_text()); return
 	var req = T.ProductRequest.from_dict({"skus": [PRODUCT_ID], "type": "in-app"})
 	# 6秒で価格取得を打ち切り、既定価格で購入ボタンを有効化(実価格はAppleの購入シートに出る)
-	var seq := _oi_guard("price", 6.0, func(): price_ready.emit(price_text()))
+	note("商品を 問い合わせる: %s" % PRODUCT_ID)
+	var seq := _oi_guard("price", 6.0, func():
+		note("商品の 問い合わせが 6 秒で 返らなかった")
+		price_ready.emit(price_text()))
 	var products = await _plugin.fetch_products(req)
 	if not _oi_settle("price", seq):
 		return
@@ -149,11 +176,17 @@ func _apply_oi_products(products) -> void:
 			arr = pd["products"]
 		elif not pd.is_empty():
 			arr = [pd]
+	var ids: Array = []
 	for p in arr:
 		var d := _oi_dict(p)
+		ids.append(str(d.get("id", "")))
 		if str(d.get("id", "")) == PRODUCT_ID:
 			var dp := str(d.get("displayPrice", d.get("display_price", "")))
 			if dp != "": _price_text = dp
+	if arr.is_empty():
+		note("ストアから 商品が 1 つも 返ってこなかった" 			+ "(App Store Connect / Play Console の 商品の 状態を 見ること)")
+	else:
+		note("ストアが 返した 商品: %s" % ", ".join(PackedStringArray(ids)))
 	price_ready.emit(price_text())
 
 func _on_oi_products(result) -> void:
@@ -196,6 +229,7 @@ func _oi_request_buy() -> void:
 	var bseq := _oi_guard("buy", 180.0, func():
 		purchase_done.emit(false, "ストアからの応答がありませんでした。購入が完了している場合は「購入の復元」をお試しください。"))
 	_oi_buy_wait_seq = bseq
+	note("購入シートを 要求する: %s" % PRODUCT_ID)
 	_plugin.request_purchase(props)
 	# 完了/失敗は purchase_updated / purchase_error シグナルで届く
 
@@ -279,6 +313,7 @@ func _on_oi_purchase_updated(purchase) -> void:
 		_plugin.finish_transaction(purchase, false)
 	elif _plugin.has_method("finish_transaction_dict"):
 		_plugin.finish_transaction_dict(d, false)
+	note("購入/復元 できた: %s" % PRODUCT_ID)
 	GameState.set_premium(true)
 	if _restoring:
 		_restoring = false
@@ -296,6 +331,8 @@ func _on_oi_purchase_error(error) -> void:
 		_oi_buy_wait_seq = -1
 	var d := _oi_dict(error)
 	var code := str(d.get("code", ""))
+	last_error = {"code": code, "message": str(d.get("message", ""))}
+	note("ストアが 失敗を 返した: code=%s / %s" % [code, str(d.get("message", ""))])
 	var cancelled := code in ["user-cancelled", "user_cancelled", "cancelled", "e_user_cancelled"]
 	if _restoring:
 		_restoring = false
@@ -357,6 +394,8 @@ func query_price() -> void:
 
 ## 購入フローを開始。完了時 purchase_done(ok, msg) を発火。
 func purchase() -> void:
+	note("「買う」を 押した(platform=%s / 接続=%s)" % [
+		_platform if _platform != "" else "スタブ", _connected])
 	if _plugin == null:
 		purchase_done.emit.call_deferred(false, "この環境では ストアに接続できません")
 		return
@@ -373,6 +412,7 @@ func purchase() -> void:
 			[PRODUCT_ID],
 		])
 		var code := _resp_code(res)
+		note("購入シートの 起動コード: %d" % code)
 		# 0=購入シートの起動に成功(購入結果は on_purchase_updated で届く)。
 		# それ以外(既所有7は signal で拾う)＝起動失敗なので、無反応にせず理由を出す。
 		if code != 0 and code != 7:
@@ -386,6 +426,7 @@ func purchase() -> void:
 
 ## 過去の購入を復元。完了時 restore_done(ok) を発火。
 func restore() -> void:
+	note("「復元」を 押した")
 	if _plugin == null:
 		restore_done.emit.call_deferred(false)
 		return
@@ -405,6 +446,7 @@ func restore() -> void:
 # ══════════ Android ハンドラ(signal式)══════════
 func _on_and_connected() -> void:
 	_connected = true
+	note("Google Play に 接続できた")
 	query_price()      # 価格を先読み
 	_and_query_owned() # 起動時の所有確認
 
@@ -735,6 +777,8 @@ func debug_report() -> Dictionary:
 		"price_live": _price_text != "",   # true＝ストアから実取得／false＝既定値(＝商品が未取得＝要ASC設定)
 		"premium": GameState.premium,
 		"product_id": PRODUCT_ID,
+		"last_error": last_error,
+		"log": log_lines(),
 		"methods": PackedStringArray(),
 		"signals": PackedStringArray(),
 	}

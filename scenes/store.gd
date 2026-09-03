@@ -43,11 +43,17 @@ func _ready() -> void:
 	v.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	scroll.add_child(v)
 
-	var title := Label.new()
+	# 題は ボタン。7 回 つづけて たたくと「課金の しらべ」が 開く。
+	# (実機で 買えないと 言われたとき、その場で 中を 見るため。見た目は 文字のまま)
+	var title := Button.new()
 	title.text = "全ステージを解放"
-	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title.flat = true
+	title.focus_mode = Control.FOCUS_NONE
 	title.add_theme_font_size_override("font_size", 46)
 	title.add_theme_color_override("font_color", Color(1.0, 0.85, 0.35))
+	title.add_theme_color_override("font_hover_color", Color(1.0, 0.85, 0.35))
+	title.add_theme_color_override("font_pressed_color", Color(1.0, 0.85, 0.35))
+	title.pressed.connect(_on_title_tap)
 	v.add_child(title)
 
 	var paid := GameState.paid_stage_count()
@@ -193,3 +199,24 @@ func _on_purchase_done(ok: bool, msg: String) -> void:
 func _on_restore_done(ok: bool) -> void:
 	status.text = "購入を復元しました。" if ok else "復元できる購入が見つかりませんでした。"
 	_refresh()
+
+
+# ══════════ かくしコマンド: 題を 7 回 たたく ══════════
+const CHECK_TAPS := 7          # 何回で 開くか
+const TAP_GAP := 1.5           # つづけて とみなす 間(秒)
+
+var _taps := 0
+var _last_tap := -100.0
+
+
+func _on_title_tap() -> void:
+	var now := Time.get_ticks_msec() / 1000.0
+	_taps = (_taps + 1) if now - _last_tap <= TAP_GAP else 1
+	_last_tap = now
+	if _taps >= CHECK_TAPS:
+		_taps = 0
+		GameState.play_sfx("clear")
+		GameState.change_scene("res://scenes/iap_check.tscn")
+		return
+	if _taps >= 4 and status != null:
+		status.text = "課金の しらべ まで あと %d 回" % (CHECK_TAPS - _taps)
