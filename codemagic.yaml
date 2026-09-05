@@ -13,6 +13,7 @@
 #     godot --headless --path <proj> res://tests/play_check.tscn
 #     godot --headless --path <proj> res://tests/smoke.tscn
 #     godot --headless --path <proj> res://tests/iap_gate.tscn
+#     godot --headless --path <proj> res://tests/explain_check.tscn
 #     godot --headless --path <proj> -s tests/font_check.gd
 #
 # ■ 事前に Codemagic 側で用意するもの(コードだけでは設定できないもの)

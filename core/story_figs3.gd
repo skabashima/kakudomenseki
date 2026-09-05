@@ -224,7 +224,11 @@ static func _star(p: Vector2) -> Dictionary:
 	var pts: Array = StoryDefs.star_points(p)
 	var deg: Array = StoryDefs.star_angles(p)
 	var order: Array = [pts[0], pts[2], pts[4], pts[1], pts[3]]
-	var out: Array = [ProblemGen.poly(order, ProblemGen.FILL_MAIN, GOLD, 3.0)]
+	# 塗りは 交点を 入れた 10 点の 外わくで(自分と 交わる 5 点の ままだと 塗れない)。
+	# 5 本の 線じたいは その上に 引いて、どこを 結んだのか 見えるように のこす
+	var out: Array = [
+		ProblemGen.poly(StoryDefs.star_outline(p), ProblemGen.FILL_MAIN, null, 0.0),
+		ProblemGen.poly(order, null, GOLD, 3.0)]
 	for i in 5:
 		out.append(ProblemGen.ang(pts[i], pts[(i + 2) % 5], pts[(i + 3) % 5],
 			"%d°" % roundi(deg[i]), 1.5))
@@ -235,7 +239,9 @@ static func _star_proof() -> Dictionary:
 	var pts: Array = StoryDefs.star_points(Vector2(0.0, StoryDefs.STAR_R))
 	var order: Array = [pts[0], pts[2], pts[4], pts[1], pts[3]]
 	return {"shapes": [
-		ProblemGen.poly(order, ProblemGen.FILL_MAIN, DIM, 2.5),
+		ProblemGen.poly(StoryDefs.star_outline(Vector2(0.0, StoryDefs.STAR_R)),
+			ProblemGen.FILL_MAIN, null, 0.0),
+		ProblemGen.poly(order, null, DIM, 2.5),
 		ProblemGen.poly([pts[0], pts[2], pts[3]], ProblemGen.FILL_ACCENT, GOLD, 3.0),
 		ProblemGen.label(Vector2(0.0, StoryDefs.STAR_R + 1.4),
 			"とがった角を 1 つの三角形に集める", GOLD, 26),

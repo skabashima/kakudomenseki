@@ -5,13 +5,18 @@ extends Control
 ## さわり方(act)は単元ごとに違うが、画面のつくりは同じ。
 ##   tear  … かどを ちぎって ならべる      slide … 平行線の間で かどを ずらす
 ##   fold  … 折って 重ねる                diag  … 対角線で 三角形に分ける
-##   clock … 時計の 針を まわす
+##   clock … 時計の 針を まわす            spoke … まん中から ちょう点へ 線を 引く
 
 const GOLD := Color(1.0, 0.85, 0.3)
 const SKY := Color(0.55, 0.85, 1.0)
 const INK := Color(0.95, 0.97, 1.0)
 const DIM := Color(0.66, 0.74, 0.88)
 const OK_COL := Color(0.45, 1.0, 0.62)   # できた しるしの ○
+# k21(動く 板)の 板と 門の 大きさ(ます)。たては 変わらない ―― そこが 見どころ
+const K21_TALL := 4
+const K21_WIDE := 5
+const K21_GATE_X := 3.0
+
 const PIECE_COL := [Color(1.0, 0.78, 0.35), Color(0.55, 0.85, 1.0), Color(1.0, 0.60, 0.68),
 	Color(0.65, 0.95, 0.70), Color(0.85, 0.75, 1.0), Color(1.0, 0.85, 0.55)]
 
@@ -302,6 +307,8 @@ func _act_lead() -> String:
 			return "点線で 折ってみよう。金色の ところを ゆびで つまんで、反対がわへ たおす。"
 		"diag":
 			return "金色の 点から、白い 点まで ゆびで なぞって 線を 引こう。三角形 1 つで 180°。いくつに 分かれるかな?"
+		"spoke":
+			return "まん中の 金色の 点から、かどの 白い 点 ぜんぶへ 線を 引こう。まん中の まわりは 360°。何こに 分かれるかな?"
 		"clock":
 			match mini(tries, 2):
 				0:
@@ -311,7 +318,13 @@ func _act_lead() -> String:
 				_:
 					return "さいごは 直角(かどが 四角い ところ)まで。30° が 何 こ分?"
 		"grid":
-			return "金色の 点を つまんで、うすい 形に あわせよう。ますを 数えてみて。"
+			match String(unit["id"]):
+				"k10":
+					return "金色の 点を つまんで、うすい 形に あわせよう。ななめの 線で 分けた 金色の 三角は、四角の 何分の 1 かな?"
+				"k16":
+					return "金色の 点を 右へ つまんで、底辺を うすい 形まで のばそう。高さは そのまま。広さは どう なる?"
+				_:
+					return "金色の 点を つまんで、うすい 形に あわせよう。ますを 数えてみて。"
 		"point":
 			return "四角の 中の 金色の 点を、あちこちへ 動かしてみよう。4 つの 広さは どう 変わるかな?"
 		"cut":
@@ -325,11 +338,17 @@ func _act_lead() -> String:
 		"roll":
 			return "円を 右へ ころがそう。1 まわりで さしわたし 何こ分 進むかな?"
 		"shift":
-			return "金色の 点を つまんで、左右に 動かしてみよう。"
+			if String(unit["id"]) == "k21":
+				return "金色の 板を つまんで、右へ 動かそう。門と 重なった ところは、進んだ ぶん どう ふえるかな?"
+			return "金色の 道を つまんで、左右に 動かしてみよう。のこりの 畑は どう なる?"
 		"stack":
 			return "はこの 中を タップして、さいころを つもう。"
 		"open":
-			return "まん中を ゆびで つまんで、右へ ゆっくり ひらこう。"
+			if String(unit["id"]) == "k19":
+				return "まん中を ゆびで つまんで、右へ ゆっくり ひらこう。向かい合う 面は どれと どれかな?"
+			# k23 は 「ひらく」ではなく「さかさの 箱を のせる」。
+			# k19 の ことばを そのまま 使っていて、やる ことと 合っていなかった
+			return "さかさに した 同じ 箱を、ゆびで 右上へ 運んで 上に のせよう。まっすぐな 箱に なるかな?"
 		"pour":
 			return "右の 器の はばを 変えてみよう。水の 深さは どうなる?"
 		_:
@@ -351,12 +370,23 @@ func _act_after() -> String:
 		"diag":
 			return "三角形 %d こ × 180° ＝ %d° に 分けられた。角の 数が ちがっても 同じ やり方かな?" % [
 				int(st.get("tri", 3)), int(st.get("tri", 3)) * 180]
+		"spoke":
+			var sn: int = int(st.get("n", 6))
+			return "まん中の 360° が %d こに 等分された。360 ÷ %d ＝ %d°。かどの 数が ちがっても 同じ やり方かな?" % [
+				sn, sn, roundi(360.0 / float(sn))]
 		"clock":
 			if tries == 1:
 				return "30° が 12 こで 1 しゅう 360° だった。半分なら 何 こ分?"
 			return "30° が 6 こで まっすぐ 180°。では 直角は?"
 		"grid":
-			return "ますの 数は たて × よこ に なっていた。ほかの 大きさでも 同じかな?"
+			match String(unit["id"]):
+				"k10":
+					return "三角は いつも 四角の 半分だった(たて × よこ ÷ 2)。ほかの 大きさでも 同じかな?"
+				"k16":
+					return "底辺が %d 倍に なったら、広さも %d 倍。高さは 変えていない。ほかの のばし方でも 同じかな?" % [
+						_k16_times(), _k16_times()]
+				_:
+					return "ますの 数は たて × よこ に なっていた。ほかの 大きさでも 同じかな?"
 		"point":
 			return "1 つずつは 変わるのに、上 + 下 も 左 + 右 も %d のまま。ほかの 場所でも 同じ?" % [
 				roundi(float(st.get("pw", 8.0)) * float(st.get("ph", 4.0)) * 0.5)]
@@ -371,11 +401,19 @@ func _act_after() -> String:
 		"roll":
 			return "さしわたし 3 こ分と ちょっとだった。大きさを 変えても 同じかな?"
 		"shift":
-			return "動かしても 数は 変わらなかった。ほかの 場所でも?"
+			if String(unit["id"]) == "k21":
+				# k13(道)の「動かしても 変わらない」を そのまま 使っていたが、
+				# k21 は 逆に「進んだ ぶん ふえる」回。まるきり 逆の ことを 言っていた
+				return "重なりの たては ずっと %d のまま。よこだけ 進んだ ぶん ふえた。ほかの 進み方でも 同じかな?" % [
+					K21_TALL]
+			return "道を 動かしても のこりの 広さは 変わらなかった。ほかの 場所でも?"
 		"stack":
 			return "たて × よこ × 高さ の 数だけ 入った。ほかの はこでも 同じ?"
 		"open":
-			return "ひらいても、面の 数は 変わらない。"
+			if String(unit["id"]) == "k19":
+				return "1 つ おいた 先の 面が 向かい合っていた。どの ペアも たすと 7。ほかの 目でも 同じかな?"
+			return "2 つで たて %d の まっすぐな 箱。1 つ分は その 半分 ―― 手前と 奥の 平均だった。ほかの 高さでも 同じかな?" % [
+				int(st.get("h1", 2)) + int(st.get("h2", 4))]
 		"pour":
 			return "はばを 変えると 深さが 変わる。でも かけ算は 同じ。"
 		_:
@@ -398,6 +436,9 @@ func _act_cheer() -> String:
 		"diag":
 			return "三角形 %d こ × 180° ＝ %d°" % [
 				int(st.get("tri", 3)), int(st.get("tri", 3)) * 180]
+		"spoke":
+			return "360° ÷ %d ＝ %d°" % [
+				int(st.get("n", 6)), roundi(360.0 / float(int(st.get("n", 6))))]
 		"clock":
 			match int(float(st.get("goal", 360.0))):
 				360:
@@ -407,8 +448,21 @@ func _act_cheer() -> String:
 				_:
 					return "30° × 3 ＝ 90°(直角)"
 		"grid":
-			return "%d × %d ＝ %d ます" % [int(st.get("h", 1)), int(st.get("w", 1)),
-				int(st.get("w", 1)) * int(st.get("h", 1))]
+			var gw: int = int(st.get("w", 1))
+			var gh: int = int(st.get("h", 1))
+			match String(unit["id"]):
+				"k10":
+					# 四角の ます目と、その 半分の 三角 ―― 「÷ 2」まで 数で 見せる
+					return "四角 %d × %d ＝ %d ます、三角は 半分の %s ます" % [
+						gh, gw, gw * gh, ProblemGen.fmt(float(gw * gh) * 0.5)]
+				"k16":
+					var s0: int = int(st.get("w0", 1))
+					return "底辺 %d → %d(%d 倍)、広さ %s → %s(%d 倍)" % [
+						s0, gw, _k16_times(),
+						ProblemGen.fmt(float(s0 * gh) * 0.5),
+						ProblemGen.fmt(float(gw * gh) * 0.5), _k16_times()]
+				_:
+					return "%d × %d ＝ %d ます" % [gh, gw, gw * gh]
 		"point":
 			return "上 + 下 ＝ 左 + 右 ＝ %d" % roundi(
 				float(st.get("pw", 8.0)) * float(st.get("ph", 4.0)) * 0.5)
@@ -423,12 +477,20 @@ func _act_cheer() -> String:
 		"roll":
 			return "1 まわり ＝ さしわたし 3.14 こ分"
 		"shift":
-			return "ぴったり 同じ！"
+			if String(unit["id"]) == "k21":
+				var mv := int(round(float(st.get("pos", 0.0))))
+				return "進んだ %d × たて %d ＝ %d" % [mv, K21_TALL, mv * K21_TALL]
+			return "道を どこへ 動かしても 同じ 広さ！"
 		"stack":
 			return "%d × %d × %d ＝ %d こ" % [int(st.get("bh", 1)), int(st.get("bd", 1)),
 				int(st.get("bw", 1)), int(st.get("bw", 1)) * int(st.get("bd", 1)) * int(st.get("bh", 1))]
 		"open":
-			return "ひらいた！"
+			if String(unit["id"]) == "k19":
+				return "1 と 6、2 と 5、3 と 4 ―― どれも 7"
+			var a1: int = int(st.get("h1", 2))
+			var a2: int = int(st.get("h2", 4))
+			return "高さ %d と %d ＝ %d、1 つ分は 平均の %s" % [
+				a1, a2, a1 + a2, ProblemGen.fmt(float(a1 + a2) * 0.5)]
 		"pour":
 			return "かけ算は いつも 24"
 		_:
@@ -468,11 +530,11 @@ func _reset_act() -> void:
 				var ang_b := rad_to_deg(absf((da - db).angle_to(dp - db)))
 				var ang_c := rad_to_deg(absf((da - dc).angle_to(dp - dc)))
 				st = {"tri": [da, db, dc], "deg": [ang_a, ang_b, ang_c],
-					"placed": [false, false, false], "poly": [da, db, dp, dc],
+					"placed": [false, false, false], "order": [], "poly": [da, db, dp, dc],
 					"dent": ang_a + ang_b + ang_c, "dent_at": dp}
 			else:
 				st = {"tri": [pa, pb, pc], "deg": [a, b, c], "placed": [false, false, false],
-					"poly": [pa, pb, pc]}
+					"order": [], "poly": [pa, pb, pc]}
 		"slide":
 			# 3 回で「同じ むき(同位角)」→「向かい側(対頂角)」→「ななめ 向かい(錯角)」
 			# と 運ぶ 先を 変える。しるしの 問題は ななめ 向かいを 使うので、
@@ -492,8 +554,24 @@ func _reset_act() -> void:
 		"diag":
 			var n: int = [4, 5, 6][mini(tries, 2)]
 			st = {"n": n, "picked": [], "tri": n - 2}
+		"spoke":
+			# 3 回とも 角の 数を 変える。どれも 360 で わりきれる ので、
+			# 「360 ÷ かどの 数」が いつも 整数で 出る
+			st = {"n": [6, 8, 5][mini(tries, 2)], "picked": []}
 		"grid":
-			st = {"w": 2, "h": 2, "tw": rng.randi_range(3, 8), "th": rng.randi_range(2, 5)}
+			if String(unit["id"]) == "k16":
+				# 「高さが 同じなら、底辺が 2 倍だと 広さも 2 倍」を さわって 見る 回。
+				# 高さは 動かせない ようにして、底辺だけ のばす。
+				# ここを ふつうの ます合わせに していた ころは、たても よこも
+				# 変わってしまい、見つけて ほしい きまりが どこにも 出なかった
+				var mul: int = [2, 3, 2][mini(tries, 2)]
+				# のばした 先が ます目(よこ 9)を こえると、どこまで 動かしても
+				# うすい 形に とどかず 先へ 進めなくなる。はじめの 底辺を それに 合わせる
+				var w0 := rng.randi_range(2, mini(4, 9 / mul))
+				var hh := rng.randi_range(3, 5)
+				st = {"w": w0, "h": hh, "w0": w0, "tw": w0 * mul, "th": hh}
+			else:
+				st = {"w": 2, "h": 2, "tw": rng.randi_range(3, 8), "th": rng.randi_range(2, 5)}
 		"point":
 			# よこ 8・たて 4 なら、0.5 ますきざみでも 4 つの 広さが ぜんぶ 整数に なる
 			# (上 + 下 も 左 + 右 も かならず 16 = 四角の 半分)
@@ -505,12 +583,18 @@ func _reset_act() -> void:
 		"roll":
 			st = {"turns": 0.0}
 		"shift":
-			st = {"pos": 0.0 if String(unit["id"]) == "k21" else 4.0, "from": 0.0}
+			st = {"pos": 0.0 if String(unit["id"]) == "k21" else 4.0,
+				"from": 0.0 if String(unit["id"]) == "k21" else 4.0}
 		"stack":
 			st = {"n": 0, "bw": rng.randi_range(2, 4), "bd": rng.randi_range(2, 3),
 				"bh": rng.randi_range(2, 3)}
 		"open":
-			st = {"open": 0.0}
+			if String(unit["id"]) == "k23":
+				# 手前と 奥の 高さ。3 回とも 変えて、平均が 毎回 ちがう ことを 見る
+				var hs: Array = [[2, 4], [3, 5], [1, 5]][mini(tries, 2)]
+				st = {"open": 0.0, "h1": int(hs[0]), "h2": int(hs[1])}
+			else:
+				st = {"open": 0.0}
 		"pour":
 			st = {"w": 3.0, "from": 3.0}
 		"shadow":
@@ -623,6 +707,8 @@ func _draw_map() -> void:
 			_draw_fold(c)
 		"diag":
 			_draw_diag(c)
+		"spoke":
+			_draw_spoke(c)
 		"clock":
 			_draw_clock(c)
 		"grid":
@@ -729,10 +815,10 @@ func _draw_tear(c: Control) -> void:
 	var ly := _line_y()
 	var origin := Vector2(c.size.x * 0.5 - 130.0, ly)
 	var zone := _tear_zone()
-	var n_placed := 0
-	for i in 3:
-		if bool(placed[i]):
-			n_placed += 1
+	# ならべる 順は「置いた 順」。番号の 順では ないので、あとから どの かどを
+	# 置いても すでに ならんだ ものは その ままの ところに のこる
+	var order: Array = st.get("order", [])
+	var n_placed: int = order.size()
 	# ならべる 台(ここに 置けば いい)。ゆびが 台に 入ったら 色が 濃くなる
 	var hot := false
 	if dragging >= 0:
@@ -749,21 +835,21 @@ func _draw_tear(c: Control) -> void:
 		HORIZONTAL_ALIGNMENT_LEFT, -1, 28, GOLD)
 	c.draw_line(Vector2(20, ly), Vector2(c.size.x - 20, ly), Color(1, 1, 1, 0.85), 5.0)
 	var base := 0.0
-	for i in 3:
-		if not bool(placed[i]):
-			continue
+	for v in order:
+		var i := int(v)
 		_draw_piece(c, origin, deg_to_rad(base), float(deg[i]), PIECE_COL[i], 120.0)
 		base += float(deg[i])
 	# つぎの かどが 入る ところを うすい 形で 見せる。台の どこへ 置くのか、
 	# 「かどの とがった ところを ○ に あわせる」まで 分かるようにする
 	if n_placed < 3:
-		var nxt := -1
-		for i in 3:
-			if not bool(placed[i]) and i != dragging:
-				nxt = i
-				break
+		# うすい 形は「いま 運んでいる かど」。ほかの かどを 見せると 大きさが
+		# 合わず、置いた ときに かたちが 変わったように 見えた
+		var nxt := dragging
 		if nxt < 0:
-			nxt = dragging
+			for i in 3:
+				if not bool(placed[i]):
+					nxt = i
+					break
 		if nxt >= 0:
 			var ghost: Color = PIECE_COL[nxt]
 			ghost.a = 0.50 if hot else 0.34
@@ -1108,6 +1194,83 @@ func _diag_triangles() -> Array:
 	return made
 
 
+## 正多角形を、まん中から ちょう点へ 線を 引いて 分ける
+##
+## しるしの 問題(e17-中心)は「正 n 角形の 中心と となり合う 2 つの ちょう点を
+## 結んだ 角」= 360 ÷ n。前は 対角線(diag)で 三角形に 分けていて、
+## 出てくるのは 「三角形 n-2 こ × 180°」―― 問題の 360 ÷ n の 説明に なっていなかった。
+## ここでは まん中の まわりの 360° が、引いた 線の 数だけ 等分される ところを
+## そのまま 目で 見て 数えられるようにする。
+func _spoke_center() -> Vector2:
+	return _to_screen(Vector2.ZERO)
+
+
+## 正多角形の ちょう点(diag と 同じ 置き方)
+func _spoke_points() -> Array:
+	return _diag_points()
+
+
+func _draw_spoke(c: Control) -> void:
+	var n: int = st["n"]
+	var picked: Array = st["picked"]
+	var pts: Array = _spoke_points()
+	var o := _spoke_center()
+	var f := ThemeDB.fallback_font
+	var step_deg := 360.0 / float(n)
+	var poly := PackedVector2Array()
+	for p in pts:
+		poly.append(p)
+	c.draw_colored_polygon(poly, Color(0.40, 0.60, 0.95, 0.28))
+	# となり合う 2 本が そろった ところは、まん中の 角が 1 こ 分かれた しるし。
+	# 色を ぬって「360° の うちの 1 こ分」を 見せる
+	var made := 0
+	for i in n:
+		var j := (i + 1) % n
+		if not (picked.has(i) and picked.has(j)):
+			continue
+		var col: Color = PIECE_COL[made % PIECE_COL.size()]
+		col.a = 0.45
+		c.draw_colored_polygon(PackedVector2Array([o, pts[i], pts[j]]), col)
+		made += 1
+	for i in n:
+		c.draw_line(pts[i], pts[(i + 1) % n], INK, 4.0)
+	for v in picked:
+		c.draw_line(o, pts[int(v)], GOLD, 3.5)
+	# まん中の 1 こ分の 角に、大きさを 書く(となりと 同じ 大きさだと 見える)
+	for i in n:
+		var j := (i + 1) % n
+		if not (picked.has(i) and picked.has(j)):
+			continue
+		var mid: Vector2 = o + ((pts[i] - o).normalized()
+			+ (pts[j] - o).normalized()).normalized() * (o.distance_to(pts[i]) * 0.42)
+		_draw_tag(c, mid, "%d°" % roundi(step_deg), 24, Color(1.0, 0.97, 0.85))
+	# ゆびで なぞって いる とちゅうの 線
+	if dragging >= 0 and st.has("drag_pos"):
+		c.draw_line(o, st["drag_pos"], Color(1, 0.85, 0.4, 0.7), 3.0)
+	var puls := 1.0 + sin(float(Time.get_ticks_msec()) * 0.005) * 0.15
+	for i in n:
+		if picked.has(i):
+			c.draw_circle(pts[i], 11.0, Color(0.85, 0.9, 1.0))
+		else:
+			# まだ つないでいない ちょう点は、大きめの 輪で さそう
+			c.draw_arc(pts[i], 22.0, 0.0, TAU, 24, Color(1, 1, 1, 0.35), 2.0)
+			c.draw_circle(pts[i], 11.0, Color(0.85, 0.9, 1.0))
+	# まん中の まわりが 360° だと いう ことを、輪と ことばで 出しておく
+	c.draw_arc(o, 34.0, 0.0, TAU, 40, Color(1, 0.85, 0.4, 0.45), 3.0)
+	c.draw_circle(o, 15.0 * puls, GOLD)
+	var k := picked.size()
+	var sum_msg := "まん中の まわりは ぜんぶで 360°"
+	if k > 0 and k < n:
+		sum_msg = "線 %d 本。まん中は まだ 分けきれていない" % k
+	elif k >= n:
+		sum_msg = "360° ÷ %d ＝ %d°" % [n, roundi(step_deg)]
+	c.draw_string(f, Vector2(24, c.size.y - 58), sum_msg,
+		HORIZONTAL_ALIGNMENT_LEFT, -1, 30, GOLD if k >= n else Color(0.85, 0.9, 1.0))
+	c.draw_string(f, Vector2(24, c.size.y - 20),
+		"まん中から 白い 点まで なぞろう(タップでも いい)",
+		HORIZONTAL_ALIGNMENT_LEFT, -1, 26, DIM)
+
+
 ## 時計の 文字ばん。針を まわした ぶんだけ 金色に ぬられ、
 ## 数字 1 つ分ごとに 目もりで 区切れる ―― 「何 こ分 まわしたか」が 目で 数えられる。
 ##
@@ -1274,6 +1437,17 @@ func _draw_grid_bg(c: Control, cols: int, rows: int) -> void:
 			Color(1, 1, 1, 0.10), 1.5)
 
 
+## k16 の 三角の てっぺんの よこ 位置(ます)。はじめの 底辺の まん中に 置いて 動かさない
+func _k16_apex() -> float:
+	return float(int(st.get("w0", 2))) * 0.5
+
+
+## k16 で 底辺を 何 倍に のばすか(2 倍 か 3 倍)
+func _k16_times() -> int:
+	var w0: int = int(st.get("w0", 1))
+	return int(round(float(int(st.get("tw", w0))) / maxf(float(w0), 1.0)))
+
+
 ## ますに合わせて 四角を つくる(たて × よこ)
 func _draw_grid(c: Control) -> void:
 	var s := _cell()
@@ -1282,35 +1456,60 @@ func _draw_grid(c: Control) -> void:
 	var h: int = st["h"]
 	var tw: int = st["tw"]
 	var th: int = st["th"]
+	var uid := String(unit["id"])
 	_draw_grid_bg(c, 9, 7)
 	# めあての 形
-	c.draw_rect(Rect2(o + Vector2(0, -s * th), Vector2(s * tw, s * th)),
-		Color(1.0, 0.85, 0.3, 0.18))
-	c.draw_rect(Rect2(o + Vector2(0, -s * th), Vector2(s * tw, s * th)),
-		Color(1.0, 0.85, 0.3, 0.7), false, 3.0)
+	if uid == "k16":
+		# のばした あとの 三角を うすく 出す(底辺だけ のびて、高さは 同じ)。
+		# てっぺんは 動かさない ―― 動くと 「高さは そのまま」が 見えない
+		var goal := PackedVector2Array([o, o + Vector2(s * tw, 0),
+			o + Vector2(s * _k16_apex(), -s * th)])
+		c.draw_colored_polygon(goal, Color(1.0, 0.85, 0.3, 0.18))
+		c.draw_polyline(goal + PackedVector2Array([o]), Color(1.0, 0.85, 0.3, 0.7), 3.0)
+	else:
+		c.draw_rect(Rect2(o + Vector2(0, -s * th), Vector2(s * tw, s * th)),
+			Color(1.0, 0.85, 0.3, 0.18))
+		c.draw_rect(Rect2(o + Vector2(0, -s * th), Vector2(s * tw, s * th)),
+			Color(1.0, 0.85, 0.3, 0.7), false, 3.0)
 	# いまの 形
 	var r := Rect2(o + Vector2(0, -s * h), Vector2(s * w, s * h))
-	c.draw_rect(r, Color(0.40, 0.60, 0.95, 0.45))
-	c.draw_rect(r, INK, false, 4.0)
-	var uid := String(unit["id"])
+	if uid == "k16":
+		# 四角は 出さない。高さの 線だけ 引いて、のばしても 変わらない ことを 見せる
+		var ax := _k16_apex()
+		c.draw_line(o + Vector2(s * ax, 0), o + Vector2(s * ax, -s * h),
+			Color(0.55, 0.85, 1.0, 0.85), 3.0)
+	else:
+		c.draw_rect(r, Color(0.40, 0.60, 0.95, 0.45))
+		c.draw_rect(r, INK, false, 4.0)
+	var font := ThemeDB.fallback_font
 	if uid == "k10":
-		# 三角の 広さ: ななめに 分ける
+		# 三角の 広さ: ななめに 分ける。四角の ます目と 三角の 広さを ならべて 出し、
+		# 「半分」が 数でも 見えるようにする
 		c.draw_line(o + Vector2(0, 0), o + Vector2(s * w, -s * h), GOLD, 4.0)
 		c.draw_colored_polygon(PackedVector2Array([o, o + Vector2(s * w, 0),
 			o + Vector2(s * w, -s * h)]), Color(1.0, 0.78, 0.35, 0.35))
+		_draw_tag(c, o + Vector2(s * w * 0.72, -s * h * 0.30),
+			"%s ます" % ProblemGen.fmt(float(w * h) * 0.5), 24, Color(1.0, 0.97, 0.85))
 	elif uid == "k16":
-		# 底辺だけ のばす
+		# 底辺だけ のばす。広さは 底辺 × 高さ ÷ 2 で、そのつど 数で 出す
 		c.draw_colored_polygon(PackedVector2Array([o, o + Vector2(s * w, 0),
-			o + Vector2(s * w * 0.35, -s * h)]), Color(1.0, 0.78, 0.35, 0.40))
-	# つまむ ところ
-	c.draw_circle(o + Vector2(s * w, -s * h), 16.0, GOLD)
-	var font := ThemeDB.fallback_font
-	c.draw_string(font, o + Vector2(s * w * 0.5 - 30.0, 34.0), "よこ %d" % w,
+			o + Vector2(s * _k16_apex(), -s * h)]), Color(1.0, 0.78, 0.35, 0.45))
+		_draw_tag(c, o + Vector2(s * w * 0.45, -s * h * 0.30),
+			"%s ます" % ProblemGen.fmt(float(w * h) * 0.5), 24, Color(1.0, 0.97, 0.85))
+	# つまむ ところ(k16 は 底辺の はし。高さは 動かさない)
+	c.draw_circle(o + Vector2(s * w, 0.0 if uid == "k16" else -s * h), 16.0, GOLD)
+	c.draw_string(font, o + Vector2(s * w * 0.5 - 30.0, 34.0),
+		("底辺 %d" if uid == "k16" else "よこ %d") % w,
 		HORIZONTAL_ALIGNMENT_LEFT, -1, 26, INK)
-	c.draw_string(font, o + Vector2(-96.0, -s * h * 0.5), "たて %d" % h,
+	c.draw_string(font, o + Vector2(-96.0, -s * h * 0.5),
+		("高さ %d" if uid == "k16" else "たて %d") % h,
 		HORIZONTAL_ALIGNMENT_LEFT, -1, 26, INK)
-	c.draw_string(font, Vector2(24, map.size.y - 18),
-		"金色の 点を つまんで、うすい 形に あわせよう(たて %d よこ %d)" % [th, tw],
+	var foot := "金色の 点を つまんで、うすい 形に あわせよう(たて %d よこ %d)" % [th, tw]
+	if uid == "k10":
+		foot = "四角 %d × %d ＝ %d ます。金色の 三角は その 半分" % [h, w, w * h]
+	elif uid == "k16":
+		foot = "高さ %d は そのまま。底辺を %d まで のばそう(いま %d)" % [h, tw, w]
+	c.draw_string(font, Vector2(24, map.size.y - 18), foot,
 		HORIZONTAL_ALIGNMENT_LEFT, -1, 25, DIM)
 
 
@@ -1527,21 +1726,46 @@ func _draw_shift(c: Control) -> void:
 			"道を 左右に 動かそう。のこりの 畑は たて 5 × よこ 8 の まま",
 			HORIZONTAL_ALIGNMENT_LEFT, -1, 25, DIM)
 	else:
-		# 門と 動く板
-		var gate := Rect2(o + Vector2(s * 3.0, -s * 4.0), Vector2(s * 6.0, s * 4.0))
+		# 門と 動く板。
+		# pos は「重なりはじめてから 進んだ 長さ」。pos = 0 で 板の 右はしが
+		# 門の 左はしに ちょうど つく ように 置く(前は 置きはじめから 重なっていて、
+		# 「進んだ ぶん ふえる」の 進んだ 長さが どこにも 出ていなかった)
+		var f2 := ThemeDB.fallback_font
+		var tall := float(K21_TALL)
+		var gate := Rect2(o + Vector2(s * K21_GATE_X, -s * tall),
+			Vector2(s * 6.0, s * tall))
 		c.draw_rect(gate, Color(0.30, 0.36, 0.52, 0.7))
 		c.draw_rect(gate, INK, false, 4.0)
-		var bx := o.x + s * pos
-		var board := Rect2(Vector2(bx, o.y - s * 4.0), Vector2(s * 5.0, s * 4.0))
+		var bx := o.x + s * (K21_GATE_X - float(K21_WIDE) + pos)
+		var board := Rect2(Vector2(bx, o.y - s * tall), Vector2(s * float(K21_WIDE), s * tall))
 		c.draw_rect(board, Color(1.0, 0.78, 0.35, 0.35))
 		c.draw_rect(board, GOLD, false, 3.0)
 		var left := maxf(bx, gate.position.x)
-		var right := minf(bx + s * 5.0, gate.position.x + gate.size.x)
+		var right := minf(bx + s * float(K21_WIDE), gate.position.x + gate.size.x)
+		var over := maxf((right - left) / s, 0.0)
 		if right > left:
 			c.draw_rect(Rect2(Vector2(left, gate.position.y), Vector2(right - left, gate.size.y)),
 				Color(1.0, 0.85, 0.3, 0.55))
-		c.draw_circle(Vector2(bx + s * 2.5, o.y + 26.0), 16.0, GOLD)
-		c.draw_string(ThemeDB.fallback_font, Vector2(24, map.size.y - 18),
+			# 重なりの よこ・たて・広さを その場で 出す。
+			# 「よこだけ ふえて たては 変わらない」が 数でも 読める
+			_draw_tag(c, Vector2((left + right) * 0.5, gate.position.y + gate.size.y * 0.5),
+				"%s × %d ＝ %s" % [ProblemGen.fmt(over), K21_TALL,
+					ProblemGen.fmt(over * tall)], 26, Color(1.0, 0.97, 0.85))
+		# 進んだ 長さの ものさしは 図の 上に 出す
+		# (下に 置くと、つまむ ○ と 重なって どちらも 読めなかった)
+		var gx := gate.position.x
+		var my := gate.position.y - 22.0
+		c.draw_line(Vector2(gx, my), Vector2(gx + s * over, my), Color(1, 0.85, 0.4, 0.9), 4.0)
+		c.draw_line(Vector2(gx, my - 7.0), Vector2(gx, my + 7.0), Color(1, 0.85, 0.4, 0.9), 3.0)
+		c.draw_line(Vector2(gx + s * over, my - 7.0), Vector2(gx + s * over, my + 7.0),
+			Color(1, 0.85, 0.4, 0.9), 3.0)
+		c.draw_string(f2, Vector2(gx + 6.0, my - 14.0), "進んだ %s" % ProblemGen.fmt(over),
+			HORIZONTAL_ALIGNMENT_LEFT, -1, 24, GOLD)
+		c.draw_circle(Vector2(bx + s * float(K21_WIDE) * 0.5, o.y + 26.0), 16.0, GOLD)
+		c.draw_string(f2, Vector2(24, map.size.y - 50),
+			"重なりの たては ずっと %d。よこ だけが 進んだ ぶん ふえる" % K21_TALL,
+			HORIZONTAL_ALIGNMENT_LEFT, -1, 25, DIM)
+		c.draw_string(f2, Vector2(24, map.size.y - 18),
 			"板を 右へ 動かそう。重なった ところが 広がっていく",
 			HORIZONTAL_ALIGNMENT_LEFT, -1, 25, DIM)
 
@@ -1591,32 +1815,82 @@ func _draw_open(c: Control) -> void:
 	var s := _cell()
 	var mid := Vector2(map.size.x * 0.5, map.size.y * 0.45)
 	if String(unit["id"]) == "k19":
-		# 十字に ひらく
+		# 十字に ひらく。
+		# しるしの 問題は「向かい合う 面の 目を たすと 7」なので、面に 目を 書いて、
+		# ひらいた 図の どれと どれが 向かい合うのかまで 見せる。
+		# 前は まっさらな 6 面を ひらくだけで、問題に つながる ことが 何も なかった
 		var faces := [Vector2(0, 0), Vector2(-1, 0), Vector2(1, 0), Vector2(2, 0),
 			Vector2(0, -1), Vector2(0, 1)]
+		# 横 4 まいは わっか。1 つ おいた 先どうしが 向かい合う
+		# (0,0)-(2,0) と (-1,0)-(1,0)。上下の 2 まいも たがいに 向かい合う
+		var pips := [1, 2, 5, 6, 3, 4]
+		var pair_of := [0, 1, 1, 0, 2, 2]
+		var side := s * 1.7
+		var font_o := ThemeDB.fallback_font
+		# 向かい合う 2 まいは 同じ 色。線で むすぶと まん中で 重なって 読めなく
+		# なるので、色だけで 組を 見せて、ことばは 下に 1 行 出す
+		var box: Array = []
 		for i in faces.size():
 			var f: Vector2 = faces[i]
-			var pos := mid + f * s * 1.7 * t + Vector2(-s * 0.85, -s * 0.85)
-			c.draw_rect(Rect2(pos, Vector2(s * 1.7, s * 1.7)),
-				Color(0.55, 0.75, 1.0, 0.85 if i == 0 else 0.6))
-			c.draw_rect(Rect2(pos, Vector2(s * 1.7, s * 1.7)), INK, false, 3.0)
-		c.draw_string(ThemeDB.fallback_font, Vector2(24, map.size.y - 18),
-			"つまんで ひらこう(面は 6 つ)" if t < 0.9 else "ひらいた! 面は 6 つ",
+			var pos := mid + f * side * t + Vector2(-side * 0.5, -side * 0.5)
+			box.append(pos + Vector2(side, side) * 0.5)
+			var col: Color = PIECE_COL[int(pair_of[i])]
+			col.a = 0.55
+			c.draw_rect(Rect2(pos, Vector2(side, side)), col)
+			c.draw_rect(Rect2(pos, Vector2(side, side)), INK, false, 3.0)
+		# 目は 面を ぜんぶ ぬってから 書く(となりの 面に かくれない ように)
+		for i in faces.size():
+			_draw_tag(c, box[i], str(pips[i]), 34, Color(1.0, 0.97, 0.85))
+		if t > 0.9:
+			c.draw_string(font_o, Vector2(24, map.size.y - 52),
+				"同じ 色が 向かい合う面 ― 1 と 6、2 と 5、3 と 4",
+				HORIZONTAL_ALIGNMENT_LEFT, -1, 26, GOLD)
+		c.draw_string(font_o, Vector2(24, map.size.y - 18),
+			"つまんで ひらこう(面は 6 つ)" if t < 0.9
+			else "ひらいた! 1 つ おいた 先が 向かい合う面。たすと どれも 7",
 			HORIZONTAL_ALIGNMENT_LEFT, -1, 25, DIM if t < 0.9 else GOLD)
 	else:
-		# ななめに 切った 箱と、さかさに した 同じ 箱
-		var w := s * 4.0
-		var h1 := s * 1.6
-		var h2 := s * 4.2
-		var o := mid + Vector2(-w, s * 1.6)
-		c.draw_colored_polygon(PackedVector2Array([o, o + Vector2(w, 0),
-			o + Vector2(w, -h2), o + Vector2(0, -h1)]), Color(0.40, 0.60, 0.95, 0.45))
-		var flip_o := o + Vector2(w, 0) + Vector2(w, 0) * t
-		c.draw_colored_polygon(PackedVector2Array([flip_o, flip_o + Vector2(w, 0),
-			flip_o + Vector2(w, -h1), flip_o + Vector2(0, -h2)]),
-			Color(1.0, 0.78, 0.35, 0.55))
-		c.draw_string(ThemeDB.fallback_font, Vector2(24, map.size.y - 18),
-			"さかさの 箱を 右へ 運ぼう" if t < 0.9 else "2 つで まっすぐな 箱に なった",
+		# ななめに 切った 箱と、さかさに した 同じ 箱。
+		# 前は さかさの 箱を 「右へ」 はなしていくだけで、2 つを 合わせても
+		# まっすぐな 箱に ならず、「高さの 平均」が どこにも 出なかった。
+		# ここでは さかさの 箱を もとの 箱の 上に のせて、
+		# たてが 手前 + 奥 の まっすぐな 箱に なる ところを 見せる
+		var f2 := ThemeDB.fallback_font
+		var n1: float = float(st.get("h1", 2))
+		var n2: float = float(st.get("h2", 4))
+		var w := s * 3.0
+		var o := mid + Vector2(-w * 0.5, s * (n1 + n2) * 0.5)
+		var base := PackedVector2Array([o, o + Vector2(w, 0),
+			o + Vector2(w, -s * n2), o + Vector2(0, -s * n1)])
+		c.draw_colored_polygon(base, Color(0.40, 0.60, 0.95, 0.45))
+		c.draw_polyline(base + PackedVector2Array([o]), INK, 3.0)
+		# さかさの 箱: 左の 地めん(t=0)から、もとの 箱の 上(t=1)へ。
+		# ゆびは 右へ 動かすので、箱も 右上へ 上がっていく
+		var from_pts := [o + Vector2(-w * 1.25, 0), o + Vector2(-w * 0.25, 0),
+			o + Vector2(-w * 0.25, -s * n1), o + Vector2(-w * 1.25, -s * n2)]
+		var to_pts := [o + Vector2(0, -s * n1), o + Vector2(w, -s * n2),
+			o + Vector2(w, -s * (n1 + n2)), o + Vector2(0, -s * (n1 + n2))]
+		var moving := PackedVector2Array()
+		for i in 4:
+			moving.append((from_pts[i] as Vector2).lerp(to_pts[i] as Vector2, t))
+		c.draw_colored_polygon(moving, Color(1.0, 0.78, 0.35, 0.55))
+		c.draw_polyline(moving + PackedVector2Array([moving[0]]), GOLD, 3.0)
+		_draw_tag(c, o + Vector2(-34.0, -s * n1 * 0.5), "手前 %d" % int(n1), 24, SKY)
+		_draw_tag(c, o + Vector2(w + 40.0, -s * n2 * 0.5), "奥 %d" % int(n2), 24, SKY)
+		if t > 0.9:
+			# まっすぐな 箱に なった。たては 手前 + 奥
+			c.draw_rect(Rect2(o + Vector2(0, -s * (n1 + n2)), Vector2(w, s * (n1 + n2))),
+				Color(1, 0.95, 0.5, 0.95), false, 4.0)
+			_draw_tag(c, o + Vector2(w * 0.5, -s * (n1 + n2) - 26.0),
+				"たて %d + %d ＝ %d" % [int(n1), int(n2), int(n1 + n2)], 26,
+				Color(1.0, 0.97, 0.85))
+		c.draw_string(f2, Vector2(24, map.size.y - 50),
+			"2 つ 合わせると たて %d の まっすぐな 箱。1 つ分は その 半分 ＝ %s"
+				% [int(n1 + n2), ProblemGen.fmt((n1 + n2) * 0.5)],
+			HORIZONTAL_ALIGNMENT_LEFT, -1, 25, DIM if t < 0.9 else GOLD)
+		c.draw_string(f2, Vector2(24, map.size.y - 18),
+			"さかさの 箱を つまんで、右上へ 運んで のせよう" if t < 0.9
+			else "のった! まっすぐな 箱 2 つ分に なった",
 			HORIZONTAL_ALIGNMENT_LEFT, -1, 25, DIM if t < 0.9 else GOLD)
 
 
@@ -1742,6 +2016,14 @@ func _press(act: String, at: Vector2) -> void:
 				GameState.play_sfx("type")
 			else:
 				_tap_diag(at)
+		"spoke":
+			# まん中を つまんで、ちょう点まで なぞる(タップでも つながる)
+			if at.distance_to(_spoke_center()) < 120.0:
+				dragging = 0
+				st["drag_pos"] = at
+				GameState.play_sfx("type")
+			else:
+				_tap_spoke(at)
 		"clock":
 			dragging = 0
 			var v := at - _clock_center()
@@ -1766,16 +2048,21 @@ func _release(act: String, at: Vector2) -> void:
 			# なぞった 先に 点が あれば つなぐ
 			st["drag_pos"] = at
 			_tap_diag(at)
+		"spoke":
+			st["drag_pos"] = at
+			_tap_spoke(at)
 		"tear":
 			if at.y > _tear_zone().position.y:
 				var placed: Array = st["placed"]
 				placed[dragging] = true
+				# 置いた 順に ならべる。番号の 順で ならべると、あとから 前の 番号を
+				# 置いた ときに 先に 置いた かどが 横へ ずれて 並びかわり、
+				# 「かってに 動いた」と 見えて 混乱した
+				var order: Array = st["order"]
+				if not order.has(dragging):
+					order.append(dragging)
 				GameState.play_sfx("correct")
-				var n := 0
-				for p in placed:
-					if bool(p):
-						n += 1
-				if n == 3:
+				if order.size() == 3:
 					_act_done()
 		"slide":
 			var goal: Vector2 = _slide_target()[0]
@@ -1831,7 +2118,7 @@ func _drag_to(act: String, at: Vector2) -> void:
 	var s := _cell()
 	var o := _grid_origin()
 	match act:
-		"diag":
+		"diag", "spoke":
 			st["drag_pos"] = at
 		"clock":
 			_turn_clock(at)
@@ -1839,7 +2126,11 @@ func _drag_to(act: String, at: Vector2) -> void:
 			_fold_by(at)
 		"grid":
 			st["w"] = clampi(int(round((at.x - o.x) / s)), 1, 9)
-			st["h"] = clampi(int(round((o.y - at.y) / s)), 1, 7)
+			if String(unit["id"]) == "k16":
+				# 高さは 変えない(変えられると 「高さが 同じなら」が 見えない)
+				st["h"] = int(st["th"])
+			else:
+				st["h"] = clampi(int(round((o.y - at.y) / s)), 1, 7)
 		"point":
 			# 0.5 ますきざみ。四角の 中(へりに つかない ところ)に とめる
 			var pw: float = st["pw"]
@@ -1860,7 +2151,11 @@ func _drag_to(act: String, at: Vector2) -> void:
 			var rr := minf((map.size.x - 90.0) / (TAU + 2.0), map.size.y * 0.16)
 			st["turns"] = clampf((at.x - (50.0 + rr)) / maxf(TAU * rr, 1.0), 0.0, 1.05)
 		"shift":
-			st["pos"] = clampf((at.x - o.x) / s - 0.5, 0.0, 8.0)
+			if String(unit["id"]) == "k21":
+				# 進んだ 長さ。ます きざみに そろえて、数が そのまま 読めるように する
+				st["pos"] = clampf(round((at.x - o.x) / s - 0.5), 0.0, float(K21_WIDE))
+			else:
+				st["pos"] = clampf((at.x - o.x) / s - 0.5, 0.0, 8.0)
 		"open":
 			# 右へ なぞった ぶんだけ ひらく(これが 無いと、ゆびで 動かしても
 			# 何も 起きない ―― 実際に そうなっていた)
@@ -1917,4 +2212,28 @@ func _tap_diag(at: Vector2) -> void:
 	if picked.size() >= n - 3:
 		GameState.play_sfx("correct")
 		st["tri"] = n - 2
+		_act_done()
+
+
+## まん中から ちょう点へ 1 本ずつ 引く。
+## ぜんぶ 引けたら、まん中の 360° が かどの 数だけ 等分される
+func _tap_spoke(at: Vector2) -> void:
+	var n: int = st["n"]
+	var picked: Array = st["picked"]
+	var pts := _spoke_points()
+	var best := -1
+	var best_d := 130.0
+	for i in n:
+		if picked.has(i):
+			continue
+		var d := at.distance_to(pts[i] as Vector2)
+		if d < best_d:
+			best_d = d
+			best = i
+	if best < 0:
+		return
+	picked.append(best)
+	GameState.play_sfx("type")
+	if picked.size() >= n:
+		GameState.play_sfx("correct")
 		_act_done()

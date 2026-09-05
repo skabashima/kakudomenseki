@@ -271,13 +271,13 @@ static func _t_parabola(rng: RandomNumberGenerator) -> Dictionary:
 	var w := rng.randi_range(2, 6)
 	var half := float(w) * 0.5
 	var k := half * half
+	# 弧の 両はしは ちょうど 水面(y = k)の 上。閉じれば 水面が そのまま 底辺に
+	# なるので、同じ点を もう一度 足さない(重なった点の ない 多角形に する)
 	var region: Array = []
 	var n := 30
 	for i in n + 1:
 		var x := -half + 2.0 * half * float(i) / float(n)
 		region.append(Vector2(x, x * x))
-	region.append(Vector2(half, k))
-	region.append(Vector2(-half, k))
 	return {
 		"q": "噴水の水が描く放物線を、水面が切り取っている。水面との交点の隔たりは %d m。" % w
 			+ "石を敷く面積は何 m²? (交点の差)³ ÷ 6 で出る。",
@@ -630,7 +630,11 @@ static func _t_star(rng: RandomNumberGenerator) -> Dictionary:
 		rest = 180 - int(known[0]) - int(known[1]) - int(known[2]) - int(known[3])
 	var pts: Array = StoryDefs.star_points(Vector2(0.0, StoryDefs.STAR_R))
 	var order: Array = [pts[0], pts[2], pts[4], pts[1], pts[3]]
-	var out: Array = [ProblemGen.poly(order, ProblemGen.FILL_MAIN, GOLD, 3.0)]
+	# 塗りは 交点を 入れた 10 点の 外わくで。5 点の ままだと 自分と 交わって 塗れない
+	var out: Array = [
+		ProblemGen.poly(StoryDefs.star_outline(Vector2(0.0, StoryDefs.STAR_R)),
+			ProblemGen.FILL_MAIN, null, 0.0),
+		ProblemGen.poly(order, null, GOLD, 3.0)]
 	for i in 5:
 		var txt := "?" if i == 0 else "%d°" % int(known[i - 1])
 		out.append(ProblemGen.ang(pts[i], pts[(i + 2) % 5], pts[(i + 3) % 5], txt, 1.5))
