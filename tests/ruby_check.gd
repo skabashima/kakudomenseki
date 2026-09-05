@@ -2,80 +2,31 @@ extends SceneTree
 ## 小学生むけの文が「小 1 の漢字＋ふりがな」だけで書けているかを見張る。
 ##   godot --headless --path . -s tests/ruby_check.gd
 ##
-## 中学受験レベルの問題文・ヒント・解説・ステージ名と、ストーリーの中学受験の章、
-## それに試作の画面の文を、ふりがなを付けたあとで走査する。
-## 小 1 で習わない漢字が「よみ なし」で残っていたら落とす。
+## 見るところ(どれも 実際に 出ていた まちがい):
+##   1. 小 1 で習わない漢字が「よみ なし」で のこっていないか
+##   2. 漢字の かたまりが、人が 確かめていない 割れ方を していないか
+##      ―― 「分度器」が 分(ぶん)+度(ど)+器(うつわ)= **ぶんどうつわ** に
+##      なっていた。よみは 付いているので 1 だけでは 気づけない。
+##      新しい 割れ方が 出たら、声に 出して 確かめてから
+##      core/ruby.gd の SPLIT_OK に 足すか、WORDS に 語として 入れる。
+##
+## 見るはんい(core/ruby_corpus.gd)は「ふりがなを 出す 画面が 使う 文」ぜんぶ。
+## 前は 本編の 問題文と 島取りの 画面だけで、たからのちず・図鑑・解き方アニメが
+## 抜けていた ―― まちがいは そこに のこっていた。
 
 var missing := {}          # 漢字の かたまり → 出てきた回数
 var examples := {}         # かたまり → 出てきた文の例
+var unreviewed := {}       # 見ていない 割れ方 → その読み
 
 
 func _init() -> void:
-	for course in ProblemGen.COURSES:
-		for st in course["stages"]:
-			var sid := String(st["id"])
-			if not Ruby.needed(sid):
-				continue
-			_scan(Ruby.apply(String(st["title"])), sid + " の名前")
-			_scan(Ruby.apply(String(st["desc"])), sid + " の説明")
-			var rng := RandomNumberGenerator.new()
-			for seed_i in 12:
-				rng.seed = 900 + seed_i
-				var p: Dictionary = ProblemGen.generate(sid, rng, seed_i % 10)
-				for key in ["q", "hint1", "hint2", "expl"]:
-					_scan(Ruby.apply(String(p.get(key, ""))), sid)
-	# 島取り(戦略ゲーム)も 小学生から 遊ぶ。画面に 出る 文を そのまま 走査する
-	for path in ["res://scenes/island.gd", "res://scenes/island_select.gd",
-			"res://core/island_defs.gd"]:
-		_scan_source(path)
-	# ストーリー(中学生)は ふりがな を付けないモードなので見ない
+	for t in RubyCorpus.texts():
+		_scan(String(t))
 	_report()
 
 
-## ソースの 中の 日本語の 文字列を 取り出して 走査する。
-## 画面の 文は その場で 書いているので、データを 見るだけでは 抜ける
-func _scan_source(path: String) -> void:
-	var f := FileAccess.open(path, FileAccess.READ)
-	if f == null:
-		return
-	var src := f.get_as_text()
-	# 二重引用符の あいだを 取り出す(正規表現の 逃がし字で 事故りやすいので 手で)
-	var i := 0
-	while true:
-		var a := src.find("\"", i)
-		if a < 0:
-			break
-		var b := src.find("\"", a + 1)
-		if b < 0:
-			break
-		var lit := src.substr(a + 1, b - a - 1)
-		i = b + 1
-		if lit.begins_with("res://") or lit.begins_with("user://"):
-			continue
-		var has_kanji := false
-		for k in lit.length():
-			var c := lit.unicode_at(k)
-			if c >= 0x4E00 and c <= 0x9FFF:
-				has_kanji = true
-		if has_kanji:
-			_scan(Ruby.apply(lit), path.get_file())
-
-
-func _report() -> void:
-	if missing.is_empty():
-		print("RUBY CHECK OK: 小 1 の漢字と ふりがな だけで書けている")
-		quit(0)
-	else:
-		var keys: Array = missing.keys()
-		keys.sort_custom(func(a, b): return int(missing[a]) > int(missing[b]))
-		for k in keys:
-			print("よみ なし: %s  (%d 回)  例: %s" % [k, int(missing[k]), String(examples.get(k, ""))])
-		print("RUBY CHECK FAILED: %d 語" % keys.size())
-		quit(1)
-
-
-## 漢字の かたまり ごとに見て、うしろに (よみ) が付いていなければ小 1 の字だけか確かめる
-func _scan(text: String, where: String) -> void:
+## 漢字の かたまりごとに、よみ が 付いているか・割れ方を 見ているか
+func _scan(text: String) -> void:
 	var i := 0
 	while i < text.length():
 		if not _is_kanji(text.unicode_at(i)):
@@ -85,17 +36,56 @@ func _scan(text: String, where: String) -> void:
 		while j < text.length() and _is_kanji(text.unicode_at(j)):
 			j += 1
 		var run := text.substr(i, j - i)
-		var has_ruby := j < text.length() and text.substr(j, 1) == "("
-		if not has_ruby:
-			var need := false
-			for k in run.length():
-				if not Ruby.plain_ok(run.substr(k, 1)):
-					need = true
-			if need:
+		_check_run(run, text)
+		i = j
+
+
+func _check_run(run: String, text: String) -> void:
+	var parts: Array = Ruby.parts(run)
+	# 1. よみ が 付かないまま のこった 漢字(小 1 の字は そのままでよい)
+	for p in parts:
+		var seg: Dictionary = p
+		if String(seg["r"]) != "":
+			continue
+		var s := String(seg["s"])
+		for k in s.length():
+			var ch := s.substr(k, 1)
+			if _is_kanji(s.unicode_at(k)) and not Ruby.plain_ok(ch):
 				missing[run] = int(missing.get(run, 0)) + 1
 				if not examples.has(run):
-					examples[run] = text.substr(maxi(i - 12, 0), 34)
-		i = j
+					examples[run] = text
+				return
+	# 2. 2 つ以上に 割れたら、その 読みを 人が 見ているか
+	if parts.size() <= 1 or Ruby.SPLIT_OK.has(run):
+		return
+	var yomi := ""
+	for p2 in parts:
+		var seg2: Dictionary = p2
+		var r := String(seg2["r"])
+		yomi += r if r != "" else String(seg2["s"])
+	unreviewed[run] = yomi
+	if not examples.has(run):
+		examples[run] = text
+
+
+func _report() -> void:
+	if missing.is_empty() and unreviewed.is_empty():
+		print("RUBY CHECK OK: 小 1 の漢字と ふりがな だけで書けている" \
+			+ "(割れ方も %d とおり ぜんぶ 見たもの)" % Ruby.SPLIT_OK.size())
+		quit(0)
+		return
+	var keys: Array = missing.keys()
+	keys.sort_custom(func(a, b): return int(missing[a]) > int(missing[b]))
+	for k in keys:
+		print("よみ なし: %s  (%d 回)  例: %s" % [k, int(missing[k]), String(examples.get(k, ""))])
+	var uk: Array = unreviewed.keys()
+	uk.sort()
+	for k in uk:
+		print("見ていない 割れ方: %s → 「%s」  例: %s" % [
+			k, String(unreviewed[k]), String(examples.get(k, ""))])
+	print("RUBY CHECK FAILED: よみ なし %d 語 / 見ていない 割れ方 %d 語" % [
+		keys.size(), uk.size()])
+	quit(1)
 
 
 func _is_kanji(code: int) -> bool:
