@@ -271,8 +271,8 @@ static func _t_parabola(rng: RandomNumberGenerator) -> Dictionary:
 	var w := rng.randi_range(2, 6)
 	var half := float(w) * 0.5
 	var k := half * half
-	# 弧の 両はしは ちょうど 水面(y = k)の 上。同じ点を もう一度 足すと
-	# 多角形の 三角形分割が 失敗して、塗った 面が 出なくなる
+	# 弧の 両はしは ちょうど 水面(y = k)の 上。閉じれば 水面が そのまま 底辺に
+	# なるので、同じ点を もう一度 足さない(重なった点の ない 多角形に する)
 	var region: Array = []
 	var n := 30
 	for i in n + 1:
