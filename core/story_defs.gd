@@ -780,7 +780,9 @@ const CHAPTERS := [
 				"親方が注文書に道具の数を書き入れた。「表はいらん」",
 			]},
 			{"type": "solve", "title": "道具の数", "fig": "euler",
-				"lead": "辺の数を数えて伝えよう。", "after": "石は無駄なく切り出された。"},
+				# 依頼は 辺の数を 聞くことも 頂点の数を 聞くこともある。
+				# 「辺の数を数えて」と 書いていたので、頂点を 聞かれた回と 食いちがっていた
+				"lead": "頂点 − 辺 + 面 = 2 を使おう。", "after": "石は無駄なく切り出された。"},
 			{"type": "talk", "title": "屋敷の庭", "art": "dusk", "lines": [
 				"カラスは表を売れないまま、丘の上の屋敷を見上げた。",
 				"「あそこの庭には丸い池がある。島へ板を渡す仕事で、庭師がずっと揉めていてな」",
@@ -1728,6 +1730,27 @@ static func star_points(p: Vector2) -> Array:
 	for i in range(1, 5):
 		var a := deg_to_rad(90.0 + 72.0 * float(i))
 		out.append(Vector2(cos(a), sin(a)) * STAR_R)
+	return out
+
+
+## 星形の 外わく(10 点)。
+## 5 点を 1 つ飛ばしに 結んだ 線は みずから 交わるので、そのままでは
+## 塗りの 三角形分割が できず、塗った 色が まるごと 消えていた
+## (Godot が「Invalid polygon data」を出して 何も 描かない)。
+## とがった 5 点と、線どうしの 交点 5 つを 交ごに 並べれば ふつうの 多角形になる。
+static func star_outline(p: Vector2) -> Array:
+	var a := star_points(p)
+	var out: Array = []
+	for i in 5:
+		out.append(a[i])
+		# となり合う 2 つの とがった 点の あいだに できる くぼみ。
+		# その 2 点を またぐ 2 本の 線の 交点
+		var f1: Vector2 = a[(i + 4) % 5]
+		var t1: Vector2 = a[(i + 1) % 5]
+		var f2: Vector2 = a[i]
+		var t2: Vector2 = a[(i + 2) % 5]
+		var hit = Geometry2D.line_intersects_line(f1, t1 - f1, f2, t2 - f2)
+		out.append(hit if hit != null else (t1 + f2) * 0.5)
 	return out
 
 

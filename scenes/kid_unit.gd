@@ -12,6 +12,11 @@ const SKY := Color(0.55, 0.85, 1.0)
 const INK := Color(0.95, 0.97, 1.0)
 const DIM := Color(0.66, 0.74, 0.88)
 const OK_COL := Color(0.45, 1.0, 0.62)   # できた しるしの ○
+# k21(動く 板)の 板と 門の 大きさ(ます)。たては 変わらない ―― そこが 見どころ
+const K21_TALL := 4
+const K21_WIDE := 5
+const K21_GATE_X := 3.0
+
 const PIECE_COL := [Color(1.0, 0.78, 0.35), Color(0.55, 0.85, 1.0), Color(1.0, 0.60, 0.68),
 	Color(0.65, 0.95, 0.70), Color(0.85, 0.75, 1.0), Color(1.0, 0.85, 0.55)]
 
@@ -333,13 +338,17 @@ func _act_lead() -> String:
 		"roll":
 			return "円を 右へ ころがそう。1 まわりで さしわたし 何こ分 進むかな?"
 		"shift":
-			return "金色の 点を つまんで、左右に 動かしてみよう。"
+			if String(unit["id"]) == "k21":
+				return "金色の 板を つまんで、右へ 動かそう。門と 重なった ところは、進んだ ぶん どう ふえるかな?"
+			return "金色の 道を つまんで、左右に 動かしてみよう。のこりの 畑は どう なる?"
 		"stack":
 			return "はこの 中を タップして、さいころを つもう。"
 		"open":
 			if String(unit["id"]) == "k19":
 				return "まん中を ゆびで つまんで、右へ ゆっくり ひらこう。向かい合う 面は どれと どれかな?"
-			return "まん中を ゆびで つまんで、右へ ゆっくり ひらこう。"
+			# k23 は 「ひらく」ではなく「さかさの 箱を のせる」。
+			# k19 の ことばを そのまま 使っていて、やる ことと 合っていなかった
+			return "さかさに した 同じ 箱を、ゆびで 右上へ 運んで 上に のせよう。まっすぐな 箱に なるかな?"
 		"pour":
 			return "右の 器の はばを 変えてみよう。水の 深さは どうなる?"
 		_:
@@ -392,13 +401,19 @@ func _act_after() -> String:
 		"roll":
 			return "さしわたし 3 こ分と ちょっとだった。大きさを 変えても 同じかな?"
 		"shift":
-			return "動かしても 数は 変わらなかった。ほかの 場所でも?"
+			if String(unit["id"]) == "k21":
+				# k13(道)の「動かしても 変わらない」を そのまま 使っていたが、
+				# k21 は 逆に「進んだ ぶん ふえる」回。まるきり 逆の ことを 言っていた
+				return "重なりの たては ずっと %d のまま。よこだけ 進んだ ぶん ふえた。ほかの 進み方でも 同じかな?" % [
+					K21_TALL]
+			return "道を 動かしても のこりの 広さは 変わらなかった。ほかの 場所でも?"
 		"stack":
 			return "たて × よこ × 高さ の 数だけ 入った。ほかの はこでも 同じ?"
 		"open":
 			if String(unit["id"]) == "k19":
 				return "1 つ おいた 先の 面が 向かい合っていた。どの ペアも たすと 7。ほかの 目でも 同じかな?"
-			return "ひらいても、面の 数は 変わらない。"
+			return "2 つで たて %d の まっすぐな 箱。1 つ分は その 半分 ―― 手前と 奥の 平均だった。ほかの 高さでも 同じかな?" % [
+				int(st.get("h1", 2)) + int(st.get("h2", 4))]
 		"pour":
 			return "はばを 変えると 深さが 変わる。でも かけ算は 同じ。"
 		_:
@@ -462,14 +477,20 @@ func _act_cheer() -> String:
 		"roll":
 			return "1 まわり ＝ さしわたし 3.14 こ分"
 		"shift":
-			return "ぴったり 同じ！"
+			if String(unit["id"]) == "k21":
+				var mv := int(round(float(st.get("pos", 0.0))))
+				return "進んだ %d × たて %d ＝ %d" % [mv, K21_TALL, mv * K21_TALL]
+			return "道を どこへ 動かしても 同じ 広さ！"
 		"stack":
 			return "%d × %d × %d ＝ %d こ" % [int(st.get("bh", 1)), int(st.get("bd", 1)),
 				int(st.get("bw", 1)), int(st.get("bw", 1)) * int(st.get("bd", 1)) * int(st.get("bh", 1))]
 		"open":
 			if String(unit["id"]) == "k19":
 				return "1 と 6、2 と 5、3 と 4 ―― どれも 7"
-			return "ひらいた！"
+			var a1: int = int(st.get("h1", 2))
+			var a2: int = int(st.get("h2", 4))
+			return "高さ %d と %d ＝ %d、1 つ分は 平均の %s" % [
+				a1, a2, a1 + a2, ProblemGen.fmt(float(a1 + a2) * 0.5)]
 		"pour":
 			return "かけ算は いつも 24"
 		_:
@@ -543,8 +564,10 @@ func _reset_act() -> void:
 				# 高さは 動かせない ようにして、底辺だけ のばす。
 				# ここを ふつうの ます合わせに していた ころは、たても よこも
 				# 変わってしまい、見つけて ほしい きまりが どこにも 出なかった
-				var w0 := rng.randi_range(2, 4)
 				var mul: int = [2, 3, 2][mini(tries, 2)]
+				# のばした 先が ます目(よこ 9)を こえると、どこまで 動かしても
+				# うすい 形に とどかず 先へ 進めなくなる。はじめの 底辺を それに 合わせる
+				var w0 := rng.randi_range(2, mini(4, 9 / mul))
 				var hh := rng.randi_range(3, 5)
 				st = {"w": w0, "h": hh, "w0": w0, "tw": w0 * mul, "th": hh}
 			else:
@@ -560,12 +583,18 @@ func _reset_act() -> void:
 		"roll":
 			st = {"turns": 0.0}
 		"shift":
-			st = {"pos": 0.0 if String(unit["id"]) == "k21" else 4.0, "from": 0.0}
+			st = {"pos": 0.0 if String(unit["id"]) == "k21" else 4.0,
+				"from": 0.0 if String(unit["id"]) == "k21" else 4.0}
 		"stack":
 			st = {"n": 0, "bw": rng.randi_range(2, 4), "bd": rng.randi_range(2, 3),
 				"bh": rng.randi_range(2, 3)}
 		"open":
-			st = {"open": 0.0}
+			if String(unit["id"]) == "k23":
+				# 手前と 奥の 高さ。3 回とも 変えて、平均が 毎回 ちがう ことを 見る
+				var hs: Array = [[2, 4], [3, 5], [1, 5]][mini(tries, 2)]
+				st = {"open": 0.0, "h1": int(hs[0]), "h2": int(hs[1])}
+			else:
+				st = {"open": 0.0}
 		"pour":
 			st = {"w": 3.0, "from": 3.0}
 		"shadow":
@@ -1697,21 +1726,46 @@ func _draw_shift(c: Control) -> void:
 			"道を 左右に 動かそう。のこりの 畑は たて 5 × よこ 8 の まま",
 			HORIZONTAL_ALIGNMENT_LEFT, -1, 25, DIM)
 	else:
-		# 門と 動く板
-		var gate := Rect2(o + Vector2(s * 3.0, -s * 4.0), Vector2(s * 6.0, s * 4.0))
+		# 門と 動く板。
+		# pos は「重なりはじめてから 進んだ 長さ」。pos = 0 で 板の 右はしが
+		# 門の 左はしに ちょうど つく ように 置く(前は 置きはじめから 重なっていて、
+		# 「進んだ ぶん ふえる」の 進んだ 長さが どこにも 出ていなかった)
+		var f2 := ThemeDB.fallback_font
+		var tall := float(K21_TALL)
+		var gate := Rect2(o + Vector2(s * K21_GATE_X, -s * tall),
+			Vector2(s * 6.0, s * tall))
 		c.draw_rect(gate, Color(0.30, 0.36, 0.52, 0.7))
 		c.draw_rect(gate, INK, false, 4.0)
-		var bx := o.x + s * pos
-		var board := Rect2(Vector2(bx, o.y - s * 4.0), Vector2(s * 5.0, s * 4.0))
+		var bx := o.x + s * (K21_GATE_X - float(K21_WIDE) + pos)
+		var board := Rect2(Vector2(bx, o.y - s * tall), Vector2(s * float(K21_WIDE), s * tall))
 		c.draw_rect(board, Color(1.0, 0.78, 0.35, 0.35))
 		c.draw_rect(board, GOLD, false, 3.0)
 		var left := maxf(bx, gate.position.x)
-		var right := minf(bx + s * 5.0, gate.position.x + gate.size.x)
+		var right := minf(bx + s * float(K21_WIDE), gate.position.x + gate.size.x)
+		var over := maxf((right - left) / s, 0.0)
 		if right > left:
 			c.draw_rect(Rect2(Vector2(left, gate.position.y), Vector2(right - left, gate.size.y)),
 				Color(1.0, 0.85, 0.3, 0.55))
-		c.draw_circle(Vector2(bx + s * 2.5, o.y + 26.0), 16.0, GOLD)
-		c.draw_string(ThemeDB.fallback_font, Vector2(24, map.size.y - 18),
+			# 重なりの よこ・たて・広さを その場で 出す。
+			# 「よこだけ ふえて たては 変わらない」が 数でも 読める
+			_draw_tag(c, Vector2((left + right) * 0.5, gate.position.y + gate.size.y * 0.5),
+				"%s × %d ＝ %s" % [ProblemGen.fmt(over), K21_TALL,
+					ProblemGen.fmt(over * tall)], 26, Color(1.0, 0.97, 0.85))
+		# 進んだ 長さの ものさしは 図の 上に 出す
+		# (下に 置くと、つまむ ○ と 重なって どちらも 読めなかった)
+		var gx := gate.position.x
+		var my := gate.position.y - 22.0
+		c.draw_line(Vector2(gx, my), Vector2(gx + s * over, my), Color(1, 0.85, 0.4, 0.9), 4.0)
+		c.draw_line(Vector2(gx, my - 7.0), Vector2(gx, my + 7.0), Color(1, 0.85, 0.4, 0.9), 3.0)
+		c.draw_line(Vector2(gx + s * over, my - 7.0), Vector2(gx + s * over, my + 7.0),
+			Color(1, 0.85, 0.4, 0.9), 3.0)
+		c.draw_string(f2, Vector2(gx + 6.0, my - 14.0), "進んだ %s" % ProblemGen.fmt(over),
+			HORIZONTAL_ALIGNMENT_LEFT, -1, 24, GOLD)
+		c.draw_circle(Vector2(bx + s * float(K21_WIDE) * 0.5, o.y + 26.0), 16.0, GOLD)
+		c.draw_string(f2, Vector2(24, map.size.y - 50),
+			"重なりの たては ずっと %d。よこ だけが 進んだ ぶん ふえる" % K21_TALL,
+			HORIZONTAL_ALIGNMENT_LEFT, -1, 25, DIM)
+		c.draw_string(f2, Vector2(24, map.size.y - 18),
 			"板を 右へ 動かそう。重なった ところが 広がっていく",
 			HORIZONTAL_ALIGNMENT_LEFT, -1, 25, DIM)
 
@@ -1796,19 +1850,47 @@ func _draw_open(c: Control) -> void:
 			else "ひらいた! 1 つ おいた 先が 向かい合う面。たすと どれも 7",
 			HORIZONTAL_ALIGNMENT_LEFT, -1, 25, DIM if t < 0.9 else GOLD)
 	else:
-		# ななめに 切った 箱と、さかさに した 同じ 箱
-		var w := s * 4.0
-		var h1 := s * 1.6
-		var h2 := s * 4.2
-		var o := mid + Vector2(-w, s * 1.6)
-		c.draw_colored_polygon(PackedVector2Array([o, o + Vector2(w, 0),
-			o + Vector2(w, -h2), o + Vector2(0, -h1)]), Color(0.40, 0.60, 0.95, 0.45))
-		var flip_o := o + Vector2(w, 0) + Vector2(w, 0) * t
-		c.draw_colored_polygon(PackedVector2Array([flip_o, flip_o + Vector2(w, 0),
-			flip_o + Vector2(w, -h1), flip_o + Vector2(0, -h2)]),
-			Color(1.0, 0.78, 0.35, 0.55))
-		c.draw_string(ThemeDB.fallback_font, Vector2(24, map.size.y - 18),
-			"さかさの 箱を 右へ 運ぼう" if t < 0.9 else "2 つで まっすぐな 箱に なった",
+		# ななめに 切った 箱と、さかさに した 同じ 箱。
+		# 前は さかさの 箱を 「右へ」 はなしていくだけで、2 つを 合わせても
+		# まっすぐな 箱に ならず、「高さの 平均」が どこにも 出なかった。
+		# ここでは さかさの 箱を もとの 箱の 上に のせて、
+		# たてが 手前 + 奥 の まっすぐな 箱に なる ところを 見せる
+		var f2 := ThemeDB.fallback_font
+		var n1: float = float(st.get("h1", 2))
+		var n2: float = float(st.get("h2", 4))
+		var w := s * 3.0
+		var o := mid + Vector2(-w * 0.5, s * (n1 + n2) * 0.5)
+		var base := PackedVector2Array([o, o + Vector2(w, 0),
+			o + Vector2(w, -s * n2), o + Vector2(0, -s * n1)])
+		c.draw_colored_polygon(base, Color(0.40, 0.60, 0.95, 0.45))
+		c.draw_polyline(base + PackedVector2Array([o]), INK, 3.0)
+		# さかさの 箱: 左の 地めん(t=0)から、もとの 箱の 上(t=1)へ。
+		# ゆびは 右へ 動かすので、箱も 右上へ 上がっていく
+		var from_pts := [o + Vector2(-w * 1.25, 0), o + Vector2(-w * 0.25, 0),
+			o + Vector2(-w * 0.25, -s * n1), o + Vector2(-w * 1.25, -s * n2)]
+		var to_pts := [o + Vector2(0, -s * n1), o + Vector2(w, -s * n2),
+			o + Vector2(w, -s * (n1 + n2)), o + Vector2(0, -s * (n1 + n2))]
+		var moving := PackedVector2Array()
+		for i in 4:
+			moving.append((from_pts[i] as Vector2).lerp(to_pts[i] as Vector2, t))
+		c.draw_colored_polygon(moving, Color(1.0, 0.78, 0.35, 0.55))
+		c.draw_polyline(moving + PackedVector2Array([moving[0]]), GOLD, 3.0)
+		_draw_tag(c, o + Vector2(-34.0, -s * n1 * 0.5), "手前 %d" % int(n1), 24, SKY)
+		_draw_tag(c, o + Vector2(w + 40.0, -s * n2 * 0.5), "奥 %d" % int(n2), 24, SKY)
+		if t > 0.9:
+			# まっすぐな 箱に なった。たては 手前 + 奥
+			c.draw_rect(Rect2(o + Vector2(0, -s * (n1 + n2)), Vector2(w, s * (n1 + n2))),
+				Color(1, 0.95, 0.5, 0.95), false, 4.0)
+			_draw_tag(c, o + Vector2(w * 0.5, -s * (n1 + n2) - 26.0),
+				"たて %d + %d ＝ %d" % [int(n1), int(n2), int(n1 + n2)], 26,
+				Color(1.0, 0.97, 0.85))
+		c.draw_string(f2, Vector2(24, map.size.y - 50),
+			"2 つ 合わせると たて %d の まっすぐな 箱。1 つ分は その 半分 ＝ %s"
+				% [int(n1 + n2), ProblemGen.fmt((n1 + n2) * 0.5)],
+			HORIZONTAL_ALIGNMENT_LEFT, -1, 25, DIM if t < 0.9 else GOLD)
+		c.draw_string(f2, Vector2(24, map.size.y - 18),
+			"さかさの 箱を つまんで、右上へ 運んで のせよう" if t < 0.9
+			else "のった! まっすぐな 箱 2 つ分に なった",
 			HORIZONTAL_ALIGNMENT_LEFT, -1, 25, DIM if t < 0.9 else GOLD)
 
 
@@ -2069,7 +2151,11 @@ func _drag_to(act: String, at: Vector2) -> void:
 			var rr := minf((map.size.x - 90.0) / (TAU + 2.0), map.size.y * 0.16)
 			st["turns"] = clampf((at.x - (50.0 + rr)) / maxf(TAU * rr, 1.0), 0.0, 1.05)
 		"shift":
-			st["pos"] = clampf((at.x - o.x) / s - 0.5, 0.0, 8.0)
+			if String(unit["id"]) == "k21":
+				# 進んだ 長さ。ます きざみに そろえて、数が そのまま 読めるように する
+				st["pos"] = clampf(round((at.x - o.x) / s - 0.5), 0.0, float(K21_WIDE))
+			else:
+				st["pos"] = clampf((at.x - o.x) / s - 0.5, 0.0, 8.0)
 		"open":
 			# 右へ なぞった ぶんだけ ひらく(これが 無いと、ゆびで 動かしても
 			# 何も 起きない ―― 実際に そうなっていた)

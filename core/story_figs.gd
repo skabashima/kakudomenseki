@@ -356,11 +356,10 @@ static func _parab_pts(from_x: float, to_x: float) -> Array:
 static func _parabola(p: Vector2) -> Dictionary:
 	var k: float = p.y
 	var w := sqrt(k)
-	var region: Array = []
-	for q in _parab_pts(-w, w):
-		region.append(q)
-	region.append(Vector2(w, k))
-	region.append(Vector2(-w, k))
+	# 弧の 両はしは ちょうど y = k(水面)の 上に ある。
+	# そこへ 同じ点を もう一度 足していたので、多角形に 重なった点が 2 組でき、
+	# Godot の 三角形分割が 失敗して 塗りが まるごと 消えていた
+	var region: Array = _parab_pts(-w, w)
 	return {"shapes": [
 		ProblemGen.grid(Vector2(-3.4, -0.5), Vector2(3.4, 10.0)),
 		ProblemGen.axes(Vector2(-3.4, -0.5), Vector2(3.4, 10.0)),
@@ -376,11 +375,8 @@ static func _parabola(p: Vector2) -> Dictionary:
 static func _parabola_proof() -> Dictionary:
 	var k := 4.0
 	var w := sqrt(k)
-	var region: Array = []
-	for q in _parab_pts(-w, w):
-		region.append(q)
-	region.append(Vector2(w, k))
-	region.append(Vector2(-w, k))
+	# 弧の 両はしが そのまま 水面の 上。閉じる 点は 足さない(上と 同じ)
+	var region: Array = _parab_pts(-w, w)
 	return {"shapes": [
 		ProblemGen.axes(Vector2(-3.4, -0.5), Vector2(3.4, 8.0)),
 		ProblemGen.poly(region, ProblemGen.FILL_ACCENT, null, 0.0),
