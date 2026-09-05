@@ -97,6 +97,12 @@ func _do_act(inst: Node, act: String) -> void:
 			var n: int = inst.st["n"]
 			for i in range(2, n - 1):
 				await _drag(inst, pts[0], pts[i])
+		"spoke":
+			# まん中から ちょう点 ぜんぶへ、1 本ずつ なぞる
+			var sp: Array = inst._spoke_points()
+			var mid_o: Vector2 = inst._spoke_center()
+			for i in int(inst.st["n"]):
+				await _drag(inst, mid_o, sp[i])
 		"clock":
 			await _turn_clock(inst)
 		"grid":

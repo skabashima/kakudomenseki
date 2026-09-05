@@ -5,7 +5,7 @@ extends Control
 ## さわり方(act)は単元ごとに違うが、画面のつくりは同じ。
 ##   tear  … かどを ちぎって ならべる      slide … 平行線の間で かどを ずらす
 ##   fold  … 折って 重ねる                diag  … 対角線で 三角形に分ける
-##   clock … 時計の 針を まわす
+##   clock … 時計の 針を まわす            spoke … まん中から ちょう点へ 線を 引く
 
 const GOLD := Color(1.0, 0.85, 0.3)
 const SKY := Color(0.55, 0.85, 1.0)
@@ -302,6 +302,8 @@ func _act_lead() -> String:
 			return "点線で 折ってみよう。金色の ところを ゆびで つまんで、反対がわへ たおす。"
 		"diag":
 			return "金色の 点から、白い 点まで ゆびで なぞって 線を 引こう。三角形 1 つで 180°。いくつに 分かれるかな?"
+		"spoke":
+			return "まん中の 金色の 点から、かどの 白い 点 ぜんぶへ 線を 引こう。まん中の まわりは 360°。何こに 分かれるかな?"
 		"clock":
 			match mini(tries, 2):
 				0:
@@ -351,6 +353,10 @@ func _act_after() -> String:
 		"diag":
 			return "三角形 %d こ × 180° ＝ %d° に 分けられた。角の 数が ちがっても 同じ やり方かな?" % [
 				int(st.get("tri", 3)), int(st.get("tri", 3)) * 180]
+		"spoke":
+			var sn: int = int(st.get("n", 6))
+			return "まん中の 360° が %d こに 等分された。360 ÷ %d ＝ %d°。かどの 数が ちがっても 同じ やり方かな?" % [
+				sn, sn, roundi(360.0 / float(sn))]
 		"clock":
 			if tries == 1:
 				return "30° が 12 こで 1 しゅう 360° だった。半分なら 何 こ分?"
@@ -398,6 +404,9 @@ func _act_cheer() -> String:
 		"diag":
 			return "三角形 %d こ × 180° ＝ %d°" % [
 				int(st.get("tri", 3)), int(st.get("tri", 3)) * 180]
+		"spoke":
+			return "360° ÷ %d ＝ %d°" % [
+				int(st.get("n", 6)), roundi(360.0 / float(int(st.get("n", 6))))]
 		"clock":
 			match int(float(st.get("goal", 360.0))):
 				360:
@@ -468,11 +477,11 @@ func _reset_act() -> void:
 				var ang_b := rad_to_deg(absf((da - db).angle_to(dp - db)))
 				var ang_c := rad_to_deg(absf((da - dc).angle_to(dp - dc)))
 				st = {"tri": [da, db, dc], "deg": [ang_a, ang_b, ang_c],
-					"placed": [false, false, false], "poly": [da, db, dp, dc],
+					"placed": [false, false, false], "order": [], "poly": [da, db, dp, dc],
 					"dent": ang_a + ang_b + ang_c, "dent_at": dp}
 			else:
 				st = {"tri": [pa, pb, pc], "deg": [a, b, c], "placed": [false, false, false],
-					"poly": [pa, pb, pc]}
+					"order": [], "poly": [pa, pb, pc]}
 		"slide":
 			# 3 回で「同じ むき(同位角)」→「向かい側(対頂角)」→「ななめ 向かい(錯角)」
 			# と 運ぶ 先を 変える。しるしの 問題は ななめ 向かいを 使うので、
@@ -492,6 +501,10 @@ func _reset_act() -> void:
 		"diag":
 			var n: int = [4, 5, 6][mini(tries, 2)]
 			st = {"n": n, "picked": [], "tri": n - 2}
+		"spoke":
+			# 3 回とも 角の 数を 変える。どれも 360 で わりきれる ので、
+			# 「360 ÷ かどの 数」が いつも 整数で 出る
+			st = {"n": [6, 8, 5][mini(tries, 2)], "picked": []}
 		"grid":
 			st = {"w": 2, "h": 2, "tw": rng.randi_range(3, 8), "th": rng.randi_range(2, 5)}
 		"point":
@@ -623,6 +636,8 @@ func _draw_map() -> void:
 			_draw_fold(c)
 		"diag":
 			_draw_diag(c)
+		"spoke":
+			_draw_spoke(c)
 		"clock":
 			_draw_clock(c)
 		"grid":
@@ -729,10 +744,10 @@ func _draw_tear(c: Control) -> void:
 	var ly := _line_y()
 	var origin := Vector2(c.size.x * 0.5 - 130.0, ly)
 	var zone := _tear_zone()
-	var n_placed := 0
-	for i in 3:
-		if bool(placed[i]):
-			n_placed += 1
+	# ならべる 順は「置いた 順」。番号の 順では ないので、あとから どの かどを
+	# 置いても すでに ならんだ ものは その ままの ところに のこる
+	var order: Array = st.get("order", [])
+	var n_placed: int = order.size()
 	# ならべる 台(ここに 置けば いい)。ゆびが 台に 入ったら 色が 濃くなる
 	var hot := false
 	if dragging >= 0:
@@ -749,21 +764,21 @@ func _draw_tear(c: Control) -> void:
 		HORIZONTAL_ALIGNMENT_LEFT, -1, 28, GOLD)
 	c.draw_line(Vector2(20, ly), Vector2(c.size.x - 20, ly), Color(1, 1, 1, 0.85), 5.0)
 	var base := 0.0
-	for i in 3:
-		if not bool(placed[i]):
-			continue
+	for v in order:
+		var i := int(v)
 		_draw_piece(c, origin, deg_to_rad(base), float(deg[i]), PIECE_COL[i], 120.0)
 		base += float(deg[i])
 	# つぎの かどが 入る ところを うすい 形で 見せる。台の どこへ 置くのか、
 	# 「かどの とがった ところを ○ に あわせる」まで 分かるようにする
 	if n_placed < 3:
-		var nxt := -1
-		for i in 3:
-			if not bool(placed[i]) and i != dragging:
-				nxt = i
-				break
+		# うすい 形は「いま 運んでいる かど」。ほかの かどを 見せると 大きさが
+		# 合わず、置いた ときに かたちが 変わったように 見えた
+		var nxt := dragging
 		if nxt < 0:
-			nxt = dragging
+			for i in 3:
+				if not bool(placed[i]):
+					nxt = i
+					break
 		if nxt >= 0:
 			var ghost: Color = PIECE_COL[nxt]
 			ghost.a = 0.50 if hot else 0.34
@@ -1106,6 +1121,83 @@ func _diag_triangles() -> Array:
 			continue
 		made.append(i)
 	return made
+
+
+## 正多角形を、まん中から ちょう点へ 線を 引いて 分ける
+##
+## しるしの 問題(e17-中心)は「正 n 角形の 中心と となり合う 2 つの ちょう点を
+## 結んだ 角」= 360 ÷ n。前は 対角線(diag)で 三角形に 分けていて、
+## 出てくるのは 「三角形 n-2 こ × 180°」―― 問題の 360 ÷ n の 説明に なっていなかった。
+## ここでは まん中の まわりの 360° が、引いた 線の 数だけ 等分される ところを
+## そのまま 目で 見て 数えられるようにする。
+func _spoke_center() -> Vector2:
+	return _to_screen(Vector2.ZERO)
+
+
+## 正多角形の ちょう点(diag と 同じ 置き方)
+func _spoke_points() -> Array:
+	return _diag_points()
+
+
+func _draw_spoke(c: Control) -> void:
+	var n: int = st["n"]
+	var picked: Array = st["picked"]
+	var pts: Array = _spoke_points()
+	var o := _spoke_center()
+	var f := ThemeDB.fallback_font
+	var step_deg := 360.0 / float(n)
+	var poly := PackedVector2Array()
+	for p in pts:
+		poly.append(p)
+	c.draw_colored_polygon(poly, Color(0.40, 0.60, 0.95, 0.28))
+	# となり合う 2 本が そろった ところは、まん中の 角が 1 こ 分かれた しるし。
+	# 色を ぬって「360° の うちの 1 こ分」を 見せる
+	var made := 0
+	for i in n:
+		var j := (i + 1) % n
+		if not (picked.has(i) and picked.has(j)):
+			continue
+		var col: Color = PIECE_COL[made % PIECE_COL.size()]
+		col.a = 0.45
+		c.draw_colored_polygon(PackedVector2Array([o, pts[i], pts[j]]), col)
+		made += 1
+	for i in n:
+		c.draw_line(pts[i], pts[(i + 1) % n], INK, 4.0)
+	for v in picked:
+		c.draw_line(o, pts[int(v)], GOLD, 3.5)
+	# まん中の 1 こ分の 角に、大きさを 書く(となりと 同じ 大きさだと 見える)
+	for i in n:
+		var j := (i + 1) % n
+		if not (picked.has(i) and picked.has(j)):
+			continue
+		var mid: Vector2 = o + ((pts[i] - o).normalized()
+			+ (pts[j] - o).normalized()).normalized() * (o.distance_to(pts[i]) * 0.42)
+		_draw_tag(c, mid, "%d°" % roundi(step_deg), 24, Color(1.0, 0.97, 0.85))
+	# ゆびで なぞって いる とちゅうの 線
+	if dragging >= 0 and st.has("drag_pos"):
+		c.draw_line(o, st["drag_pos"], Color(1, 0.85, 0.4, 0.7), 3.0)
+	var puls := 1.0 + sin(float(Time.get_ticks_msec()) * 0.005) * 0.15
+	for i in n:
+		if picked.has(i):
+			c.draw_circle(pts[i], 11.0, Color(0.85, 0.9, 1.0))
+		else:
+			# まだ つないでいない ちょう点は、大きめの 輪で さそう
+			c.draw_arc(pts[i], 22.0, 0.0, TAU, 24, Color(1, 1, 1, 0.35), 2.0)
+			c.draw_circle(pts[i], 11.0, Color(0.85, 0.9, 1.0))
+	# まん中の まわりが 360° だと いう ことを、輪と ことばで 出しておく
+	c.draw_arc(o, 34.0, 0.0, TAU, 40, Color(1, 0.85, 0.4, 0.45), 3.0)
+	c.draw_circle(o, 15.0 * puls, GOLD)
+	var k := picked.size()
+	var sum_msg := "まん中の まわりは ぜんぶで 360°"
+	if k > 0 and k < n:
+		sum_msg = "線 %d 本。まん中は まだ 分けきれていない" % k
+	elif k >= n:
+		sum_msg = "360° ÷ %d ＝ %d°" % [n, roundi(step_deg)]
+	c.draw_string(f, Vector2(24, c.size.y - 58), sum_msg,
+		HORIZONTAL_ALIGNMENT_LEFT, -1, 30, GOLD if k >= n else Color(0.85, 0.9, 1.0))
+	c.draw_string(f, Vector2(24, c.size.y - 20),
+		"まん中から 白い 点まで なぞろう(タップでも いい)",
+		HORIZONTAL_ALIGNMENT_LEFT, -1, 26, DIM)
 
 
 ## 時計の 文字ばん。針を まわした ぶんだけ 金色に ぬられ、
@@ -1742,6 +1834,14 @@ func _press(act: String, at: Vector2) -> void:
 				GameState.play_sfx("type")
 			else:
 				_tap_diag(at)
+		"spoke":
+			# まん中を つまんで、ちょう点まで なぞる(タップでも つながる)
+			if at.distance_to(_spoke_center()) < 120.0:
+				dragging = 0
+				st["drag_pos"] = at
+				GameState.play_sfx("type")
+			else:
+				_tap_spoke(at)
 		"clock":
 			dragging = 0
 			var v := at - _clock_center()
@@ -1766,16 +1866,21 @@ func _release(act: String, at: Vector2) -> void:
 			# なぞった 先に 点が あれば つなぐ
 			st["drag_pos"] = at
 			_tap_diag(at)
+		"spoke":
+			st["drag_pos"] = at
+			_tap_spoke(at)
 		"tear":
 			if at.y > _tear_zone().position.y:
 				var placed: Array = st["placed"]
 				placed[dragging] = true
+				# 置いた 順に ならべる。番号の 順で ならべると、あとから 前の 番号を
+				# 置いた ときに 先に 置いた かどが 横へ ずれて 並びかわり、
+				# 「かってに 動いた」と 見えて 混乱した
+				var order: Array = st["order"]
+				if not order.has(dragging):
+					order.append(dragging)
 				GameState.play_sfx("correct")
-				var n := 0
-				for p in placed:
-					if bool(p):
-						n += 1
-				if n == 3:
+				if order.size() == 3:
 					_act_done()
 		"slide":
 			var goal: Vector2 = _slide_target()[0]
@@ -1831,7 +1936,7 @@ func _drag_to(act: String, at: Vector2) -> void:
 	var s := _cell()
 	var o := _grid_origin()
 	match act:
-		"diag":
+		"diag", "spoke":
 			st["drag_pos"] = at
 		"clock":
 			_turn_clock(at)
@@ -1917,4 +2022,28 @@ func _tap_diag(at: Vector2) -> void:
 	if picked.size() >= n - 3:
 		GameState.play_sfx("correct")
 		st["tri"] = n - 2
+		_act_done()
+
+
+## まん中から ちょう点へ 1 本ずつ 引く。
+## ぜんぶ 引けたら、まん中の 360° が かどの 数だけ 等分される
+func _tap_spoke(at: Vector2) -> void:
+	var n: int = st["n"]
+	var picked: Array = st["picked"]
+	var pts := _spoke_points()
+	var best := -1
+	var best_d := 130.0
+	for i in n:
+		if picked.has(i):
+			continue
+		var d := at.distance_to(pts[i] as Vector2)
+		if d < best_d:
+			best_d = d
+			best = i
+	if best < 0:
+		return
+	picked.append(best)
+	GameState.play_sfx("type")
+	if picked.size() >= n:
+		GameState.play_sfx("correct")
 		_act_done()
