@@ -55,6 +55,20 @@ Android SDK も 同じ ところ からしか 取れないので、**ここが �
 - `maven.google.com` も 中身は dl.google.com へ 飛ぶので 代わりに ならない。
 - 通る ことが 分かっている 先: `github.com` / `repo1.maven.org` / `services.gradle.org`。
 
+**しらべた 結果(2026-09 時点)― 迂回は できない:**
+
+| ほしい もの | どこから | 通るか |
+|---|---|---|
+| Godot 本体・書き出しテンプレート | github.com | ○ |
+| Android Gradle Plugin | repo1.maven.org(Maven Central にも ある) | ○ |
+| gradle 本体 | services.gradle.org | ○ |
+| **Android SDK(android.jar API 36・aapt2・d8・build-tools)** | **dl.google.com だけ** | **×** |
+
+Ubuntu の apt にも Android の パッケージは あるが、
+`android-sdk-platform-23`(API 23)止まりで、`aapt2` と `d8` は 候補すら 無い。
+このプロジェクトは compileSdk 36 なので **足りない**。
+→ **`dl.google.com` を 開けてもらう しか ない。**
+
 ### (b) 書き出しコマンドの 実行を 許可されているか
 
 `--export-release` と `--install-android-build-template` は
