@@ -96,19 +96,41 @@ func _ready() -> void:
 	if rev_n != 5:
 		fails.append("逆向きの 問いが %d 問(5 問の はず)" % rev_n)
 
-	# 逆向きの 選択肢: 正しい 展開図 1 つと、ちがう 立体の 展開図 3 つ。
-	# ★ 同じ 立体の べつの 展開図を まぜると 正解が いくつも できて しまう
-	for t in 12:
-		var picks: Array = scene._net_choices(t * 7 % NetDefs.all().size())
+	# 逆向きの 選択肢: 正しい 展開図 1 つと、それを くずした 3 つ。
+	# ★ 見た だけで 分かる ちがう 立体を ならべない。
+	# ★ くずした ものが たまたま 正しい 展開図に なっていない こと。
+	#    立方体の 展開図は 11 とおり あるので、これを 見ないと
+	#    「正解が 2 つ ある」問いが できて しまう
+	var all_nets: Array = NetDefs.all()
+	for k in 14:
+		var at := (k * 7) % all_nets.size()
+		var picks: Array = scene._net_choices(at)
 		if picks.size() != 4:
 			fails.append("逆向きの 選択肢が %d こ" % picks.size())
 			break
-		var solids := {}
+		var real_n := 0
+		var sigs := {}
 		for q in picks:
-			solids[String((q as Dictionary)["solid"])] = true
-		if solids.size() != 4:
-			fails.append("逆向きの 選択肢に 同じ 立体が まざっている(正解が いくつも できる)")
+			var row: Dictionary = q
+			if not bool(row.get("fake", false)):
+				real_n += 1
+			sigs[NetDefs._signature(row["faces"])] = true
+		if real_n != 1:
+			fails.append("組み立てられる 展開図が %d こ(1 こだけの はず)" % real_n)
 			break
+		if sigs.size() != 4:
+			fails.append("同じ 形の 選択肢が まざっている")
+			break
+		# くずした ものが その 立体の ほんとうの 展開図に なっていないか
+		var real_sigs: Dictionary = NetDefs._valid_signatures(
+			String((all_nets[at] as Dictionary)["solid"]))
+		for q in picks:
+			var row2: Dictionary = q
+			if not bool(row2.get("fake", false)):
+				continue
+			if real_sigs.has(NetDefs._signature(row2["faces"])):
+				fails.append("くずした はずが 正しい 展開図に なっている")
+				break
 	scene.run_ids = []
 
 	# 展開図の 応用(10 問)― 出どころの 組み合わせが ぜんぶ 問題に なるか

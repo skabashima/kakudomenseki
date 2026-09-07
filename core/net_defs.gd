@@ -535,6 +535,154 @@ static func _octa3d(r: float) -> Array:
 
 
 # =========================================================
+# にせの 展開図 ― 組み立てられない ものを 作る
+#
+# 「この 立体の 展開図は どれ?」で つかう。まるで ちがう 立体の 展開図を
+# ならべると 見た だけで 分かって しまうので、**正しい 展開図を 少し
+# くずした もの**を 出す。中学受験で 出る まちがいの 形と 同じ:
+#   ・面が 1 枚 多い(いらない 面が ついている)
+#   ・面が 1 枚 足りない
+#   ・面の 場所が ちがって、組み立てると 重なる
+#
+# ★ くずした つもりが 正しい 展開図に なって いる ことが ある
+#   (立方体の 展開図は 11 とおり ある)。作った ものが その 立体の
+#   ほんとうの 展開図と 同じ 形で ない ことを かならず 確かめる。
+# =========================================================
+
+## 正しい 展開図 net から、組み立てられない にせものを want まい 作る
+static func fakes(net: Dictionary, want: int, rng: RandomNumberGenerator) -> Array:
+	var faces: Array = net["faces"]
+	var real := _valid_signatures(String(net["solid"]))
+	var out: Array = []
+	var seen := {_signature(faces): true}
+	var tries := 0
+	while out.size() < want and tries < 260:
+		tries += 1
+		var made: Array = []
+		match tries % 3:
+			0: made = _fake_add(faces, rng)      # 面を 1 枚 ふやす
+			1: made = _fake_drop(faces, rng)     # 面を 1 枚 へらす
+			_: made = _fake_move(faces, rng)     # 面の 場所を かえる
+		if made.is_empty() or _overlaps(made):
+			continue
+		var sig := _signature(made)
+		if seen.has(sig) or real.has(sig):
+			continue                              # 正しい 展開図に なって しまった
+		seen[sig] = true
+		# 折る しくみは 持たせない(組み立てられない ものなので)。
+		# 平らに 描く ためだけに、どの 面も 台あつかいに する
+		var parent: Array = []
+		var hinge: Array = []
+		var angle: Array = []
+		for k in made.size():
+			parent.append(-1)
+			hinge.append([])
+			angle.append(0.0)
+		out.append({"faces": made, "solid": String(net["solid"]),
+			"id": "%s_fake%d" % [String(net["id"]), out.size()],
+			"hint": "", "kind": "poly", "parent": parent, "hinge": hinge,
+			"angle": angle, "round": bool(net.get("round", false)), "fake": true,
+			"verts": 0, "edges": 0})
+	return out
+
+
+## その 立体の ほんとうの 展開図の しるし(見分けに つかう)
+static func _valid_signatures(solid_name: String) -> Dictionary:
+	var out := {}
+	for n in all():
+		if String(n["solid"]) == solid_name:
+			out[_signature(n["faces"])] = true
+	return out
+
+
+## 面を 1 枚 ふやす。あいている 辺の 外がわへ、その 面を 折り返して つける
+static func _fake_add(faces: Array, rng: RandomNumberGenerator) -> Array:
+	var free_edges := _free_edges(faces)
+	if free_edges.is_empty():
+		return []
+	var pick: Array = free_edges[rng.randi_range(0, free_edges.size() - 1)]
+	var f: Array = faces[int(pick[0])]
+	var out: Array = faces.duplicate(true)
+	out.append(_mirror(f, pick[1], pick[2]))
+	return out
+
+
+## 面を 1 枚 へらす。ほかと 1 辺でしか つながっていない 面だけ 外す
+## (まん中の 面を 外すと 展開図が 2 つに 分かれて、見て すぐ 分かる)
+static func _fake_drop(faces: Array, rng: RandomNumberGenerator) -> Array:
+	var leaves: Array = []
+	for i in faces.size():
+		if _shared_count(faces, i) == 1:
+			leaves.append(i)
+	if leaves.is_empty():
+		return []
+	var drop: int = leaves[rng.randi_range(0, leaves.size() - 1)]
+	var out: Array = []
+	for i in faces.size():
+		if i != drop:
+			out.append((faces[i] as Array).duplicate())
+	return out
+
+
+## 面の 場所を かえる。はしの 面を 1 枚 外して、べつの あいている 辺に つける
+static func _fake_move(faces: Array, rng: RandomNumberGenerator) -> Array:
+	var less := _fake_drop(faces, rng)
+	if less.is_empty():
+		return []
+	return _fake_add(less, rng)
+
+
+## ほかの 面と 共有していない 辺 [面の番号, 点 a, 点 b]
+static func _free_edges(faces: Array) -> Array:
+	var out: Array = []
+	for i in faces.size():
+		var f: Array = faces[i]
+		for k in f.size():
+			var a: Vector2 = f[k]
+			var b: Vector2 = f[(k + 1) % f.size()]
+			if not _edge_shared(faces, i, a, b):
+				out.append([i, a, b])
+	return out
+
+
+static func _edge_shared(faces: Array, skip: int, a: Vector2, b: Vector2) -> bool:
+	for j in faces.size():
+		if j == skip:
+			continue
+		var g: Array = faces[j]
+		for k in g.size():
+			var c: Vector2 = g[k]
+			var d: Vector2 = g[(k + 1) % g.size()]
+			if (a.distance_to(c) < 0.01 and b.distance_to(d) < 0.01) \
+					or (a.distance_to(d) < 0.01 and b.distance_to(c) < 0.01):
+				return true
+	return false
+
+
+static func _shared_count(faces: Array, i: int) -> int:
+	var f: Array = faces[i]
+	var n := 0
+	for k in f.size():
+		if _edge_shared(faces, i, f[k], f[(k + 1) % f.size()]):
+			n += 1
+	return n
+
+
+## 多角形を 直線 a-b で 折り返す
+static func _mirror(poly: Array, a: Vector2, b: Vector2) -> Array:
+	var e := (b - a)
+	if e.length() < 0.0001:
+		return poly.duplicate()
+	e = e.normalized()
+	var out: Array = []
+	for p in poly:
+		var d: Vector2 = (p as Vector2) - a
+		var along := e * d.dot(e)
+		out.append(a + along - (d - along))
+	return out
+
+
+# =========================================================
 # 立方体 ― マス目で 書いた 展開図(十字・T 字・かいだん)
 # =========================================================
 

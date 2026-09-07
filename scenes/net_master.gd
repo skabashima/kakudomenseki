@@ -305,6 +305,9 @@ func _build_quiz(i: int, rev := false) -> void:
 	view = NetView.new()
 	view.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	view.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	if rev:
+		# 逆向きは 選択肢の 絵を 大きく 見せたいので、上は ひかえめに
+		view.size_flags_stretch_ratio = 0.85
 	root.add_child(view)
 	if rev:
 		view.show_solid(net)
@@ -372,45 +375,46 @@ func _choices(net: Dictionary) -> Array:
 	return out
 
 
-## 逆向きの 選択肢。正しい 展開図 1 つと、**ちがう 立体の** 展開図 3 つ。
-## ★ 同じ 立体の べつの 展開図を まぜては いけない ―― 立方体の 展開図は
-##   11 とおり あるので、どれも 正解に なって しまう
+## 逆向きの 選択肢。正しい 展開図 1 つと、**それを 少し くずした** 3 つ。
+##
+## ★ ちがう 立体の 展開図を ならべると、見た だけで 分かって しまう。
+##   中学受験で 出る まちがいと 同じように、面が 1 枚 多い・足りない・
+##   場所が ちがう ものを 出す(NetDefs.fakes)。
+## ★ くずした ものが たまたま 正しい 展開図に なる ことが あるので、
+##   NetDefs 側で「その 立体の ほんとうの 展開図と 同じ 形で ない」ことを
+##   確かめている
 func _net_choices(correct_i: int) -> Array:
 	var correct: Dictionary = nets[correct_i]
-	var by_solid := {}
-	for n in nets:
-		var row: Dictionary = n
-		if String(row["solid"]) == String(correct["solid"]):
-			continue
-		var key := String(row["solid"])
-		if not by_solid.has(key):
-			by_solid[key] = []
-		(by_solid[key] as Array).append(row)
-	var names: Array = by_solid.keys()
-	names.shuffle()
+	var rng := RandomNumberGenerator.new()
+	rng.randomize()
 	var out: Array = [correct]
-	for key in names:
-		if out.size() >= 4:
-			break
-		var group: Array = by_solid[key]
-		out.append(group[randi() % group.size()])
+	out.append_array(NetDefs.fakes(correct, 3, rng))
+	# くずせなかった ときの 保険 ― ちがう 立体の 展開図で うめる
+	if out.size() < 4:
+		var others: Array = nets.filter(func(n):
+			return String((n as Dictionary)["solid"]) != String(correct["solid"]))
+		others.shuffle()
+		for n in others:
+			if out.size() >= 4:
+				break
+			out.append(n)
 	out.shuffle()
 	return out
 
 
 func _net_choice_button(net: Dictionary, correct_id: String) -> Button:
 	var btn := Button.new()
-	btn.custom_minimum_size = Vector2(0, 150)
+	btn.custom_minimum_size = Vector2(0, 230)
 	btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	btn.focus_mode = Control.FOCUS_NONE
 	btn.set_meta("key", String(net["id"]))
 	GameState.style_button(btn, Color(0.26, 0.36, 0.54))
 	var mini := NetView.new()
 	mini.set_anchors_preset(Control.PRESET_FULL_RECT)
-	mini.offset_left = 8.0
-	mini.offset_top = 8.0
-	mini.offset_right = -8.0
-	mini.offset_bottom = -8.0
+	mini.offset_left = 6.0
+	mini.offset_top = 6.0
+	mini.offset_right = -6.0
+	mini.offset_bottom = -6.0
 	btn.add_child(mini)
 	mini.show_net(net, true)
 	btn.pressed.connect(func() -> void:
