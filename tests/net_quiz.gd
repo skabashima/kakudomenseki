@@ -96,6 +96,19 @@ func _ready() -> void:
 	if rev_n != 5:
 		fails.append("逆向きの 問いが %d 問(5 問の はず)" % rev_n)
 
+	# ★ 誤答の 判定に つかう「ほんものの 展開図」は、クイズの 一覧では なく
+	#   その 立体を 数えつくした ものを つかう こと。
+	#   一覧は 立体ごとに 打ち切っている ので、四角柱なら 29 とおり あるのに
+	#   8 とおりしか 入っていない ―― 残りを「まちがい」として 出して しまう
+	var listed := 0
+	for n in NetDefs.all():
+		if String(n["id"]).begins_with("prism4_"):
+			listed += 1
+	var whole: int = NetDefs._valid_signatures("prism4_0").size()
+	if whole <= listed:
+		fails.append("四角柱の 展開図が 全数 %d / 一覧 %d ― 数えつくせていない" % [
+			whole, listed])
+
 	# 逆向きの 選択肢: 正しい 展開図 1 つと、それを くずした 3 つ。
 	# ★ 見た だけで 分かる ちがう 立体を ならべない。
 	# ★ くずした ものが たまたま 正しい 展開図に なっていない こと。
@@ -109,13 +122,21 @@ func _ready() -> void:
 			fails.append("逆向きの 選択肢が %d こ" % picks.size())
 			break
 		var real_n := 0
+		var solids := {}
 		var sigs := {}
 		for q in picks:
 			var row: Dictionary = q
 			if not bool(row.get("fake", false)):
 				real_n += 1
+			solids[String(row["solid"])] = true
 			sigs[NetDefs._signature(row["faces"])] = true
-		if real_n != 1:
+		# 円柱・円錐は 面を 24 に 分けているので くずしても 見た目が 変わらない。
+		# その ときだけ ちがう 立体を ならべる(正解は やはり 1 つ)
+		if bool((all_nets[at] as Dictionary).get("round", false)):
+			if solids.size() != 4:
+				fails.append("まるい 立体の 選択肢に 同じ 立体が まざっている")
+				break
+		elif real_n != 1:
 			fails.append("組み立てられる 展開図が %d こ(1 こだけの はず)" % real_n)
 			break
 		if sigs.size() != 4:
@@ -123,7 +144,7 @@ func _ready() -> void:
 			break
 		# くずした ものが その 立体の ほんとうの 展開図に なっていないか
 		var real_sigs: Dictionary = NetDefs._valid_signatures(
-			String((all_nets[at] as Dictionary)["solid"]))
+			String((all_nets[at] as Dictionary)["id"]))
 		for q in picks:
 			var row2: Dictionary = q
 			if not bool(row2.get("fake", false)):

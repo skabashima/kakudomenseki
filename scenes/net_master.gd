@@ -389,15 +389,21 @@ func _net_choices(correct_i: int) -> Array:
 	rng.randomize()
 	var out: Array = [correct]
 	out.append_array(NetDefs.fakes(correct, 3, rng))
-	# くずせなかった ときの 保険 ― ちがう 立体の 展開図で うめる
+	# くずせなかった とき(円柱・円錐)は ちがう 立体の 展開図で うめる。
+	# ★ 立体が かぶらないように 取る ―― 同じ 立体の 展開図を 2 つ 入れると
+	#   正解が 2 つに なって しまう
 	if out.size() < 4:
-		var others: Array = nets.filter(func(n):
-			return String((n as Dictionary)["solid"]) != String(correct["solid"]))
+		var used := {String(correct["solid"]): true}
+		var others: Array = nets.duplicate()
 		others.shuffle()
 		for n in others:
 			if out.size() >= 4:
 				break
-			out.append(n)
+			var row: Dictionary = n
+			if used.has(String(row["solid"])):
+				continue
+			used[String(row["solid"])] = true
+			out.append(row)
 	out.shuffle()
 	return out
 

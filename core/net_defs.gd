@@ -97,7 +97,11 @@ static func _solid(key: String) -> Array:
 		"pyr4": return _pyramid3d(_regular(4, 4.0), 4.4)
 		"pyr5": return _pyramid3d(_regular(5, 3.2), 4.6)
 		"pyr6": return _pyramid3d(_regular(6, 2.8), 4.6)
-		_: return _octa3d(3.2)
+		"octa": return _octa3d(3.2)
+	# ★ 知らない 名まえの ときに 何かを 返しては いけない。
+	#   前は 正八面体を 返していたので、名まえを まちがえると
+	#   まるで ちがう 立体の 展開図と 見くらべて しまう
+	return []
 
 
 static func _rect(w: float, d: float) -> Array:
@@ -551,8 +555,12 @@ static func _octa3d(r: float) -> Array:
 
 ## 正しい 展開図 net から、組み立てられない にせものを want まい 作る
 static func fakes(net: Dictionary, want: int, rng: RandomNumberGenerator) -> Array:
+	# 円柱・円錐は 面を 24 に 分けている。1 枚 足しても 見た目が 変わらないので
+	# くずし方が 通じない
+	if bool(net.get("round", false)):
+		return []
 	var faces: Array = net["faces"]
-	var real := _valid_signatures(String(net["solid"]))
+	var real := _valid_signatures(String(net["id"]))
 	var out: Array = []
 	var seen := {_signature(faces): true}
 	var tries := 0
@@ -586,12 +594,47 @@ static func fakes(net: Dictionary, want: int, rng: RandomNumberGenerator) -> Arr
 	return out
 
 
-## その 立体の ほんとうの 展開図の しるし(見分けに つかう)
-static func _valid_signatures(solid_name: String) -> Dictionary:
+## 一度 数えた ものは とっておく(立体ごとに 数千回 ひらくので)
+static var _sig_cache: Dictionary = {}
+
+
+## その 立体の ほんとうの 展開図の しるしを **ぜんぶ** あつめる。
+##
+## ★ ここを クイズの 一覧(`all()`)から 作っては いけない。
+##   一覧は 立体ごとに 数を 打ち切って いるので、
+##   四角柱なら 29 とおり あるのに 8 とおりしか 入っていない。
+##   残りの 21 とおりは ほんものの 展開図なのに「まちがい」に されて しまう
+##   ―― 実際に 四角柱で それが 起きた。
+static func _valid_signatures(net_id: String) -> Dictionary:
+	var key := net_id
+	var cut := key.rfind("_")
+	if cut > 0:
+		key = key.substr(0, cut)
+	if _sig_cache.has(key):
+		return _sig_cache[key]
 	var out := {}
-	for n in all():
-		if String(n["solid"]) == solid_name:
-			out[_signature(n["faces"])] = true
+	var faces3 := _solid(key)
+	if faces3.is_empty():
+		_sig_cache[key] = out
+		return out
+	var adj := _adjacency(faces3)
+	var rng := RandomNumberGenerator.new()
+	rng.seed = hash(key) + 99
+	var quiet := 0
+	for i in 4000:
+		var net := _unfold(faces3, _tree(adj, rng))
+		if net.is_empty():
+			continue
+		var sig := _signature(net["faces"])
+		if out.has(sig):
+			quiet += 1
+			# しばらく 新しい 形が 出なければ 出そろったと みなす
+			if quiet > 700:
+				break
+			continue
+		quiet = 0
+		out[sig] = true
+	_sig_cache[key] = out
 	return out
 
 
