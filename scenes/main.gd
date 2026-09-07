@@ -139,8 +139,8 @@ func _ready() -> void:
 	var pair := HBoxContainer.new()
 	pair.add_theme_constant_override("separation", 12)
 	vbox.add_child(pair)
-	var icon_of := {"kaku": Icons.angle_mark(72.0, Color(1, 1, 1, 0.95)),
-		"men": Icons.area_mark(72.0, Color(1, 1, 1, 0.95))}
+	var icon_of := {"kaku": Icons.angle_mark(54.0, Color(1, 1, 1, 0.95)),
+		"men": Icons.area_mark(54.0, Color(1, 1, 1, 0.95))}
 	for c in ProblemGen.COURSES:
 		var cid := String(c["id"])
 		var stages: Array = c["stages"]
@@ -153,6 +153,18 @@ func _ready() -> void:
 				GameState.current_course = cid
 				GameState.mode = "normal"
 				GameState.change_scene("res://scenes/stage_select.tscn")))
+
+	# 展開図マスター ― 角度・面積の すぐ下。展開図が どの 立体に なるかを
+	# 当てる(当たっても はずれても 立ち上がる アニメつき)
+	var nets_all: int = NetDefs.all().size()
+	var nets_done := 0
+	for n in NetDefs.all():
+		if GameState.net_clear.has(String(n["id"])):
+			nets_done += 1
+	vbox.add_child(_small_card("展開図マスター", Color(0.30, 0.46, 0.40),
+		Icons.net_mark(52.0, Color(1, 1, 1, 0.92)), func() -> void:
+			GameState.change_scene("res://scenes/net_master.tscn"),
+		"%d / %d" % [nets_done, nets_all]))
 
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 10)
@@ -175,15 +187,17 @@ func _ready() -> void:
 		"見つけた 決まり %d / %d" % [int(zk[0]), int(zk[1])]))
 
 
+
 	# 未購入のときだけ解放の入口を出す(買い切り 1 商品・広告なし)
 	if not GameState.premium:
 		vbox.add_child(_spacer(10))
 		vbox.add_child(_menu_button(
-			"すべてを解放", "残り %d ステージ・ストーリー %d・島 %d・挑戦・チャレンジ" % [
+			"すべてを解放", "残り %d ステージ・ストーリー %d・島 %d・展開図 %d・挑戦・チャレンジ" % [
 				int(GameState.paid_content_count()["stage"]),
 				int(GameState.paid_content_count()["kid"])
 					+ int(GameState.paid_content_count()["chapter"]),
-				int(GameState.paid_content_count()["island"])],
+				int(GameState.paid_content_count()["island"]),
+				int(GameState.paid_content_count()["net"])],
 			Color(0.78, 0.55, 0.15), func() -> void:
 				GameState.change_scene("res://scenes/store.tscn"), true))
 
@@ -291,7 +305,9 @@ func _story_card(name: String, grade: String, progress_text: String, color: Colo
 func _course_card(name: String, progress_text: String, color: Color,
 		icon: Control, callback: Callable) -> Button:
 	var btn := Button.new()
-	btn.custom_minimum_size = Vector2(0, 250)
+	# ★ 高さは 1 画面に 入る ことが 先。ここを 250 に していたら、
+	#   下に ある「展開図マスター」まで 画面に 出て こなかった
+	btn.custom_minimum_size = Vector2(0, 168)
 	btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	GameState.style_button(btn, color)
 	btn.pressed.connect(func() -> void:
@@ -301,7 +317,7 @@ func _course_card(name: String, progress_text: String, color: Color,
 	v.set_anchors_preset(Control.PRESET_FULL_RECT)
 	v.alignment = BoxContainer.ALIGNMENT_CENTER
 	v.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	v.add_theme_constant_override("separation", 6)
+	v.add_theme_constant_override("separation", 2)
 	btn.add_child(v)
 	var holder := CenterContainer.new()
 	holder.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -310,12 +326,12 @@ func _course_card(name: String, progress_text: String, color: Color,
 	var lbl := Label.new()
 	lbl.text = name
 	lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	lbl.add_theme_font_size_override("font_size", 42)
+	lbl.add_theme_font_size_override("font_size", 34)
 	v.add_child(lbl)
 	var sub := Label.new()
 	sub.text = progress_text
 	sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	sub.add_theme_font_size_override("font_size", 26)
+	sub.add_theme_font_size_override("font_size", 22)
 	sub.add_theme_color_override("font_color", Color(1, 1, 1, 0.8))
 	v.add_child(sub)
 	return btn

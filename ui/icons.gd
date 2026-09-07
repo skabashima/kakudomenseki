@@ -65,6 +65,34 @@ static func area_mark(sz: float, col: Color) -> Control:
 	return c
 
 
+## 展開図マスターの印(十字にひらいた面と、立ち上がりかけの 1 面)。
+## ★ 面積編と同じ area_mark を使い回していたら、タイトルで見分けが つかなかった
+static func net_mark(sz: float, col: Color) -> Control:
+	var c := _base(sz)
+	c.draw.connect(func() -> void:
+		var u := sz * 0.26
+		var cx := sz * 0.36
+		var cy := sz * 0.50
+		var line := Color(0, 0, 0, 0.30)
+		# 十字にひらいた 4 面(まん中・左・上・下)
+		for d in [Vector2(0, 0), Vector2(-1, 0), Vector2(0, -1), Vector2(0, 1)]:
+			var r := Rect2(cx - u * 0.5 + d.x * u, cy - u * 0.5 + d.y * u, u, u)
+			c.draw_rect(r, col)
+			c.draw_rect(r, line, false, sz * 0.03)
+		# 右の 1 面だけ 立ち上がりかけ(ななめの 四角形)
+		var x0 := cx + u * 0.5
+		var quad := PackedVector2Array([
+			Vector2(x0, cy - u * 0.5), Vector2(x0 + u * 0.92, cy - u * 0.95),
+			Vector2(x0 + u * 0.92, cy + u * 0.05), Vector2(x0, cy + u * 0.5)])
+		# ★ lightened では 白い アイコン色の とき 何も 変わらない。
+		#   うすくして「まだ 立ち上がる 途中の 面」に 見せる
+		c.draw_colored_polygon(quad, Color(col.r, col.g, col.b, col.a * 0.5))
+		var edge := PackedVector2Array(quad)
+		edge.append(quad[0])
+		c.draw_polyline(edge, line, sz * 0.03))
+	return c
+
+
 ## ものがたりの印(開いた本)
 static func book(sz: float, col: Color) -> Control:
 	var c := _base(sz)

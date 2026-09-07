@@ -45,8 +45,8 @@ DELIVERY = [
 
 # 掲載する順(Google Play は 8 枚まで)。最初の 3 枚で「何のアプリか」が伝わる並びにする
 PICKS = [
-    "01_title", "07_kid_map", "15_island", "08_kid_tear", "03_problem_angle",
-    "05_calc", "11_stage_select_men", "12_store_iap",
+    "01_title", "03_problem_angle", "16_net_fold", "07_kid_map", "15_island",
+    "08_kid_tear", "11_stage_select_men", "12_store_iap",
 ]
 
 # 画面ごとの: 素材 / 見出し / 補足 / 背景色(濃い→薄い)
@@ -87,6 +87,10 @@ SHOTS = [
      "探査機を飛ばしながら、方べき・余弦定理・積分で軌道を決める", BLUE),
     ("15_island.png", "解いた答えの数だけ\n島の土地が広がる",
      "カラスと陣地を取り合う戦略モード。24 の島・337 問", GOLD),
+    ("16_net_fold.png", "展開図が\nその場で立体になる",
+     "当たってもはずれても立ち上がる。101 とおりの展開図を当てる", TEAL),
+    ("17_net_list.png", "展開図は\n101 とおり",
+     "立方体だけで 11 種類。同じ立体でもひらき方はいろいろ", BLUE),
 ]
 
 # 掲載順にリネームするときの短い名前(01_ の数字は PICKS の並び)
@@ -106,6 +110,8 @@ NICE_NAME = {
     "13_story_map_jhs": "story_jhs",
     "14_story_map_hs": "story_hs_map",
     "15_island": "island",
+    "16_net_fold": "net_fold",
+    "17_net_list": "net_list",
 }
 
 

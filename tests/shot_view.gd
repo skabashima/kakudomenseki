@@ -28,8 +28,14 @@ func _ready() -> void:
 	var act := false
 	var deg := -1.0
 	var tri := 0
+	var netq := -1                 # 展開図マスターの 何番めの クイズか
+	var hold := false              # できた ところで 止める(つぎへ 進めない)
+	var netfold := false           # 答えて 立ち上がった ところまで 進めるか
 	for arg in OS.get_cmdline_user_args():
 		if arg.begins_with("--scene="): scene = arg.substr(8)
+		if arg.begins_with("--netq="): netq = int(arg.substr(7))
+		if arg == "--netfold": netfold = true
+		if arg == "--hold": hold = true
 		if arg.begins_with("--out="): out = arg.substr(6)
 		if arg.begins_with("--unit="): GameState.kid_unit = arg.substr(7)
 		if arg.begins_with("--ch="): GameState.story_chapter = arg.substr(5)
@@ -56,6 +62,18 @@ func _ready() -> void:
 	get_tree().root.add_child(inst)
 	for i in 10:
 		await get_tree().process_frame
+	if netq >= 0:
+		# 展開図マスターの クイズ。--netfold で 立ち上がった ところまで 進める
+		inst._build_quiz(netq)
+		await get_tree().process_frame
+		if netfold:
+			var net: Dictionary = inst.nets[netq]
+			inst._answer(inst.choice_box.get_child(0) as Button,
+				String(net["solid"]), String(net["solid"]))
+			for i in 300:
+				await get_tree().process_frame
+				if inst.view.t >= 1.0:
+					break
 	if act:
 		# おはなしを とばして さわる場面へ。--try= で 何回めかを えらぶ
 		for i in 8:
@@ -66,6 +84,8 @@ func _ready() -> void:
 		for r in tri:
 			inst._act_done()
 			await get_tree().process_frame
+			if hold and r == tri - 1:
+				break              # できた ところで 止める(立ち上がりを 見る)
 			inst._advance()
 			await get_tree().process_frame
 	for tn in turns:

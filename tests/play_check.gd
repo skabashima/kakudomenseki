@@ -31,6 +31,7 @@ func _ready() -> void:
 	await _test_clear_with_miss()
 	await _test_gauntlet()
 	await _test_walkthrough()
+	await _test_net_challenge()
 
 	GameState.stars = keep_stars
 	GameState.scores = keep_scores
@@ -155,6 +156,30 @@ func _test_gauntlet() -> void:
 		failures.append("gauntlet: 挑戦スコアが記録されていない")
 	scene.queue_free()
 	await get_tree().process_frame
+
+
+## 展開図の 挑戦(10 問)。ステージを またいで 出るので、ここで 通しておく
+func _test_net_challenge() -> void:
+	var keep := GameState.net_challenge_best
+	GameState.net_challenge_best = 0
+	GameState.mode = "net"
+	var inst: Node = (load("res://scenes/problem.tscn") as PackedScene).instantiate()
+	get_tree().root.add_child(inst)
+	await get_tree().process_frame
+	if inst._q_total() != 10:
+		failures.append("net: 10 問で ないと いけない (%d 問)" % inst._q_total())
+	var seen := {}
+	for q in 10:
+		seen[inst.stage_id] = true
+		await _type_answer(inst, _answer_str(inst))
+	if inst.overlay == null:
+		failures.append("net: 結果画面が 出ていない")
+	if GameState.net_challenge_best <= 0:
+		failures.append("net: 自己ベストが 記録されていない")
+	inst.queue_free()
+	await get_tree().process_frame
+	GameState.net_challenge_best = keep
+	GameState.mode = "normal"
 
 
 func _test_walkthrough() -> void:

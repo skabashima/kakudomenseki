@@ -43,12 +43,14 @@ static func gen(stage_id: String, rng: RandomNumberGenerator, tier: int) -> Dict
 				2: return _e22(rng, 2)
 				_: return _e22_corner(rng)
 		"e23":
-			# サイコロの目 → 直方体の展開図 → 円柱の展開図 → 角柱の展開図
-			match [0, 0, 0, 1, 1, 1, 2, 2, 3, 3][t]:
+			# サイコロの目 → 転がして上の面 → 直方体 → 円柱 → 角柱 → 正多面体
+			match [0, 0, 1, 1, 2, 2, 3, 4, 4, 5][t]:
 				0: return _e23(rng, 0)
-				1: return _e23(rng, 1)
-				2: return _e23(rng, 2)
-				_: return _e23_prism(rng)
+				1: return _e23_roll(rng)
+				2: return _e23(rng, 1)
+				3: return _e23(rng, 2)
+				4: return _e23_prism(rng)
+				_: return _e23_platonic(rng)
 		"j17":
 			# 垂直二等分線 → 角の二等分線 → 60°の作図と二等分 → 接線の作図
 			match [0, 0, 0, 1, 1, 1, 2, 2, 3, 3][t]:
@@ -484,6 +486,157 @@ static func _e23_prism(rng: RandomNumberGenerator) -> Dictionary:
 			(a + b + c) * h, a * b, ProblemGen.fmt(area)],
 		"fig": {"shapes": shapes},
 	}
+
+
+## e23-転がし: さいころを 転がして 上の面(目の 向きを 追う)。
+## 向かい合う 面の 和は 7。転がすと 上・手前・右が 入れかわる
+static func _e23_roll(rng: RandomNumberGenerator) -> Dictionary:
+	var dirs: Array = ["右", "左", "手前", "奥"]
+	var top := 1
+	var front := 2
+	var right := 3
+	# ★ 直前と 逆の 向きは 選ばない。「手前 → 奥」は 元に もどるだけで、
+	#   転がす 回数だけ 多い 見せかけの 問題に なる
+	var back_of := {"右": "左", "左": "右", "手前": "奥", "奥": "手前"}
+	var moves: Array = []
+	var prev := ""
+	for i in rng.randi_range(2, 3):
+		var d: String = dirs[rng.randi_range(0, 3)]
+		while prev != "" and d == String(back_of[prev]):
+			d = dirs[rng.randi_range(0, 3)]
+		prev = d
+		moves.append(d)
+		var was := top
+		match d:
+			"右":
+				top = 7 - right
+				right = was
+			"左":
+				top = right
+				right = 7 - was
+			"手前":
+				top = 7 - front
+				front = was
+			_:
+				top = front
+				front = 7 - was
+	var a := 5.0
+	var shapes: Array = _cube(a)
+	shapes += [
+		ProblemGen.label(ProblemGen.proj3(Vector3(a * 0.5, a * 0.5, a)), "1",
+			ProblemGen.COL_YELLOW, 30),
+		ProblemGen.label(ProblemGen.proj3(Vector3(a * 0.5, 0, a * 0.5)), "2",
+			ProblemGen.COL_YELLOW, 30),
+		ProblemGen.label(ProblemGen.proj3(Vector3(a, a * 0.5, a * 0.5)), "3",
+			ProblemGen.COL_YELLOW, 30),
+		ProblemGen.label(Vector2(a * 0.7, -1.6), "→ " + " → ".join(PackedStringArray(moves)),
+			ProblemGen.COL_DIM, 26),
+	]
+	var order := "・".join(PackedStringArray(moves))
+	return {
+		"q": "上の面が 1、手前の面が 2、右の面が 3 のさいころを、%s の順に 1 回ずつ転がしました。上の面の目はいくつですか。" % order,
+		"answer": float(top), "unit": "",
+		"steps": [
+			{"say": "向かい合う 面の 和は 7。1 の 下は 6、2 の おくは 5、3 の 左は 4。"},
+			{"say": "転がすと 上の 面は となりの 面に 入れかわる。1 回ずつ 追いかけよう。"},
+			{"say": "上の 面は %d に なる。入力してみよう!" % top},
+		],
+		"hint1": "向かい合う面の和は 7。右へ転がすと、左の面(7 − 右)が上にくるよ。",
+		"hint2": "1 回ずつ「上・手前・右」を書き出していこう。",
+		"expl": "%s の順に転がすと、上の面は %d です。" % [order, top],
+		"fig": {"shapes": shapes},
+	}
+
+
+## e23-正多面体: 正四面体の展開図で 重なる 辺 / 展開図から 辺と 頂点の 数
+static func _e23_platonic(rng: RandomNumberGenerator) -> Dictionary:
+	if rng.randf() < 0.5:
+		# 大きな 三角形を 4 つに 分けた 展開図。外がわの 6 本の 辺に 番号を ふる
+		var net := NetDefs.tetra_fixed()
+		var shapes: Array = _net_shapes(net)
+		var faces: Array = net["faces"]
+		var mid := Vector2.ZERO
+		for p in faces[0]:
+			mid += p as Vector2
+		mid /= 3.0
+		# 外がわの 辺を まわりの 順に あつめる。
+		# 側面は [中点 i, 中点 i+1, かど] の 順なので、外がわは
+		#   奇数番 … 中点 → かど / 偶数番 … かど → つぎの 中点
+		var edges: Array = []
+		for i in 3:
+			var tri: Array = faces[i + 1]
+			edges.append([tri[0], tri[2]])
+			edges.append([tri[2], tri[1]])
+		for i in edges.size():
+			var e: Array = edges[i]
+			var c: Vector2 = ((e[0] as Vector2) + (e[1] as Vector2)) * 0.5
+			shapes.append(ProblemGen.label(c + (c - mid).normalized() * 1.0,
+				str(i + 1), ProblemGen.COL_YELLOW, 30))
+		# ★ 重なるのは「中点で 出会う 2 本」。かどで 出会う 2 本では ない ―
+		#   かどは 組み立てると てっぺんに 集まるが、相手の 中点が ちがうので
+		#   重ならない。1 と 2 を 組に すると まちがえる
+		var pick := rng.randi_range(1, 6)
+		var pair := pick + 1 if pick % 2 == 0 else pick - 1
+		if pair > 6:
+			pair = 1
+		elif pair < 1:
+			pair = 6
+		return {
+			"q": "正四面体の展開図です。外がわの辺に 1 〜 6 の番号がついています。組み立てたとき、%d の辺とぴったり重なる辺の番号を答えなさい。" % pick,
+			"answer": float(pair), "unit": "",
+			"hint1": "中点(辺のまん中)で となり合っている 2 本が、組み立てると重なるよ。",
+			"hint2": "%d の となりの 辺を 見よう。" % pick,
+			"expl": "中点で出会う 2 本が重なります。%d と重なるのは %d です。" % [pick, pair],
+			"fig": {"shapes": shapes},
+		}
+	# 展開図の 面の 数から 辺・頂点の 数
+	var sets: Array = [
+		["tetra", "正四面体", "正三角形", 4, 3, 6, 4],
+		["cube", "立方体", "正方形", 6, 4, 12, 8],
+		["octa", "正八面体", "正三角形", 8, 3, 12, 6],
+	]
+	var s2: Array = sets[rng.randi_range(0, sets.size() - 1)]
+	var net2: Dictionary = NetDefs.tetra_fixed()
+	if String(s2[0]) == "cube":
+		net2 = NetDefs.cube_fixed()
+	elif String(s2[0]) == "octa":
+		net2 = NetDefs.octa_fixed()
+	var name2 := String(s2[1])
+	var shape_name := String(s2[2])
+	var f_n := int(s2[3])
+	var per := int(s2[4])
+	var e_n := int(s2[5])
+	var v_n := int(s2[6])
+	var ask_edge := rng.randf() < 0.5
+	if ask_edge:
+		return {
+			"q": "%s の展開図です。%s が %d 枚あります。組み立てると辺は何本になりますか。" % [
+				name2, shape_name, f_n],
+			"answer": float(e_n), "unit": "本",
+			"hint1": "1 本の辺は、2 枚の面がくっついてできるよ。",
+			"hint2": "%d × %d ÷ 2" % [f_n, per],
+			"expl": "面 %d 枚 × 1 枚の辺 %d 本 ÷ 2 = %d 本です。" % [f_n, per, e_n],
+			"fig": {"shapes": _net_shapes(net2)},
+		}
+	return {
+		"q": "%s の展開図です。%s が %d 枚あり、辺は %d 本になります。組み立てると頂点はいくつになりますか。" % [
+			name2, shape_name, f_n, e_n],
+		"answer": float(v_n), "unit": "こ",
+		"hint1": "オイラーの式 頂点 − 辺 + 面 = 2 をつかおう。",
+		"hint2": "頂点 = 2 + %d − %d" % [e_n, f_n],
+		"expl": "頂点 − %d + %d = 2 なので、頂点は %d こです。" % [e_n, f_n, v_n],
+		"fig": {"shapes": _net_shapes(net2)},
+	}
+
+
+## 展開図(NetDefs)を 図形スペックに する。
+## 展開図マスターと 同じ 形を つかうので、問題と クイズで 見た目が そろう
+static func _net_shapes(net: Dictionary) -> Array:
+	var out: Array = []
+	for f in net["faces"]:
+		out.append(ProblemGen.poly(f as Array, ProblemGen.FILL_MAIN,
+			Color(0.92, 0.95, 1.0), 2.5))
+	return out
 
 
 # =========================================================

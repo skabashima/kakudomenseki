@@ -181,6 +181,33 @@ func record_kid_clear(id: String) -> bool:
 	return true
 
 
+## 展開図マスターで 当てた 展開図の id
+var net_clear: Dictionary = {}
+
+## 展開図の 挑戦(3 問)の 自己ベスト スコア
+var net_challenge_best: int = 0
+
+
+## 展開図の 挑戦を クリアした。自己ベストを こえたら true
+func record_net_challenge(score: int) -> bool:
+	if score <= net_challenge_best:
+		save_game()
+		return false
+	net_challenge_best = score
+	save_game()
+	return true
+
+
+## 展開図を 当てた。はじめてなら true
+func record_net_clear(id: String) -> bool:
+	if net_clear.has(id):
+		return false
+	net_clear[id] = true
+	bump_stat("net")
+	save_game()
+	return true
+
+
 ## 章をクリアした。はじめてなら true
 func record_story_clear(id: String) -> bool:
 	if story_clear.has(id):
@@ -236,6 +263,7 @@ func is_stage_free(index: int) -> bool:
 const FREE_KID_UNITS := 5              # たからのちず(小学生)の 無料の 歩
 const FREE_STORY_CHAPTERS := {"jhs": 3, "hs": 2}   # ストーリー(中学生/高校生)の 無料の 章
 const FREE_ISLANDS_PER_RANGE := 2      # 島取り: はんいごとに 無料の 島
+const FREE_NETS := 8                   # 展開図マスター: ためせる 展開図(全 101)
 
 
 ## たからのちず(小学生)の その歩に 購入が 必要か
@@ -251,6 +279,13 @@ func story_chapter_needs_purchase(mode: String, chapter_id: String) -> bool:
 		return false
 	var free_n := int(FREE_STORY_CHAPTERS.get(mode, 3))
 	return StoryDefs.chapter_index_in(StoryDefs.chapters_of(mode), chapter_id) >= free_n
+
+
+## 展開図マスターの その 展開図に 購入が 必要か(やさしい 順で 何番めか で 見る)
+func net_needs_purchase(index: int) -> bool:
+	if premium or debug_unlock_all:
+		return false
+	return index >= FREE_NETS
 
 
 ## 島取りの その島に 購入が 必要か(はんいの 中で 何番めか で 見る)
@@ -278,7 +313,9 @@ func paid_content_count() -> Dictionary:
 	var chap := 0
 	for m in ["jhs", "hs"]:
 		chap += maxi(StoryDefs.chapters_of(m).size() - int(FREE_STORY_CHAPTERS[m]), 0)
-	return {"stage": paid_stage_count(), "kid": kid, "chapter": chap, "island": isles}
+	var nets := maxi(NetDefs.all().size() - FREE_NETS, 0)
+	return {"stage": paid_stage_count(), "kid": kid, "chapter": chap, "island": isles,
+		"net": nets}
 
 
 ## そのステージを遊ぶのに購入が必要か
@@ -676,6 +713,8 @@ func save_game() -> void:
 		"daily_best": daily_best,
 		"story_clear": story_clear,
 		"kid_clear": kid_clear,
+		"net_clear": net_clear,
+		"net_challenge_best": net_challenge_best,
 		"island_clear": island_clear,
 		"island_star": island_star,
 		"island_range": island_range,
@@ -712,6 +751,8 @@ func load_game() -> void:
 	daily_best = int(data.get("daily_best", 0))
 	story_clear = data.get("story_clear", {})
 	kid_clear = data.get("kid_clear", {})
+	net_clear = data.get("net_clear", {})
+	net_challenge_best = int(data.get("net_challenge_best", 0))
 	island_clear = data.get("island_clear", {})
 	island_star = data.get("island_star", {})
 	island_range = String(data.get("island_range", "all"))

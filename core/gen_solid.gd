@@ -75,10 +75,12 @@ static func gen(stage_id: String, rng: RandomNumberGenerator, tier: int) -> Dict
 				_: return _j13_surface(rng)
 		"j14":
 			# 直方体の対角線 → 表面を這う最短経路 → 立方体の対角線(√3)
-			match [0, 0, 0, 0, 1, 1, 1, 2, 2, 2][t]:
+			#   → 円錐の側面をひとまわりする最短(展開図の弦)
+			match [0, 0, 0, 1, 1, 1, 2, 2, 3, 3][t]:
 				0: return _j14(rng, 0)
 				1: return _j14(rng, 1)
-				_: return _j14(rng, 2)
+				2: return _j14(rng, 2)
+				_: return _j14_cone(rng)
 		"j15":
 			# ピラミッド型 → 3 本の平行線 → 台形の対角線 → 中点連結
 			match [0, 0, 0, 1, 1, 1, 2, 2, 3, 3][t]:
@@ -873,6 +875,74 @@ static func _j13(rng: RandomNumberGenerator, kind: int) -> Dictionary:
 		"hint2": "中心角 = 360 × (底面の半径 ÷ 母線) = 360 × %d ÷ %d" % [r3, l],
 		"expl": "中心角 = 360 × %d/%d = %d° です。" % [r3, l, ang],
 		"fig": fig3,
+	}
+
+
+## j14-円錐: 側面を ひとまわりする 最短の 道のり。
+## 展開図の おうぎ形(中心角 360 × r ÷ l)の 弦が 答え。
+## ★ 中心角が 180° に なる 組は 入れない ―― 弦が かなめを 通って しまい、
+##   「側面を はう 道」に ならない。60・90・120 だけ にすると
+##   答えも 母線 × 1 / 1.41 / 1.73 で きれいに 出る
+const CONE_LOOP := [
+	[1, 6, 60], [2, 12, 60], [1, 4, 90], [2, 8, 90], [3, 12, 90],
+	[1, 3, 120], [2, 6, 120], [3, 9, 120], [4, 12, 120],
+]
+
+
+static func _j14_cone(rng: RandomNumberGenerator) -> Dictionary:
+	var s: Array = CONE_LOOP[rng.randi_range(0, CONE_LOOP.size() - 1)]
+	var r: int = s[0]
+	var l: int = s[1]
+	var ang: int = s[2]
+	# 弦 = 2 × 母線 × sin(中心角 ÷ 2)。60° なら 母線 そのもの、
+	# 90° なら √2 倍、120° なら √3 倍
+	var mul := 1.0
+	var note := ""
+	var expr := "%d" % l
+	if ang == 90:
+		mul = 1.41
+		note = "√2 = 1.41 として、"
+		expr = "%d × 1.41" % l
+	elif ang == 120:
+		mul = 1.73
+		note = "√3 = 1.73 として、"
+		expr = "%d × 1.73" % l
+	var ans := float(l) * mul
+	var lf := float(l) * 0.8
+	var half := deg_to_rad(float(ang)) * 0.5
+	var p1 := Vector2(cos(-half), sin(-half)) * lf
+	var p2 := Vector2(cos(half), sin(half)) * lf
+	var fig := {"shapes": [
+		ProblemGen.sector(Vector2.ZERO, lf, -float(ang) * 0.5, float(ang) * 0.5,
+			ProblemGen.FILL_ACCENT, ProblemGen.COL_YELLOW),
+		ProblemGen.seg(Vector2.ZERO, p1, ProblemGen.COL_YELLOW, 2.5),
+		ProblemGen.seg(Vector2.ZERO, p2, ProblemGen.COL_YELLOW, 2.5),
+		ProblemGen.seg(p1, p2, Color(0.45, 1.0, 0.6), 4.0),
+		ProblemGen.ang(Vector2.ZERO, p1, p2, "%d°" % ang, 1.6, false),
+		ProblemGen.label((p1 + p2) * 0.5 + Vector2(1.5, 0), "?", Color(0.45, 1.0, 0.6), 30),
+		# ★ おうぎ形の 中に 置くと 塗りに かぶって 読めない。外がわへ 出す
+		ProblemGen.label(p2 * 0.55 + p2.normalized().rotated(PI * 0.5) * 1.4,
+			"母線 %d" % l, ProblemGen.COL_DIM, 24),
+		ProblemGen.circle(Vector2(lf + float(r) + 2.4, -float(r) - 1.6), float(r), null,
+			Color(0.92, 0.95, 1.0), 2.5),
+		ProblemGen.label(Vector2(lf + float(r) + 2.4, -2.0 * float(r) - 2.8),
+			"底面 半径 %d" % r, ProblemGen.COL_DIM, 24),
+	]}
+	return {
+		"q": "底面の半径 %d cm、母線の長さ %d cm の円錐があります。%s底面の円周上の点 A から側面をひとまわりして A にもどるときの、最短の道のりを求めなさい。" % [
+			r, l, note],
+		"answer": ans, "unit": "cm", "tol": 0.02,
+		"steps": [
+			{"say": "立体の ままでは 分からない。側面を ひらいて おうぎ形に する。"},
+			{"say": "中心角 = 360 × %d ÷ %d = %d°。ひとまわりの 最短は この おうぎ形の 弦。" % [
+				r, l, ang]},
+			{"say": "弦 = %s = %s cm。入力してみよう!" % [expr, ProblemGen.fmt(ans)]},
+		],
+		"hint1": "側面をひらくと中心角 360 × 半径 ÷ 母線 のおうぎ形。ひとまわりの最短は、その両はしを結ぶまっすぐな線(弦)だよ。",
+		"hint2": "中心角は %d°。弦 = %s" % [ang, expr],
+		"expl": "中心角 = 360 × %d/%d = %d°。弦 = %s = %s cm です。" % [
+			r, l, ang, expr, ProblemGen.fmt(ans)],
+		"fig": fig,
 	}
 
 

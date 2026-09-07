@@ -53,22 +53,51 @@ var overlay: Control = null
 var answer_panel: PanelContainer
 
 
-## ステージにひもづくモード(通常攻略 or 挑戦 10 問)か
+## ステージにひもづくモード(通常攻略 / 挑戦 10 問 / 展開図の挑戦)か。
+## ハート・スコア・「問 n / m」の出し方をこの 3 つで共通にする
 func _stage_based() -> bool:
-	return GameState.mode == "normal" or GameState.mode == "gauntlet"
+	return GameState.mode == "normal" or GameState.mode == "gauntlet" \
+		or GameState.mode == "net"
+
+
+## 展開図の挑戦(10 問)。展開図につながる問題をやさしい順に出す。
+## 1 問ごとに [ステージ, tier] の候補から 1 つ選ぶので、やるたびに中身が変わる。
+##   e23 tier  0-1 サイコロの展開図 / 2-3 転がして上の面 / 4-5 直方体の展開図 /
+##             6 円柱の展開図 / 7-8 角柱の展開図 / 9 正多面体の展開図
+##   j13 tier  6-7 円錐の展開図の中心角
+##   j14 tier  8-9 円錐の側面をひとまわりする最短
+const NET_LADDER := [
+	[["e23", 0]],
+	[["e23", 1]],
+	[["e23", 2]],
+	[["e23", 3]],
+	[["e23", 4]],
+	[["e23", 5]],
+	[["e23", 6]],
+	[["e23", 7]],
+	[["e23", 9], ["j13", 6]],
+	[["j14", 9], ["j13", 7]],
+]
 
 
 ## このプレイの問数
 func _q_total() -> int:
-	return GameState.GAUNTLET_QUESTIONS if GameState.mode == "gauntlet" \
-		else GameState.QUESTIONS_PER_STAGE
+	if GameState.mode == "gauntlet":
+		return GameState.GAUNTLET_QUESTIONS
+	if GameState.mode == "net":
+		return NET_LADDER.size()
+	return GameState.QUESTIONS_PER_STAGE
 
 
 func _ready() -> void:
 	GameState.play_bgm("think")
 	rng.randomize()
 	course = ProblemGen.course_by_id(GameState.current_course)
-	if _stage_based():
+	if GameState.mode == "net":
+		# 展開図の挑戦はステージに ひもづかない(問ごとに 出どころが 変わる)
+		stage = {"id": "e23", "title": "展開図の 挑戦"}
+		stage_id = "e23"
+	elif _stage_based():
 		# 未購入の有料ステージには入れない(直接遷移してきたときの保険)
 		if GameState.needs_purchase(GameState.current_stage):
 			GameState.change_scene("res://scenes/store.tscn")
@@ -133,6 +162,8 @@ func _build_ui() -> void:
 			title_lbl.text = "サバイバル"
 		"gauntlet":
 			title_lbl.text = "挑戦: " + String(stage["title"])
+		"net":
+			title_lbl.text = "展開図の 挑戦"
 		_:
 			title_lbl.text = String(stage["title"])
 	head.add_child(title_lbl)
@@ -298,6 +329,13 @@ func _next_question(first := false) -> void:
 		# (各ステージが tier 0-9 を「解法の種類 × 難しさ」の階段に割り当てている)
 		sid = stage_id
 		tier = q_index
+	elif GameState.mode == "net":
+		# 展開図の挑戦: 問ごとに 出どころが 変わる(ステージを またぐ)
+		var picks: Array = NET_LADDER[mini(q_index, NET_LADDER.size() - 1)]
+		var pick: Array = picks[rng.randi_range(0, picks.size() - 1)]
+		sid = String(pick[0])
+		tier = int(pick[1])
+		stage_id = sid          # まちがえた ときの 復習・ふりがなの 判定に つかう
 	elif GameState.mode == "normal":
 		sid = stage_id
 		tier = q_index
@@ -578,6 +616,8 @@ func _on_correct() -> void:
 		if last:
 			if GameState.mode == "gauntlet":
 				_finish_gauntlet()
+			elif GameState.mode == "net":
+				_finish_net()
 			else:
 				_finish_stage()
 		else:
@@ -738,7 +778,7 @@ func _fail_stage() -> void:
 		GameState.record_gauntlet(stage_id, q_index)
 	var panel := _overlay_panel()
 	var v := panel.get_node("v") as VBoxContainer
-	if GameState.mode == "gauntlet":
+	if GameState.mode == "gauntlet" or GameState.mode == "net":
 		_add_label(v, "挑戦失敗… %d/%d 問まで" % [q_index, _q_total()], 40, Color(1.0, 0.55, 0.55))
 	else:
 		_add_label(v, "ハートがなくなった…", 44, Color(1.0, 0.55, 0.55))
@@ -754,8 +794,43 @@ func _fail_stage() -> void:
 	expl.custom_minimum_size = Vector2(640, 0)
 	_add_button(v, "リトライ(べつの数値で)", Color(0.2, 0.55, 0.35), func() -> void:
 		GameState.change_scene("res://scenes/problem.tscn"))
-	_add_button(v, "ステージ一覧へ", Color(0.28, 0.32, 0.44), func() -> void:
-		GameState.change_scene("res://scenes/stage_select.tscn"))
+	_add_button(v, _back_name(), Color(0.28, 0.32, 0.44), func() -> void:
+		GameState.change_scene(_back_scene()))
+
+
+## もどる先。展開図の挑戦は 展開図マスターへ もどる
+func _back_scene() -> String:
+	if GameState.mode == "net":
+		return "res://scenes/net_master.tscn"
+	return "res://scenes/stage_select.tscn"
+
+
+func _back_name() -> String:
+	if GameState.mode == "net":
+		return "展開図マスターへ"
+	return "ステージ一覧へ"
+
+
+## 展開図の挑戦(3 問)クリア
+func _finish_net() -> void:
+	GameState.play_sfx("clear")
+	GameState.bump_stat("net_challenge")
+	var best := GameState.record_net_challenge(stage_score)
+	var panel := _overlay_panel()
+	var v := panel.get_node("v") as VBoxContainer
+	var crown := Icons.crown(72.0, Color(1.0, 0.84, 0.3))
+	crown.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	v.add_child(crown)
+	_add_label(v, "展開図の 挑戦クリア!", 48, Color(1.0, 0.84, 0.3))
+	_add_label(v, "%d 問れんぞく" % _q_total(), 34, Color.WHITE)
+	_add_label(v, "スコア %d点(自己ベスト %d点)" % [stage_score,
+		GameState.net_challenge_best], 26, Color.WHITE)
+	if best:
+		_add_label(v, "自己ベスト こうしん!", 28, Color(0.6, 1.0, 0.7))
+	_add_button(v, "もういちど(べつの数値で)", Color(0.24, 0.42, 0.72), func() -> void:
+		GameState.change_scene("res://scenes/problem.tscn"))
+	_add_button(v, "展開図マスターへ", Color(0.28, 0.32, 0.44), func() -> void:
+		GameState.change_scene("res://scenes/net_master.tscn"))
 
 
 ## 挑戦モード(単元 10 問)クリア
@@ -858,7 +933,9 @@ func _add_button(parent: Control, text: String, color: Color, cb: Callable) -> B
 
 func _quit() -> void:
 	GameState.play_sfx("tap")
-	if _stage_based():
+	if GameState.mode == "net":
+		GameState.change_scene("res://scenes/net_master.tscn")
+	elif _stage_based():
 		GameState.change_scene("res://scenes/stage_select.tscn")
 	else:
 		GameState.change_scene("res://scenes/challenge_select.tscn")

@@ -16,6 +16,12 @@ var ruby_size := 16
 var color := Color(0.95, 0.97, 1.0)
 var line_gap := 1.28            # 行の高さの倍率
 
+## 左右・上下の まん中に そろえる(ボタンの 中に 入れる ときに つかう)。
+## ★ この ラベルは 最小の 横はばを 出さない(_get_minimum_size の 幅は 0)。
+##   CenterContainer に 入れると はばが 0 に なり、1 文字ずつ 折り返して
+##   しまう ―― 中に 入れずに、親いっぱいに 広げて この 印を 立てること
+var center := false
+
 var _atoms: Array = []          # {"s": 文字, "r": よみ, "w": はば}
 var _font: Font
 
@@ -115,10 +121,18 @@ func _draw() -> void:
 	var lines := _lines(size.x)
 	var lh := _line_height()
 	var ruby_h := ruby_size * 1.05 if _has_ruby() else 0.0
+	var top := 0.0
+	if center:
+		top = maxf(0.0, (size.y - float(lines.size()) * lh) * 0.5)
 	for li in lines.size():
-		var y := li * lh
+		var y := top + li * lh
 		var baseline := y + ruby_h + _font.get_ascent(font_size)
 		var x := 0.0
+		if center:
+			var line_w := 0.0
+			for a2 in lines[li]:
+				line_w += float((a2 as Dictionary)["w"])
+			x = maxf(0.0, (size.x - line_w) * 0.5)
 		for a in lines[li]:
 			var seg: Dictionary = a
 			draw_string(_font, Vector2(x, baseline), String(seg["s"]),

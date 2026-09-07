@@ -35,6 +35,9 @@ var problem: Dictionary = {}
 var input_text := ""
 
 var map: Control
+## k19「箱を ひらく」で、ひらいた 図が 立ち上がって 箱に なる ところを 見せる 重ね絵。
+## ひらいた だけでは「どの 面と どの 面が 向かい合うか」が 頭の 中でしか つながらない
+var fold_view: NetView
 var big: Label
 var talk: RubyLabel
 var keypad: Keypad
@@ -88,6 +91,11 @@ func _ready() -> void:
 	map.draw.connect(_draw_map)
 	map.gui_input.connect(_on_map_input)
 	root.add_child(map)
+	if String(unit["act"]) == "open" and String(unit["id"]) == "k19":
+		fold_view = NetView.new()
+		fold_view.set_anchors_preset(Control.PRESET_FULL_RECT)
+		fold_view.visible = false
+		map.add_child(fold_view)
 
 	figure = FigureView.new()
 	figure.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -203,6 +211,13 @@ func _act_done() -> void:
 	cheer = 1.0
 	tries += 1
 	st["done"] = true          # 図の 上に 大きな ○ を 出す しるし
+	if fold_view != null:
+		# ひらいた 図を そのまま 立ち上げて、箱に なる ところを 見せる。
+		# 目の ならびは ひらいた 図と 同じ(向かい合う 面を たすと 7)
+		fold_view.pips = ["1", "2", "5", "6", "4", "3"]
+		fold_view.show_net(NetDefs.by_id("cube_cross"))
+		fold_view.visible = true
+		fold_view.fold_up()
 	GameState.play_sfx("clear" if tries >= 3 else "correct")
 	big.text = _act_cheer()
 	if tries >= 3:
@@ -507,6 +522,9 @@ func _reset_act() -> void:
 	st = {}
 	dragging = -1
 	cheer = 0.0
+	if fold_view != null:
+		fold_view.visible = false
+		fold_view.unfold()
 	match String(unit["act"]):
 		"tear":
 			var b := rng.randf_range(40.0, 80.0)
@@ -1811,6 +1829,10 @@ func _draw_stack(c: Control) -> void:
 
 ## 箱を ひらく / ななめに 切る
 func _draw_open(c: Control) -> void:
+	if fold_view != null and fold_view.visible:
+		# 立ち上がりを 重ねて 見せている あいだは、ひらいた 図と
+		# 「つまんで ひらこう」の 案内を 出さない(下に のこって ちぐはぐに なる)
+		return
 	var t: float = st["open"]
 	var s := _cell()
 	var mid := Vector2(map.size.x * 0.5, map.size.y * 0.45)

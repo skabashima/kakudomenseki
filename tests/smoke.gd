@@ -27,6 +27,7 @@ func _run() -> void:
 	await _open("res://scenes/story_map.tscn")
 	await _open("res://scenes/daily.tscn")
 	await _open("res://scenes/zukan.tscn")
+	await _open("res://scenes/net_master.tscn")
 	await _open("res://scenes/island_select.tscn")
 	await _open("res://scenes/island.tscn")
 	await _open("res://scenes/story.tscn")

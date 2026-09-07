@@ -70,7 +70,11 @@ func _run() -> void:
 	# (方べき・チェバ・円の方程式・回転体まで入っていることが、ここで伝わる)
 	GameState.current_course = "men"
 	await _scene("res://scenes/stage_select.tscn", "11_stage_select_men.png", "大学受験レベル")
-	# 12) 解放画面(App Store の課金審査用スクショにも使う)
+	# 12) 展開図マスター(立ち上がる 途中を 撮る ― この モードの 見どころ)
+	await _net_fold(0, 0.62, "16_net_fold.png")
+	# 13) 展開図マスターの 一覧(101 とおり あることが 伝わる)
+	await _scene("res://scenes/net_master.tscn", "17_net_list.png")
+	# 14) 解放画面(App Store の課金審査用スクショにも使う)
 	GameState.premium = false
 	GameState.debug_unlock_all = false
 	await _store_shot("12_store_iap.png")
@@ -105,6 +109,35 @@ func _fill_progress() -> void:
 		GameState.story_clear[String(StoryDefs.chapters_of("jhs")[i]["id"])] = true
 	for i in 3:
 		GameState.story_clear[String(StoryDefs.chapters_of("hs")[i]["id"])] = true
+
+
+## 展開図マスターの クイズ。答えたあと、立ち上がる 途中で 止めて 撮る。
+## ★ 止めないと 1.7 秒で 立体に なりきって しまい、「展開図が 立ち上がる」ことが
+##   1 枚の 絵から 伝わらない
+func _net_fold(idx: int, at: float, out_name: String) -> void:
+	var inst: Node = (load("res://scenes/net_master.tscn") as PackedScene).instantiate()
+	sub.add_child(inst)
+	for f in 12:
+		await get_tree().process_frame
+	inst._build_quiz(idx)
+	await get_tree().process_frame
+	var net: Dictionary = inst.nets[idx]
+	var correct := String(net["solid"])
+	var btn: Button = null
+	for c in inst.choice_box.get_children():
+		if inst._text_of(c as Button) == correct:
+			btn = c as Button
+	inst._answer(btn, correct, correct)
+	for f in 6:
+		await get_tree().process_frame
+	inst.view.set_process(false)
+	inst.view.t = at
+	inst.view.queue_redraw()
+	for f in 4:
+		await get_tree().process_frame
+	await _save(out_name)
+	inst.queue_free()
+	await get_tree().process_frame
 
 
 ## その文字をふくむ Label を探す
