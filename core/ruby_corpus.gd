@@ -40,7 +40,11 @@ static func texts() -> Array:
 	for path in ["res://scenes/island.gd", "res://scenes/island_select.gd",
 			"res://core/island_defs.gd", "res://scenes/kid_unit.gd",
 			"res://scenes/kid_map.gd", "res://scenes/daily.gd",
-			"res://scenes/zukan.gd", "res://scenes/stage_select.gd"]:
+			"res://scenes/zukan.gd", "res://scenes/stage_select.gd",
+			# ★ 展開図マスターが 抜けていた ―― ここに ふりがなが 付く 文が あるのに
+			#   見ていなかったので、「挑戦 10問」の「問」が「と」と 読まれていた
+			#   まちがいを 機械で 捕まえられなかった
+			"res://scenes/net_master.gd"]:
 		out.append_array(_literals(path))
 	return out
 

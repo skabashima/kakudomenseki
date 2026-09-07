@@ -25,6 +25,8 @@ var run_at := 0
 var run_ok := 0
 ## いまの 問いが 逆向き(立体を 見せて 展開図を えらぶ)か
 var reverse := false
+## 一覧から 出す ときの むき。切りかえると 見本の 絵も 立体に かわる
+var list_reverse := false
 var view: NetView
 var choice_box: GridContainer
 var result_label: RubyLabel
@@ -58,9 +60,12 @@ func _build_list() -> void:
 	lead.ruby_size = 11
 	lead.color = Color(0.80, 0.86, 1.0)
 	lead.custom_minimum_size = Vector2(0, 56)
-	lead.set_ruby_text("この 展開図は どの 立体に なる? 当てたら、"
-		+ "その場で 立ち上がって 立体に なります。", true)
+	lead.set_ruby_text(("この 立体の 展開図は どれ? えらんだら、その 展開図が "
+		+ "立ち上がります。") if list_reverse else
+		("この 展開図は どの 立体に なる? 当てたら、"
+		+ "その場で 立ち上がって 立体に なります。"), true)
 	root.add_child(lead)
+	root.add_child(_flip_button())
 
 	var scroll := ScrollContainer.new()
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -78,6 +83,32 @@ func _build_list() -> void:
 	list.add_child(_run_card(false))
 	for i in nets.size():
 		list.add_child(_card(i))
+
+
+## 一覧の むきを 切りかえる。
+## ★ 逆向きの ときは 見本を 立体の 絵に する ―― 展開図の まま 出すと
+##   カードを 見た だけで 答えが 分かって しまう
+func _flip_button() -> Button:
+	var btn := Button.new()
+	btn.custom_minimum_size = Vector2(0, 64)
+	btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	btn.focus_mode = Control.FOCUS_NONE
+	GameState.style_button(btn, Color(0.30, 0.34, 0.48))
+	btn.pressed.connect(func() -> void:
+		GameState.play_sfx("tap")
+		list_reverse = not list_reverse
+		_build_list())
+	var lbl := RubyLabel.new()
+	lbl.set_anchors_preset(Control.PRESET_FULL_RECT)
+	lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	lbl.font_size = 22
+	lbl.ruby_size = 11
+	lbl.center = true
+	lbl.color = Color(1, 1, 1, 0.95)
+	lbl.set_ruby_text(("むきを かえる ▶ いまは 立体 → 展開図") if list_reverse
+		else ("むきを かえる ▶ いまは 展開図 → 立体"), true)
+	btn.add_child(lbl)
+	return btn
 
 
 ## 挑戦 10問(quiz = true)… 101 とおりから ランダムに 10 問、どの 立体に なるか
@@ -182,7 +213,7 @@ func _card(i: int) -> Button:
 		if locked:
 			GameState.change_scene("res://scenes/store.tscn")
 		else:
-			_build_quiz(i))
+			_build_quiz(i, list_reverse))
 
 	var row := HBoxContainer.new()
 	row.set_anchors_preset(Control.PRESET_FULL_RECT)
@@ -192,12 +223,15 @@ func _card(i: int) -> Button:
 	row.add_theme_constant_override("separation", 14)
 	btn.add_child(row)
 
-	# 展開図の 小さな 見本(答えは 見せないので 展開図の まま)
+	# 見本。むきに よって 展開図か 立体か を 出す(答えが 見えないように)
 	var mini := NetView.new()
 	mini.custom_minimum_size = Vector2(148, 104)
 	mini.modulate = Color(1, 1, 1, 0.35) if locked else Color(1, 1, 1, 1)
 	row.add_child(mini)
-	mini.show_net(net, true)
+	if list_reverse:
+		mini.show_solid(net, false, true)
+	else:
+		mini.show_net(net, true)
 
 	var col := VBoxContainer.new()
 	col.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -314,7 +348,7 @@ func _build_quiz(i: int, rev := false) -> void:
 			else:
 				_build_run_result()
 		elif idx + 1 < nets.size() and not GameState.net_needs_purchase(idx + 1):
-			_build_quiz(idx + 1)
+			_build_quiz(idx + 1, list_reverse)
 		else:
 			_build_list())
 	root.add_child(next_btn)
@@ -491,7 +525,7 @@ func _build_run_result() -> void:
 	big.ruby_size = 18
 	big.center = true
 	big.color = HEAD
-	big.set_ruby_text("%d 問中 %d 問 せいかい" % [total, got], true)
+	big.set_ruby_text("%d 問の うち %d 問 せいかい" % [total, got], true)
 	box.add_child(big)
 	var sub := RubyLabel.new()
 	sub.font_size = 24

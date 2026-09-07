@@ -64,6 +64,11 @@ func _ready() -> void:
 	get_tree().root.add_child(inst)
 	for i in 10:
 		await get_tree().process_frame
+	if netrev and netq < 0:
+		# 一覧を 逆向き(立体を 見せる)に して 撮る
+		inst.list_reverse = true
+		inst._build_list()
+		await get_tree().process_frame
 	if netq >= 0:
 		# 展開図マスターの クイズ。--netfold で 立ち上がった ところまで 進める
 		inst._build_quiz(netq, netrev)

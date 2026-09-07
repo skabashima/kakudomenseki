@@ -47,16 +47,17 @@ func _init() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 
 
-## still = true は 一覧の 小さな 見本。動かさないので、展開図の ときの
-## 大きさだけ 測る(101 まいぶん 全部 測ると 一覧を 開くのが おそくなる)
-func show_net(n: Dictionary, still := false) -> void:
+## still = true は 一覧の 小さな 見本。動かさないので、その ときの
+## 大きさだけ 測る(101 まいぶん 全部 測ると 一覧を 開くのが おそくなる)。
+## only に 0〜1 を 渡すと、その 折れぐあいの ところだけ 測る
+func show_net(n: Dictionary, still := false, only := -1.0) -> void:
 	net = n
 	t = 0.0
 	spin = 0.0
 	_playing = false
 	_spinning = false
 	set_process(false)
-	_measure(still)
+	_measure(still, only)
 	queue_redraw()
 
 
@@ -71,8 +72,8 @@ func fold_up() -> void:
 
 ## 立体の すがたで 見せる(展開図は 出さない)。
 ## 「この 立体の 展開図は どれ?」の 問いで つかう
-func show_solid(n: Dictionary, turn := true) -> void:
-	show_net(n)
+func show_solid(n: Dictionary, turn := true, still := false) -> void:
+	show_net(n, false, 1.0 if still else -1.0)
 	t = 1.0
 	# ★ 回さないまま だと 面を まっすぐ 正面から 見る ことが あり、
 	#   平べったい 絵に なって 立体に 見えない。はじめから 角を 手前に する
@@ -106,11 +107,12 @@ func _process(delta: float) -> void:
 
 ## 展開図の ときと 立体の ときの 両方が 入る 大きさを 先に 決めておく。
 ## 毎コマ 測ると 折れる たびに 拡大率が 変わって 画面が はねる
-func _measure(still := false) -> void:
+func _measure(still := false, only := -1.0) -> void:
 	_samples.clear()
-	var steps := 1 if still else 9
+	var one := still or only >= 0.0
+	var steps := 1 if one else 9
 	for i in steps:
-		var tt := 0.0 if still else float(i) / 8.0
+		var tt := (maxf(only, 0.0) if one else float(i) / 8.0)
 		var faces: Array = NetDefs.fold(net, _ease(tt))
 		var pivot := _pivot(faces)
 		var lo := Vector2(INF, INF)
