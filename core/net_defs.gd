@@ -560,23 +560,45 @@ static func fakes(net: Dictionary, want: int, rng: RandomNumberGenerator) -> Arr
 	if bool(net.get("round", false)):
 		return []
 	var faces: Array = net["faces"]
-	var real := _valid_signatures(String(net["id"]))
+	var real := valid_shapes(String(net["id"]))
 	var out: Array = []
-	var seen := {_signature(faces): true}
+	var seen: Array = [shape_key(faces)]
 	var tries := 0
 	while out.size() < want and tries < 260:
 		tries += 1
+		# ★ 面の 数を かならず 変える。
+		#   「面の 場所だけ 変える」やり方も 作って みたが、それが ほんとうに
+		#   組み立てられない かどうかを 確かめきれなかった ―― 立方体は 11、
+		#   四角柱は 29、直方体は 54 とおりも 正しい 展開図が あるので、
+		#   動かした 先が また 正しい 展開図に なる。実際に「正解が 2 つある」
+		#   問いを 出して しまった。
+		#   面が 1 枚 多い / 足りない 展開図は、どんな 置き方でも その 立体に
+		#   ならない。ここは 数える だけで 確かめられる
 		var made: Array = []
-		match tries % 3:
-			0: made = _fake_add(faces, rng)      # 面を 1 枚 ふやす
-			1: made = _fake_drop(faces, rng)     # 面を 1 枚 へらす
-			_: made = _fake_move(faces, rng)     # 面の 場所を かえる
+		if tries % 3 == 1:
+			made = _fake_drop(faces, rng)        # 面を 1 枚 へらす
+		else:
+			made = _fake_add(faces, rng)         # 面を 1 枚 ふやす
 		if made.is_empty() or _overlaps(made):
 			continue
-		var sig := _signature(made)
-		if seen.has(sig) or real.has(sig):
-			continue                              # 正しい 展開図に なって しまった
-		seen[sig] = true
+		if made.size() == faces.size():
+			continue                              # 面の 数が 同じ ものは 出さない
+		var made_key := shape_key(made)
+		var dup := false
+		for e in seen:
+			if same_shape(e, made_key):
+				dup = true
+				break
+		if dup:
+			continue
+		var real_one := false
+		for e in real:
+			if same_shape(e, made_key):
+				real_one = true       # くずした つもりが 正しい 展開図に なった
+				break
+		if real_one:
+			continue
+		seen.append(made_key)
 		# 折る しくみは 持たせない(組み立てられない ものなので)。
 		# 平らに 描く ためだけに、どの 面も 台あつかいに する
 		var parent: Array = []
@@ -596,6 +618,85 @@ static func fakes(net: Dictionary, want: int, rng: RandomNumberGenerator) -> Arr
 
 ## 一度 数えた ものは とっておく(立体ごとに 数千回 ひらくので)
 static var _sig_cache: Dictionary = {}
+static var _shape_cache: Dictionary = {}
+
+
+## 形を くらべる ための ものさし ―― 頂点どうしの きょりを ぜんぶ ならべた もの。
+## 動かしても 回しても 裏返しても 変わらないので、同じ 形なら 同じ 並びに なる。
+##
+## ★ 文字列に して くらべては いけない。展開図を 作る 道すじが ちがうと
+##   小数の 端が わずかに ずれ、2.875 が 2.87 と 2.88 に 分かれて
+##   「べつの 形」に 見えて しまう ―― ほんものの 展開図を まちがい として
+##   出して いた 原因。数のまま、ゆとりを 持って くらべる
+static func shape_key(faces: Array) -> PackedFloat32Array:
+	var pts: Array = []
+	for f in faces:
+		for p in f:
+			var v: Vector2 = p
+			var found := false
+			for q in pts:
+				if (q as Vector2).distance_to(v) < 0.02:
+					found = true
+					break
+			if not found:
+				pts.append(v)
+	var ds: Array = []
+	for i in pts.size():
+		for j in range(i + 1, pts.size()):
+			ds.append((pts[i] as Vector2).distance_to(pts[j] as Vector2))
+	ds.sort()
+	var out := PackedFloat32Array()
+	for d in ds:
+		out.append(float(d))
+	return out
+
+
+## 同じ 形か(ゆとり 0.03)
+static func same_shape(a: PackedFloat32Array, b: PackedFloat32Array) -> bool:
+	if a.size() != b.size():
+		return false
+	for i in a.size():
+		if absf(a[i] - b[i]) > 0.03:
+			return false
+	return true
+
+
+## その 立体の ほんとうの 展開図の 形を ぜんぶ
+static func valid_shapes(net_id: String) -> Array:
+	var key := net_id
+	var cut := key.rfind("_")
+	if cut > 0:
+		key = key.substr(0, cut)
+	if _shape_cache.has(key):
+		return _shape_cache[key]
+	var out: Array = []
+	var faces3 := _solid(key)
+	if faces3.is_empty():
+		_shape_cache[key] = out
+		return out
+	var adj := _adjacency(faces3)
+	var rng := RandomNumberGenerator.new()
+	rng.seed = hash(key) + 99
+	var quiet := 0
+	for i in 4000:
+		var net := _unfold(faces3, _tree(adj, rng))
+		if net.is_empty():
+			continue
+		var k := shape_key(net["faces"])
+		var known := false
+		for e in out:
+			if same_shape(e, k):
+				known = true
+				break
+		if known:
+			quiet += 1
+			if quiet > 700:
+				break
+			continue
+		quiet = 0
+		out.append(k)
+	_shape_cache[key] = out
+	return out
 
 
 ## その 立体の ほんとうの 展開図の しるしを **ぜんぶ** あつめる。
@@ -665,14 +766,6 @@ static func _fake_drop(faces: Array, rng: RandomNumberGenerator) -> Array:
 		if i != drop:
 			out.append((faces[i] as Array).duplicate())
 	return out
-
-
-## 面の 場所を かえる。はしの 面を 1 枚 外して、べつの あいている 辺に つける
-static func _fake_move(faces: Array, rng: RandomNumberGenerator) -> Array:
-	var less := _fake_drop(faces, rng)
-	if less.is_empty():
-		return []
-	return _fake_add(less, rng)
 
 
 ## ほかの 面と 共有していない 辺 [面の番号, 点 a, 点 b]

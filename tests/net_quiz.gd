@@ -142,15 +142,18 @@ func _ready() -> void:
 		if sigs.size() != 4:
 			fails.append("同じ 形の 選択肢が まざっている")
 			break
-		# くずした ものが その 立体の ほんとうの 展開図に なっていないか
-		var real_sigs: Dictionary = NetDefs._valid_signatures(
-			String((all_nets[at] as Dictionary)["id"]))
+		# ★ にせものは かならず 面の 数が ちがう こと。
+		#   面の 数が 同じ ものは「ほんとうに 組み立てられないか」を
+		#   確かめきれない ―― 立方体 11・四角柱 29・直方体 54 とおりも
+		#   正しい 展開図が あるので、動かした 先が また 正しい 展開図に なる。
+		#   実際に「正解が 2 つある」問いを 出して しまった
+		var right_n: int = ((all_nets[at] as Dictionary)["faces"] as Array).size()
 		for q in picks:
 			var row2: Dictionary = q
 			if not bool(row2.get("fake", false)):
 				continue
-			if real_sigs.has(NetDefs._signature(row2["faces"])):
-				fails.append("くずした はずが 正しい 展開図に なっている")
+			if (row2["faces"] as Array).size() == right_n:
+				fails.append("にせものの 面の 数が 正しい 展開図と 同じ(%d 枚)" % right_n)
 				break
 	scene.run_ids = []
 
