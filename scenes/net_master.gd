@@ -18,10 +18,13 @@ const RUN_LENGTH := 10         # 挑戦 10問
 
 var nets: Array = []
 var idx := -1                  # -1 = 一覧
-## 「挑戦 10問」の 出題ぶん。空なら 1 問ずつの 練習
+## 「挑戦 10問」の 出題ぶん。空なら 1 問ずつの 練習。
+## 中みは {"i": 展開図の 番号, "rev": 逆向きか}
 var run_ids: Array = []
 var run_at := 0
 var run_ok := 0
+## いまの 問いが 逆向き(立体を 見せて 展開図を えらぶ)か
+var reverse := false
 var view: NetView
 var choice_box: GridContainer
 var result_label: RubyLabel
@@ -144,16 +147,24 @@ func _run_card(quiz: bool) -> Button:
 	return btn
 
 
-## 挑戦 10問を はじめる。101 とおりから かぶらないように 10 問 えらぶ
+## 挑戦 10問を はじめる。101 とおりから かぶらないように 10 問 えらび、
+## 「展開図 → 立体」と「立体 → 展開図」を かわりばんこに 出す
 func _start_run() -> void:
 	var pool: Array = []
 	for i in nets.size():
 		pool.append(i)
 	pool.shuffle()
-	run_ids = pool.slice(0, mini(RUN_LENGTH, pool.size()))
+	run_ids = []
+	for k in mini(RUN_LENGTH, pool.size()):
+		run_ids.append({"i": int(pool[k]), "rev": k % 2 == 1})
 	run_at = 0
 	run_ok = 0
-	_build_quiz(int(run_ids[0]))
+	_open_run_item()
+
+
+func _open_run_item() -> void:
+	var item: Dictionary = run_ids[run_at]
+	_build_quiz(int(item["i"]), bool(item["rev"]))
 
 
 func _card(i: int) -> Button:
@@ -233,8 +244,11 @@ func _done_count() -> int:
 # クイズ
 # =========================================================
 
-func _build_quiz(i: int) -> void:
+## rev = false … 展開図を 見せて「どの 立体に なる?」
+## rev = true  … 立体を 見せて「この 立体の 展開図は どれ?」
+func _build_quiz(i: int, rev := false) -> void:
 	idx = i
+	reverse = rev
 	answered = false
 	_reset_root()
 	var net: Dictionary = nets[i]
@@ -250,14 +264,18 @@ func _build_quiz(i: int) -> void:
 	q.ruby_size = 12
 	q.color = Color(0.92, 0.96, 1.0)
 	q.custom_minimum_size = Vector2(0, 40)
-	q.set_ruby_text("この 展開図は どの 立体に なる?", true)
+	q.set_ruby_text("この 立体の 展開図は どれ?" if rev
+		else "この 展開図は どの 立体に なる?", true)
 	root.add_child(q)
 
 	view = NetView.new()
 	view.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	view.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	root.add_child(view)
-	view.show_net(net)
+	if rev:
+		view.show_solid(net)
+	else:
+		view.show_net(net)
 	view.folded.connect(_on_folded)
 
 	result_label = RubyLabel.new()
@@ -272,8 +290,13 @@ func _build_quiz(i: int) -> void:
 	choice_box.add_theme_constant_override("h_separation", 10)
 	choice_box.add_theme_constant_override("v_separation", 10)
 	root.add_child(choice_box)
-	for name_str in _choices(net):
-		choice_box.add_child(_choice_button(String(name_str), String(net["solid"])))
+	if rev:
+		for cand in _net_choices(i):
+			choice_box.add_child(_net_choice_button(cand as Dictionary,
+				String(net["id"])))
+	else:
+		for name_str in _choices(net):
+			choice_box.add_child(_choice_button(String(name_str), String(net["solid"])))
 
 	next_btn = Button.new()
 	next_btn.text = "つぎへ"
@@ -287,7 +310,7 @@ func _build_quiz(i: int) -> void:
 		if not run_ids.is_empty():
 			run_at += 1
 			if run_at < run_ids.size():
-				_build_quiz(int(run_ids[run_at]))
+				_open_run_item()
 			else:
 				_build_run_result()
 		elif idx + 1 < nets.size() and not GameState.net_needs_purchase(idx + 1):
@@ -315,11 +338,58 @@ func _choices(net: Dictionary) -> Array:
 	return out
 
 
+## 逆向きの 選択肢。正しい 展開図 1 つと、**ちがう 立体の** 展開図 3 つ。
+## ★ 同じ 立体の べつの 展開図を まぜては いけない ―― 立方体の 展開図は
+##   11 とおり あるので、どれも 正解に なって しまう
+func _net_choices(correct_i: int) -> Array:
+	var correct: Dictionary = nets[correct_i]
+	var by_solid := {}
+	for n in nets:
+		var row: Dictionary = n
+		if String(row["solid"]) == String(correct["solid"]):
+			continue
+		var key := String(row["solid"])
+		if not by_solid.has(key):
+			by_solid[key] = []
+		(by_solid[key] as Array).append(row)
+	var names: Array = by_solid.keys()
+	names.shuffle()
+	var out: Array = [correct]
+	for key in names:
+		if out.size() >= 4:
+			break
+		var group: Array = by_solid[key]
+		out.append(group[randi() % group.size()])
+	out.shuffle()
+	return out
+
+
+func _net_choice_button(net: Dictionary, correct_id: String) -> Button:
+	var btn := Button.new()
+	btn.custom_minimum_size = Vector2(0, 150)
+	btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	btn.focus_mode = Control.FOCUS_NONE
+	btn.set_meta("key", String(net["id"]))
+	GameState.style_button(btn, Color(0.26, 0.36, 0.54))
+	var mini := NetView.new()
+	mini.set_anchors_preset(Control.PRESET_FULL_RECT)
+	mini.offset_left = 8.0
+	mini.offset_top = 8.0
+	mini.offset_right = -8.0
+	mini.offset_bottom = -8.0
+	btn.add_child(mini)
+	mini.show_net(net, true)
+	btn.pressed.connect(func() -> void:
+		_answer(btn, String(net["id"]), correct_id))
+	return btn
+
+
 func _choice_button(name_str: String, correct: String) -> Button:
 	var btn := Button.new()
 	btn.custom_minimum_size = Vector2(0, 82)
 	btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	btn.focus_mode = Control.FOCUS_NONE
+	btn.set_meta("key", name_str)
 	GameState.style_button(btn, Color(0.26, 0.36, 0.54))
 	# ★ CenterContainer に 入れない。RubyLabel は 最小の 横はばを 出さないので、
 	#   入れると はばが 0 に なり「四角錐」が「四 / 角錐」と 1 文字ずつ 折れる。
@@ -350,7 +420,7 @@ func _answer(btn: Button, picked: String, correct: String) -> void:
 	#   2 回目の 答えは answered で 止めている
 	for c in choice_box.get_children():
 		var b := c as Button
-		if _text_of(b) == correct:
+		if _key_of(b) == correct:
 			GameState.style_button(b, Color(0.24, 0.55, 0.36))
 		elif b == btn:
 			GameState.style_button(b, Color(0.58, 0.28, 0.32))
@@ -360,13 +430,25 @@ func _answer(btn: Button, picked: String, correct: String) -> void:
 	if ok:
 		run_ok += 1
 		GameState.record_net_clear(String(net["id"]))
+	var name_str := String(net["solid"])
+	if ok:
 		result_label.set_ruby_text("せいかい! %s。 立ち上がる ところを 見てみよう。"
-			% correct, true)
+			% name_str, true)
 	else:
 		# ★ まちがえても 折り上がりを 見せる。ここが いちばん 分かる ところ
 		result_label.set_ruby_text("ざんねん。正しくは %s。 立ち上がる ところを 見てみよう。"
-			% correct, true)
+			% (name_str if not reverse else "この 中の 1 つ"), true)
+	# 逆向きの ときは 立体を 見せていたので、正しい 展開図に もどしてから 立ち上げる
+	if reverse:
+		view.show_net(net)
 	view.fold_up()
+
+
+## その ボタンが あらわす もの(前向き = 立体の 名まえ / 逆向き = 展開図の id)
+func _key_of(btn: Button) -> String:
+	if btn.has_meta("key"):
+		return String(btn.get_meta("key"))
+	return _text_of(btn)
 
 
 ## ボタンに 出ている 名まえ(ふりがな を のぞいた ぶん)

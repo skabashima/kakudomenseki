@@ -69,6 +69,19 @@ func fold_up() -> void:
 	set_process(true)
 
 
+## 立体の すがたで 見せる(展開図は 出さない)。
+## 「この 立体の 展開図は どれ?」の 問いで つかう
+func show_solid(n: Dictionary, turn := true) -> void:
+	show_net(n)
+	t = 1.0
+	# ★ 回さないまま だと 面を まっすぐ 正面から 見る ことが あり、
+	#   平べったい 絵に なって 立体に 見えない。はじめから 角を 手前に する
+	spin = 0.9
+	_spinning = turn
+	set_process(turn)
+	queue_redraw()
+
+
 ## 展開図に もどす
 func unfold() -> void:
 	t = 0.0
@@ -205,7 +218,11 @@ func _draw() -> void:
 		if round_net:
 			col = CAP_COL if caps.has(idx) else ROUND_COL
 		# 立体に なるほど 面ごとの 明るさに 差を つける(向きが 分かる)
-		col = col.lightened(_shade(faces[idx]) * (0.22 if soft else 0.35) * t)
+		# ★ 「上を 向いているか」だけで 決めると、横を 向いた 面が どれも 同じ
+		#   明るさに なって、三角柱などが 平べったい 絵に 見える。
+		#   ななめ 上からの 光に 対する 向きで 決める
+		var k := lerpf(1.0, 0.58 + 0.42 * _shade(faces[idx]), t)
+		col = Color(col.r * k, col.g * k, col.b * k, col.a)
 		draw_colored_polygon(poly, col)
 		if not soft:
 			var line := PackedVector2Array(poly)
@@ -226,6 +243,20 @@ func _draw() -> void:
 	if round_net:
 		# 側面の 分け目は 描いていないので、外がわの わくを なぞって 輪かくを 出す
 		_draw_outline(faces, e, scale, mid, center)
+	elif t > 0.85:
+		# ★ 立体に なりきると、見えている 面が 2 つだけの 向きで
+		#   平べったい 絵に 見える ことが ある。見取り図と 同じように、
+		#   かくれた 辺を うすく 重ねて 奥ゆきを 出す
+		for f in faces:
+			var line2 := PackedVector2Array()
+			for p2 in f:
+				var q2 := _screen(_turned(p2 as Vector3, e), t, 0.0)
+				line2.append(center + Vector2((q2.x - mid.x) * scale,
+					-(q2.y - mid.y) * scale))
+			if line2.size() < 3:
+				continue
+			line2.append(line2[0])
+			draw_polyline(line2, Color(1, 1, 1, 0.22 * (t - 0.85) / 0.15), 2.0, true)
 
 
 ## まわして 見せる ぶん(立体に なってから)
@@ -235,17 +266,20 @@ func _turned(p: Vector3, e: float) -> Vector3:
 	return _spun(p, spin * e, _spin_pivot)
 
 
-## 上を 向いている 面ほど 明るく
+## ななめ 上からの 光。面の 向きで 明るさを 決める(0〜1)
+const LIGHT := Vector3(-0.32, -0.52, 0.79)
+
+
 func _shade(pts: Array) -> float:
 	if pts.size() < 3:
-		return 0.0
+		return 0.6
 	var a: Vector3 = pts[0]
 	var b: Vector3 = pts[1]
 	var c: Vector3 = pts[2]
 	var n := (b - a).cross(c - a)
 	if n.length() < 0.0001:
-		return 0.0
-	return absf(n.normalized().z)
+		return 0.6
+	return absf(n.normalized().dot(LIGHT.normalized()))
 
 
 ## 円柱・円錐の わく。面が 24 枚 あって 分けた 線は うすくしてあるので、

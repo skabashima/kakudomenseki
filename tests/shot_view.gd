@@ -30,11 +30,13 @@ func _ready() -> void:
 	var tri := 0
 	var netq := -1                 # 展開図マスターの 何番めの クイズか
 	var hold := false              # できた ところで 止める(つぎへ 進めない)
-	var netfold := false           # 答えて 立ち上がった ところまで 進めるか
+	var netfold := false           # 答えて 立ち上がった ところまで 進める
+	var netrev := false            # 逆向き(立体を 見せて 展開図を えらぶ)か
 	for arg in OS.get_cmdline_user_args():
 		if arg.begins_with("--scene="): scene = arg.substr(8)
 		if arg.begins_with("--netq="): netq = int(arg.substr(7))
 		if arg == "--netfold": netfold = true
+		if arg == "--netrev": netrev = true
 		if arg == "--hold": hold = true
 		if arg.begins_with("--out="): out = arg.substr(6)
 		if arg.begins_with("--unit="): GameState.kid_unit = arg.substr(7)
@@ -64,7 +66,7 @@ func _ready() -> void:
 		await get_tree().process_frame
 	if netq >= 0:
 		# 展開図マスターの クイズ。--netfold で 立ち上がった ところまで 進める
-		inst._build_quiz(netq)
+		inst._build_quiz(netq, netrev)
 		await get_tree().process_frame
 		if netfold:
 			var net: Dictionary = inst.nets[netq]

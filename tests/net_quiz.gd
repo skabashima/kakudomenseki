@@ -84,10 +84,31 @@ func _ready() -> void:
 	if scene.run_ids.size() != 10:
 		fails.append("挑戦は 10 問の はず(いまは %d 問)" % scene.run_ids.size())
 	var seen_ids := {}
+	var rev_n := 0
 	for v in scene.run_ids:
-		seen_ids[int(v)] = true
+		var item: Dictionary = v
+		seen_ids[int(item["i"])] = true
+		if bool(item["rev"]):
+			rev_n += 1
 	if seen_ids.size() != scene.run_ids.size():
 		fails.append("挑戦の 出題が かぶっている")
+	# 「展開図 → 立体」と「立体 → 展開図」を かわりばんこに 出す
+	if rev_n != 5:
+		fails.append("逆向きの 問いが %d 問(5 問の はず)" % rev_n)
+
+	# 逆向きの 選択肢: 正しい 展開図 1 つと、ちがう 立体の 展開図 3 つ。
+	# ★ 同じ 立体の べつの 展開図を まぜると 正解が いくつも できて しまう
+	for t in 12:
+		var picks: Array = scene._net_choices(t * 7 % NetDefs.all().size())
+		if picks.size() != 4:
+			fails.append("逆向きの 選択肢が %d こ" % picks.size())
+			break
+		var solids := {}
+		for q in picks:
+			solids[String((q as Dictionary)["solid"])] = true
+		if solids.size() != 4:
+			fails.append("逆向きの 選択肢に 同じ 立体が まざっている(正解が いくつも できる)")
+			break
 	scene.run_ids = []
 
 	# 展開図の 応用(10 問)― 出どころの 組み合わせが ぜんぶ 問題に なるか
