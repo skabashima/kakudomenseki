@@ -539,6 +539,160 @@ static func _octa3d(r: float) -> Array:
 
 
 # =========================================================
+# その 並べ方は ほんとうに 組み立てられるか
+#
+# 面の 数を 変えずに 場所だけ ずらした ものは、見た だけでは
+# 組み立てられるか 分からない(立方体の 展開図は 11、四角柱は 29、
+# 直方体は 54 とおり ある)。ここで **立体の ほうと 突き合わせて** 決める。
+#
+# やり方: 並べ方の 面を 立体の 面に 1 対 1 で 対応づけられるかを 探す。
+#   ・辺の 長さの ならびが 合う 面どうしを 対応させる
+#   ・となり合う 2 面が 共有する 辺が、立体でも 同じ 辺で つながっている
+# ぜんぶ 矛盾なく つけられたら、それは その 立体の 展開図。
+# =========================================================
+
+## 2D の 並べ方 faces2 は、立体 key の 展開図か
+static func folds_into(faces2: Array, key: String) -> bool:
+	var solid := _solid(key)
+	if solid.is_empty() or faces2.size() != solid.size():
+		return false
+	var links := _net_links(faces2)
+	if links.size() != faces2.size() - 1:
+		return false                      # 木に なっていない(輪や 離れが ある)
+	# 台の 面を どの 面に 当てるか、向きも 変えて ためす
+	for si in solid.size():
+		for turn in _fits(faces2[0], solid[si]):
+			var used := {}
+			var map := {}
+			map[0] = {"face": si, "off": int(turn[0]), "dir": int(turn[1])}
+			used[si] = true
+			if _spread(faces2, solid, links, map, used):
+				return true
+	return false
+
+
+## となり合う 面の 組 [i, j, i の 辺の 番号, j の 辺の 番号]
+static func _net_links(faces2: Array) -> Array:
+	var out: Array = []
+	for i in faces2.size():
+		var f: Array = faces2[i]
+		for t in f.size():
+			var a: Vector2 = f[t]
+			var b: Vector2 = f[(t + 1) % f.size()]
+			for j in range(i + 1, faces2.size()):
+				var g: Array = faces2[j]
+				for u in g.size():
+					var c: Vector2 = g[u]
+					var d: Vector2 = g[(u + 1) % g.size()]
+					if (a.distance_to(d) < 0.02 and b.distance_to(c) < 0.02) \
+							or (a.distance_to(c) < 0.02 and b.distance_to(d) < 0.02):
+						out.append([i, j, t, u])
+	return out
+
+
+## 2D の 面 f と 立体の 面 g の 合わせ方 [ずらし, 向き] を ぜんぶ
+static func _fits(f: Array, g: Array) -> Array:
+	var out: Array = []
+	var m := f.size()
+	if g.size() != m:
+		return out
+	var sf: Array = []
+	for t in m:
+		sf.append((f[(t + 1) % m] as Vector2).distance_to(f[t] as Vector2))
+	var sg: Array = []
+	for u in m:
+		sg.append((g[(u + 1) % m] as Vector3).distance_to(g[u] as Vector3))
+	for off in m:
+		for dir in [1, -1]:
+			var ok := true
+			for t in m:
+				var u := posmod(off + dir * t, m) if dir > 0 else posmod(off - t - 1, m)
+				if absf(float(sf[t]) - float(sg[u])) > 0.03:
+					ok = false
+					break
+			if ok:
+				out.append([off, dir])
+	return out
+
+
+## 台から となりへ 対応を 広げる。1 つでも 合わなければ その 当て方は だめ
+static func _spread(faces2: Array, solid: Array, links: Array, map: Dictionary,
+		used: Dictionary) -> bool:
+	var moved := true
+	while moved:
+		moved = false
+		for link in links:
+			var i: int = int(link[0])
+			var j: int = int(link[1])
+			var from := i
+			var to := j
+			var e_from: int = int(link[2])
+			var e_to: int = int(link[3])
+			if map.has(j) and not map.has(i):
+				from = j
+				to = i
+				e_from = int(link[3])
+				e_to = int(link[2])
+			elif not map.has(i):
+				continue
+			if map.has(to):
+				continue
+			# 立体の 側で、その 辺を 共有する 相手の 面を さがす
+			var a3 := _mapped(solid, map[from], faces2[from].size(), e_from, false)
+			var b3 := _mapped(solid, map[from], faces2[from].size(), e_from, true)
+			var found := -1
+			for k in solid.size():
+				if used.has(k):
+					continue
+				var gk: Array = solid[k]
+				# ★ 2 点を 持っている だけでは だめ。その 2 点が となり合って
+				#   いる(＝ほんとうに その 辺で つながっている)ことまで 見る
+				for w in gk.size():
+					var p1: Vector3 = gk[w]
+					var p2: Vector3 = gk[(w + 1) % gk.size()]
+					if (p1.distance_to(a3) < 0.01 and p2.distance_to(b3) < 0.01) 							or (p1.distance_to(b3) < 0.01 and p2.distance_to(a3) < 0.01):
+						found = k
+						break
+				if found >= 0:
+					break
+			if found < 0:
+				return false
+			var fit := _fit_edge(faces2[to], e_to, solid[found], a3, b3)
+			if fit.is_empty():
+				return false
+			map[to] = {"face": found, "off": int(fit[0]), "dir": int(fit[1])}
+			used[found] = true
+			moved = true
+	return map.size() == faces2.size()
+
+
+## 対応づけた 面の、辺 e の はし(second = false なら 手前、true なら 先)の 3D の 点
+static func _mapped(solid: Array, m: Dictionary, sides: int, e: int,
+		second: bool) -> Vector3:
+	var g: Array = solid[int(m["face"])]
+	var off := int(m["off"])
+	var dir := int(m["dir"])
+	var t := e + (1 if second else 0)
+	var u := posmod(off + dir * t, sides) if dir > 0 else posmod(off - t, sides)
+	return g[u]
+
+
+## 面 f の 辺 e が 立体の 面 g の 辺(a3-b3)に 重なる 合わせ方
+static func _fit_edge(f: Array, e: int, g: Array, a3: Vector3, b3: Vector3) -> Array:
+	for turn in _fits(f, g):
+		var m := {"face": 0, "off": int(turn[0]), "dir": int(turn[1])}
+		var ga := _mapped([g], m, f.size(), e, false)
+		var gb := _mapped([g], m, f.size(), e, true)
+		# ★ 立体の 面の 向き(表・裏)は そろえて 作っていないので、
+		#   辺の はしは 入れかわる ことも、そのままの ことも ある。
+		#   どちらでも よい ―― ここを 片方に 決めうちして いたので、
+		#   ほんものの 展開図を 53 こも「組み立てられない」と まちがえた
+		if (ga.distance_to(b3) < 0.01 and gb.distance_to(a3) < 0.01) 				or (ga.distance_to(a3) < 0.01 and gb.distance_to(b3) < 0.01):
+			return turn
+	return []
+
+
+# =========================================================
 # にせの 展開図 ― 組み立てられない ものを 作る
 #
 # 「この 立体の 展開図は どれ?」で つかう。まるで ちがう 立体の 展開図を
@@ -566,23 +720,20 @@ static func fakes(net: Dictionary, want: int, rng: RandomNumberGenerator) -> Arr
 	var tries := 0
 	while out.size() < want and tries < 260:
 		tries += 1
-		# ★ 面の 数を かならず 変える。
-		#   「面の 場所だけ 変える」やり方も 作って みたが、それが ほんとうに
-		#   組み立てられない かどうかを 確かめきれなかった ―― 立方体は 11、
-		#   四角柱は 29、直方体は 54 とおりも 正しい 展開図が あるので、
-		#   動かした 先が また 正しい 展開図に なる。実際に「正解が 2 つある」
-		#   問いを 出して しまった。
-		#   面が 1 枚 多い / 足りない 展開図は、どんな 置き方でも その 立体に
-		#   ならない。ここは 数える だけで 確かめられる
+		# 3 つの くずし方を 順に つかう。
+		#   ・面を 1 枚 ふやす / へらす … 面の 数が ちがうので 組み立てられない
+		#   ・面の 場所を かえる      … 数は 同じ。ひっかけに なるが、
+		#     動かした 先が また 正しい 展開図に なる ことが あるので、
+		#     ★ folds_into で「ほんとうに 組み立てられない」ことを 確かめる
 		var made: Array = []
-		if tries % 3 == 1:
-			made = _fake_drop(faces, rng)        # 面を 1 枚 へらす
-		else:
-			made = _fake_add(faces, rng)         # 面を 1 枚 ふやす
+		match tries % 3:
+			0: made = _fake_add(faces, rng)
+			1: made = _fake_drop(faces, rng)
+			_: made = _fake_move(faces, rng)
 		if made.is_empty() or _overlaps(made):
 			continue
-		if made.size() == faces.size():
-			continue                              # 面の 数が 同じ ものは 出さない
+		if made.size() == faces.size() and folds_into(made, _key_of(net)):
+			continue                              # 組み立てられて しまう ものは 出さない
 		var made_key := shape_key(made)
 		var dup := false
 		for e in seen:
@@ -766,6 +917,23 @@ static func _fake_drop(faces: Array, rng: RandomNumberGenerator) -> Array:
 		if i != drop:
 			out.append((faces[i] as Array).duplicate())
 	return out
+
+
+## 面の 場所を かえる。はしの 面を 1 枚 外して、べつの あいている 辺に つける
+static func _fake_move(faces: Array, rng: RandomNumberGenerator) -> Array:
+	var less := _fake_drop(faces, rng)
+	if less.is_empty():
+		return []
+	return _fake_add(less, rng)
+
+
+## 展開図の id から 立体の 名まえ(cube_3 → cube)
+static func _key_of(net: Dictionary) -> String:
+	var key := String(net["id"])
+	var cut := key.rfind("_")
+	if cut > 0:
+		key = key.substr(0, cut)
+	return key
 
 
 ## ほかの 面と 共有していない 辺 [面の番号, 点 a, 点 b]

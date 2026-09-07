@@ -142,18 +142,21 @@ func _ready() -> void:
 		if sigs.size() != 4:
 			fails.append("同じ 形の 選択肢が まざっている")
 			break
-		# ★ にせものは かならず 面の 数が ちがう こと。
-		#   面の 数が 同じ ものは「ほんとうに 組み立てられないか」を
-		#   確かめきれない ―― 立方体 11・四角柱 29・直方体 54 とおりも
-		#   正しい 展開図が あるので、動かした 先が また 正しい 展開図に なる。
-		#   実際に「正解が 2 つある」問いを 出して しまった
-		var right_n: int = ((all_nets[at] as Dictionary)["faces"] as Array).size()
+		# ★ にせものは どれも「組み立てられない」こと。
+		#   面の 数が 同じ ひっかけも 出すので、数では 見分けられない。
+		#   folds_into で 立体の ほうと 突き合わせて 確かめる ――
+		#   ここが 当たって いないと「正解が 2 つある」問いに なる
+		#   (実際に 2 度 出して しまった)
+		var key := String((all_nets[at] as Dictionary)["id"])
+		var cut := key.rfind("_")
+		if cut > 0:
+			key = key.substr(0, cut)
 		for q in picks:
 			var row2: Dictionary = q
 			if not bool(row2.get("fake", false)):
 				continue
-			if (row2["faces"] as Array).size() == right_n:
-				fails.append("にせものの 面の 数が 正しい 展開図と 同じ(%d 枚)" % right_n)
+			if NetDefs.folds_into(row2["faces"], key):
+				fails.append("にせものが 組み立てられて しまう(正解が 2 つに なる)")
 				break
 	scene.run_ids = []
 

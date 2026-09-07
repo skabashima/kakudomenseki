@@ -26,6 +26,8 @@ func _init() -> void:
 	for name in by_solid:
 		parts.append("%s %d" % [name, int(by_solid[name])])
 	print("展開図 %d とおり ― %s" % [NetDefs.all().size(), " / ".join(parts)])
+	_check_folds_into()
+
 	if fails.is_empty():
 		print("NET CHECK OK: %d とおり ぜんぶ 立体に 閉じる" % NetDefs.all().size())
 		quit(0)
@@ -34,6 +36,50 @@ func _init() -> void:
 			print("FAIL: " + str(f))
 		print("NET CHECK FAILED: %d 件" % fails.size())
 		quit(1)
+
+
+## ★ 「その 並べ方は 組み立てられるか」の 見分けを、両方向から 見る。
+##
+## クイズの ひっかけ(面の 数は 同じで 場所が ちがう もの)は、この 見分けが
+## 当たって いないと **正解が 2 つある 問い**に なる。実際に 2 度 出して しまった。
+##   1. ほんものの 展開図は、動かしても 回しても 裏返しても「組み立てられる」
+##   2. 面を 1 枚 ふやした ものは かならず「組み立てられない」
+func _check_folds_into() -> void:
+	var real_ng := 0
+	var fake_ng := 0
+	var n := 0
+	for key in ["cube", "prism3r", "prism4", "box_flat", "pyr4", "octa", "tetra"]:
+		var faces3: Array = NetDefs._solid(key)
+		var adj: Array = NetDefs._adjacency(faces3)
+		var rng := RandomNumberGenerator.new()
+		rng.seed = 2024
+		for i in 12:
+			var net: Dictionary = NetDefs._unfold(faces3, NetDefs._tree(adj, rng))
+			if net.is_empty():
+				continue
+			n += 1
+			var moved: Array = []
+			var ang := rng.randf_range(0.0, TAU)
+			var off := Vector2(rng.randf_range(-7.0, 7.0), rng.randf_range(-7.0, 7.0))
+			var flip: bool = rng.randf() < 0.5
+			for f in net["faces"]:
+				var g: Array = []
+				for p in f:
+					var v: Vector2 = p
+					if flip:
+						v = Vector2(-v.x, v.y)
+					g.append(v.rotated(ang) + off)
+				moved.append(g)
+			if not NetDefs.folds_into(moved, key):
+				real_ng += 1
+			var big: Array = NetDefs._fake_add(net["faces"], rng)
+			if not big.is_empty() and NetDefs.folds_into(big, key):
+				fake_ng += 1
+	if real_ng > 0:
+		fails.append("ほんものの 展開図 %d こを「組み立てられない」と まちがえた" % real_ng)
+	if fake_ng > 0:
+		fails.append("面が 1 枚 多い ものを「組み立てられる」と まちがえた(%d こ)" % fake_ng)
+	print("組み立て判定: %d こ ためして まちがい %d こ" % [n, real_ng + fake_ng])
 
 
 func _check(net: Dictionary) -> void:
