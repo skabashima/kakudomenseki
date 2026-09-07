@@ -60,7 +60,7 @@ func _stage_based() -> bool:
 		or GameState.mode == "net"
 
 
-## 展開図の挑戦(10 問)。展開図につながる問題をやさしい順に出す。
+## 展開図の応用(10 問)。展開図につながる問題をやさしい順に出す。
 ## 1 問ごとに [ステージ, tier] の候補から 1 つ選ぶので、やるたびに中身が変わる。
 ##   e23 tier  0-1 サイコロの展開図 / 2-3 転がして上の面 / 4-5 直方体の展開図 /
 ##             6 円柱の展開図 / 7-8 角柱の展開図 / 9 正多面体の展開図
@@ -94,8 +94,12 @@ func _ready() -> void:
 	rng.randomize()
 	course = ProblemGen.course_by_id(GameState.current_course)
 	if GameState.mode == "net":
-		# 展開図の挑戦はステージに ひもづかない(問ごとに 出どころが 変わる)
-		stage = {"id": "e23", "title": "展開図の 挑戦"}
+		# 買った人だけ(直接 遷移してきた ときの 保険)
+		if not GameState.net_runs_open():
+			GameState.change_scene("res://scenes/store.tscn")
+			return
+		# 展開図の応用はステージに ひもづかない(問ごとに 出どころが 変わる)
+		stage = {"id": "e23", "title": "展開図の 応用"}
 		stage_id = "e23"
 	elif _stage_based():
 		# 未購入の有料ステージには入れない(直接遷移してきたときの保険)
@@ -163,7 +167,7 @@ func _build_ui() -> void:
 		"gauntlet":
 			title_lbl.text = "挑戦: " + String(stage["title"])
 		"net":
-			title_lbl.text = "展開図の 挑戦"
+			title_lbl.text = "展開図の 応用 10問"
 		_:
 			title_lbl.text = String(stage["title"])
 	head.add_child(title_lbl)
@@ -330,7 +334,7 @@ func _next_question(first := false) -> void:
 		sid = stage_id
 		tier = q_index
 	elif GameState.mode == "net":
-		# 展開図の挑戦: 問ごとに 出どころが 変わる(ステージを またぐ)
+		# 展開図の応用: 問ごとに 出どころが 変わる(ステージを またぐ)
 		var picks: Array = NET_LADDER[mini(q_index, NET_LADDER.size() - 1)]
 		var pick: Array = picks[rng.randi_range(0, picks.size() - 1)]
 		sid = String(pick[0])
@@ -798,7 +802,7 @@ func _fail_stage() -> void:
 		GameState.change_scene(_back_scene()))
 
 
-## もどる先。展開図の挑戦は 展開図マスターへ もどる
+## もどる先。展開図の応用は 展開図マスターへ もどる
 func _back_scene() -> String:
 	if GameState.mode == "net":
 		return "res://scenes/net_master.tscn"
@@ -811,7 +815,7 @@ func _back_name() -> String:
 	return "ステージ一覧へ"
 
 
-## 展開図の挑戦(3 問)クリア
+## 展開図の応用(10 問)クリア
 func _finish_net() -> void:
 	GameState.play_sfx("clear")
 	GameState.bump_stat("net_challenge")
@@ -821,7 +825,7 @@ func _finish_net() -> void:
 	var crown := Icons.crown(72.0, Color(1.0, 0.84, 0.3))
 	crown.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	v.add_child(crown)
-	_add_label(v, "展開図の 挑戦クリア!", 48, Color(1.0, 0.84, 0.3))
+	_add_label(v, "展開図の 応用クリア!", 48, Color(1.0, 0.84, 0.3))
 	_add_label(v, "%d 問れんぞく" % _q_total(), 34, Color.WHITE)
 	_add_label(v, "スコア %d点(自己ベスト %d点)" % [stage_score,
 		GameState.net_challenge_best], 26, Color.WHITE)

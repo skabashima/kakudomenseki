@@ -70,10 +70,30 @@ func _ready() -> void:
 	if not GameState.net_clear.has(String(nets[1]["id"])):
 		fails.append("当てたのに 記録されていない")
 
-	# 展開図の 挑戦(3 問)― 出どころの 組み合わせが ぜんぶ 問題に なるか
+	# 挑戦 10問 / 応用 10問 は 買った 人だけ
+	if GameState.net_runs_open():
+		fails.append("買っていないのに 挑戦・応用が 開いている")
+	GameState.premium = true
+	if not GameState.net_runs_open():
+		fails.append("買ったのに 挑戦・応用が 開かない")
+	GameState.premium = false
+
+	# 挑戦 10問: 101 とおりから かぶらずに 10 問 えらべるか
+	scene._start_run()
+	await get_tree().process_frame
+	if scene.run_ids.size() != 10:
+		fails.append("挑戦は 10 問の はず(いまは %d 問)" % scene.run_ids.size())
+	var seen_ids := {}
+	for v in scene.run_ids:
+		seen_ids[int(v)] = true
+	if seen_ids.size() != scene.run_ids.size():
+		fails.append("挑戦の 出題が かぶっている")
+	scene.run_ids = []
+
+	# 展開図の 応用(10 問)― 出どころの 組み合わせが ぜんぶ 問題に なるか
 	var ladder: Array = load("res://scenes/problem.gd").NET_LADDER
 	if ladder.size() != 10:
-		fails.append("挑戦は 10 問の はず(いまは %d 問)" % ladder.size())
+		fails.append("応用は 10 問の はず(いまは %d 問)" % ladder.size())
 	for step in ladder:
 		for pick in step:
 			var sid := String((pick as Array)[0])
@@ -89,7 +109,7 @@ func _ready() -> void:
 					fails.append("挑戦の %s tier %d の 問題文が 空" % [sid, tier])
 
 	if fails.is_empty():
-		print("NET QUIZ OK: 当たっても はずれても 立ち上がる / 挑戦 10 問も 出る")
+		print("NET QUIZ OK: 当たっても はずれても 立ち上がる / 挑戦・応用の 10 問も 出る")
 		get_tree().quit(0)
 	else:
 		for f in fails:

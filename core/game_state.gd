@@ -184,11 +184,31 @@ func record_kid_clear(id: String) -> bool:
 ## 展開図マスターで 当てた 展開図の id
 var net_clear: Dictionary = {}
 
-## 展開図の 挑戦(3 問)の 自己ベスト スコア
+## 展開図マスターの「挑戦 10問」(どの 立体に なるか)の 自己ベスト 正解数
+var net_quiz_best: int = 0
+
+## 展開図マスターの「応用 10問」(数を 答える 問題)の 自己ベスト スコア
 var net_challenge_best: int = 0
 
 
-## 展開図の 挑戦を クリアした。自己ベストを こえたら true
+## 挑戦・応用の 2 つは 買った 人だけ。
+## ★ 1 問ずつの 練習(はじめの 8 問)は 買わなくても できる ―
+##   ここを 閉じると 何が 開くのかが 伝わらない
+func net_runs_open() -> bool:
+	return premium or debug_unlock_all
+
+
+## 挑戦 10問(どの 立体に なるか)を 通した。自己ベストを こえたら true
+func record_net_quiz(correct: int) -> bool:
+	if correct <= net_quiz_best:
+		save_game()
+		return false
+	net_quiz_best = correct
+	save_game()
+	return true
+
+
+## 応用 10問を クリアした。自己ベストを こえたら true
 func record_net_challenge(score: int) -> bool:
 	if score <= net_challenge_best:
 		save_game()
@@ -715,6 +735,7 @@ func save_game() -> void:
 		"kid_clear": kid_clear,
 		"net_clear": net_clear,
 		"net_challenge_best": net_challenge_best,
+		"net_quiz_best": net_quiz_best,
 		"island_clear": island_clear,
 		"island_star": island_star,
 		"island_range": island_range,
@@ -753,6 +774,7 @@ func load_game() -> void:
 	kid_clear = data.get("kid_clear", {})
 	net_clear = data.get("net_clear", {})
 	net_challenge_best = int(data.get("net_challenge_best", 0))
+	net_quiz_best = int(data.get("net_quiz_best", 0))
 	island_clear = data.get("island_clear", {})
 	island_star = data.get("island_star", {})
 	island_range = String(data.get("island_range", "all"))
