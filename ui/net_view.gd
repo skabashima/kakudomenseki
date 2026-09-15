@@ -201,21 +201,126 @@ func _draw() -> void:
 		order.append({"i": i, "d": d / float(maxi(1, pts.size()))})
 	order.sort_custom(func(a, b): return float(a["d"]) > float(b["d"]))
 
+	if pips.is_empty():
+		_draw_batched(faces, order, e, scale, mid, center)
+	else:
+		_draw_one_by_one(faces, order, e, scale, mid, center)
+
+
+## 見本 1 まいを **1 回の 命令**で 描く。
+##
+## ★ 面ごとに 「塗り(draw_colored_polygon)」と「ふち(draw_polyline)」を
+##   かわりばんこに 出すと、Godot 4 では それぞれが 別の 描画コールに なる。
+##   展開図マスターの 一覧は 1 コマ 363〜577 コール(ステージ一覧は 134)で、
+##   スマホの GPU は この 多さに 弱く、Android で スクロールが カクついた。
+##   塗りも ふちも ぜんぶ 三角形に して ひとつの 配列に つめ、
+##   canvas_item_add_triangle_array で まとめて 出す。
+##   奥から 順に つめるので、手前の 面が 奥を かくす 見え方は 変わらない。
+func _draw_batched(faces: Array, order: Array, e: float, scale: float, mid: Vector2,
+		center: Vector2) -> void:
+	var pts := PackedVector2Array()
+	var cols := PackedColorArray()
+	var ids := PackedInt32Array()
+	var round_net := bool(net.get("round", false))
+	var caps: Array = net.get("cap", [])
+	for row in order:
+		var idx := int(row["i"])
+		var soft := round_net and not caps.has(idx)
+		var poly := _to_screen(faces[idx], e, scale, mid, center)
+		if poly.size() < 3:
+			continue
+		var col: Color = FACE_COLS[idx % FACE_COLS.size()]
+		if round_net:
+			col = CAP_COL if caps.has(idx) else ROUND_COL
+		var k := lerpf(1.0, 0.58 + 0.42 * _shade(faces[idx]), t)
+		col = Color(col.r * k, col.g * k, col.b * k, col.a)
+		# 塗り(面は どれも 凸なので 扇形に 分ければ よい)
+		var base := pts.size()
+		for q in poly:
+			pts.append(q)
+			cols.append(col)
+		for m in range(1, poly.size() - 1):
+			ids.append(base)
+			ids.append(base + m)
+			ids.append(base + m + 1)
+		# ふち(その 面の すぐ あとに つめる ― 次の 面が かぶされば 隠れる)
+		if not soft:
+			for m in poly.size():
+				_add_seg(pts, cols, ids, poly[m], poly[(m + 1) % poly.size()], 3.0, EDGE_COL)
+	if round_net:
+		# 側面の 分け目は 描いていないので、外がわの わくを なぞって 輪かくを 出す
+		var all_pts := PackedVector2Array()
+		for f in faces:
+			all_pts.append_array(_to_screen(f, e, scale, mid, center))
+		var hull := Geometry2D.convex_hull(all_pts)
+		for m in range(hull.size() - 1):
+			_add_seg(pts, cols, ids, hull[m], hull[m + 1], 3.0, EDGE_COL)
+	elif t > 0.85:
+		# ★ 立体に なりきると、見えている 面が 2 つだけの 向きで 平べったい
+		#   絵に 見える ことが ある。見取り図と 同じように、かくれた 辺を
+		#   うすく 重ねて 奥ゆきを 出す(いちばん 上に つめる)
+		var faint := Color(1, 1, 1, 0.22 * (t - 0.85) / 0.15)
+		for f in faces:
+			var ring := _to_screen(f, e, scale, mid, center)
+			for m in ring.size():
+				_add_seg(pts, cols, ids, ring[m], ring[(m + 1) % ring.size()], 2.0, faint)
+	if ids.is_empty():
+		return
+	RenderingServer.canvas_item_add_triangle_array(get_canvas_item(), ids, pts, cols)
+
+
+## 線を 太さ w の 四角(三角形 2 つ)に して つめる。
+## はしを 太さの 半分だけ のばして、角に すきまが 空かないように する
+static func _add_seg(pts: PackedVector2Array, cols: PackedColorArray, ids: PackedInt32Array,
+		a: Vector2, b: Vector2, w: float, c: Color) -> void:
+	var d := b - a
+	var len := d.length()
+	if len < 0.001:
+		return
+	var along := d / len * (w * 0.5)
+	var side := Vector2(-along.y, along.x)
+	var a2 := a - along
+	var b2 := b + along
+	var base := pts.size()
+	pts.append(a2 + side)
+	pts.append(b2 + side)
+	pts.append(b2 - side)
+	pts.append(a2 - side)
+	for m in 4:
+		cols.append(c)
+	ids.append(base)
+	ids.append(base + 1)
+	ids.append(base + 2)
+	ids.append(base)
+	ids.append(base + 2)
+	ids.append(base + 3)
+
+
+## 面の 3D の 点を 画面の 点に
+func _to_screen(f: Array, e: float, scale: float, mid: Vector2,
+		center: Vector2) -> PackedVector2Array:
+	var out := PackedVector2Array()
+	for p in f:
+		var q := _screen(_turned(p as Vector3, e), t, 0.0)
+		out.append(center + Vector2((q.x - mid.x) * scale, -(q.y - mid.y) * scale))
+	return out
+
+
+## 面ごとに 順に 描く(さいころの 目が ある とき だけ)。
+## 目は 字なので 三角形の 配列に 入れられない。奥の 面の 目が 手前の 面に
+## 隠れる ように、面を 1 まい 描く たびに その 目を 描く 必要が ある。
+## たからのちず 19 話の 1 まいにしか 出ないので、描画コールは 問題に ならない
+func _draw_one_by_one(faces: Array, order: Array, e: float, scale: float, mid: Vector2,
+		center: Vector2) -> void:
 	var round_net := bool(net.get("round", false))
 	var caps: Array = net.get("cap", [])
 	for row in order:
 		var idx := int(row["i"])
 		# まるい 立体の 側面だけ 線を 描かない。ふた(円)は ふつうに 描く
 		var soft := round_net and not caps.has(idx)
-		var poly := PackedVector2Array()
-		for p in faces[idx]:
-			var q := _screen(_turned(p as Vector3, e), t, 0.0)
-			poly.append(center + Vector2((q.x - mid.x) * scale, -(q.y - mid.y) * scale))
+		var poly := _to_screen(faces[idx], e, scale, mid, center)
 		if poly.size() < 3:
 			continue
-		# ★ 円柱・円錐は 24 に 分けた 角柱・角錐として 折っている。
-		#   面ごとに 色を 変えると しま模様に 見えて 曲面に ならないので、
-		#   まるい ものは 1 色で 塗り、分け目の 線も 描かない
 		var col: Color = FACE_COLS[idx % FACE_COLS.size()]
 		if round_net:
 			col = CAP_COL if caps.has(idx) else ROUND_COL
@@ -243,18 +348,10 @@ func _draw() -> void:
 			draw_string(font, mid_p + Vector2(-w * 0.5, 11), txt,
 				HORIZONTAL_ALIGNMENT_LEFT, -1, 30, Color(0.12, 0.16, 0.22))
 	if round_net:
-		# 側面の 分け目は 描いていないので、外がわの わくを なぞって 輪かくを 出す
 		_draw_outline(faces, e, scale, mid, center)
 	elif t > 0.85:
-		# ★ 立体に なりきると、見えている 面が 2 つだけの 向きで
-		#   平べったい 絵に 見える ことが ある。見取り図と 同じように、
-		#   かくれた 辺を うすく 重ねて 奥ゆきを 出す
 		for f in faces:
-			var line2 := PackedVector2Array()
-			for p2 in f:
-				var q2 := _screen(_turned(p2 as Vector3, e), t, 0.0)
-				line2.append(center + Vector2((q2.x - mid.x) * scale,
-					-(q2.y - mid.y) * scale))
+			var line2 := _to_screen(f, e, scale, mid, center)
 			if line2.size() < 3:
 				continue
 			line2.append(line2[0])

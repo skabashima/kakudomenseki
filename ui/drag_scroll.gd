@@ -43,6 +43,8 @@ func _process(delta: float) -> void:
 		return
 	scroll.scroll_vertical = int(round(scroll.scroll_vertical - _velocity * delta))
 	_velocity *= FRICTION
+	# 慣性で 流れている あいだも ふつうに 描く(下の _input の ★ を 参照)
+	GameState.wake()
 
 
 func _input(event: InputEvent) -> void:
@@ -98,6 +100,12 @@ func _input(event: InputEvent) -> void:
 	_scrolled = true
 	scroll.scroll_vertical = int(round(scroll.scroll_vertical - dy))
 	_velocity = dy * 12.0
+	# ★ なぞっている あいだは 低消費モードを 切る。
+	#   低消費モードは 描く たびに エンジンが ひと休み するので、
+	#   Android の 実機では 指の 動きと 描く 間隔が そろわず、スクロールが
+	#   カクカクする。wake() は 数コマ だけ 切って 自動で もどすので、
+	#   指を 止めれば すぐ 熱対策の 状態に もどる
+	GameState.wake()
 	get_viewport().set_input_as_handled()
 
 
