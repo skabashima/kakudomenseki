@@ -220,6 +220,24 @@ func _scroll_to(p: Vector2, jump: bool) -> void:
 # 地図を描く
 # =========================================================
 
+## いま 画面に 見えている たての はんい(すこし はみ出して 返す)。
+##
+## 地図の キャンバスは 画面の 何倍も 高い。ぜんぶ 描くと、見えていない
+## ところまで 毎回 描く ことに なって、実機で スクロールが つっかえた。
+## 描く 前に ここで はじく
+func _view_y() -> Vector2:
+	if scroll == null or not is_instance_valid(scroll):
+		return Vector2(-1e9, 1e9)
+	var top := float(scroll.scroll_vertical) - 200.0
+	return Vector2(top, top + scroll.size.y + 400.0)
+
+
+## その たて位置は 画面に 入るか(r は その もの の 大きさ)
+func _shows(y: float, r := 0.0) -> bool:
+	var v := _view_y()
+	return y + r >= v.x and y - r <= v.y
+
+
 func _draw_map() -> void:
 	var c := canvas
 	var w := c.size.x
@@ -242,8 +260,11 @@ func _draw_sea(c: Control, w: float, h: float) -> void:
 	var band := 46.0
 	c.draw_rect(Rect2(0, 0, band, h), SEA)
 	c.draw_rect(Rect2(w - band, 0, band, h), SEA)
+	var v := _view_y()
 	for i in int(h / 60.0):
 		var y := 30.0 + 60.0 * float(i)
+		if y < v.x or y > v.y:
+			continue
 		for x in [band * 0.5, w - band * 0.5]:
 			c.draw_arc(Vector2(x, y), 10.0, PI, TAU, 8, Color(1, 1, 1, 0.35), 2.0)
 
@@ -274,6 +295,9 @@ func _draw_land(c: Control, w: float, h: float) -> void:
 func _draw_path(c: Control) -> void:
 	var reached := _cleared_count()
 	for i in KidDefs.UNITS.size() - 1:
+		# 画面の 外の 区間は 引かない(1 区間で 12 点 打っている)
+		if not _shows(_node_pos(i).y, STEP + 120.0):
+			continue
 		var col := PATH if i < reached else Color(PATH.r, PATH.g, PATH.b, 0.30)
 		var prev := _node_pos(i)
 		for s in range(1, 13):
@@ -406,6 +430,8 @@ func _draw_nodes(c: Control) -> void:
 	var font := ThemeDB.fallback_font
 	var current := _current_index()
 	for e in nodes:
+		if not _shows((((e as Dictionary)["pos"]) as Vector2).y, 220.0):
+			continue
 		var i: int = e["index"]
 		var p: Vector2 = e["pos"]
 		var uid := String((e["unit"] as Dictionary)["id"])
@@ -511,6 +537,8 @@ func _draw_mist(c: Control, w: float) -> void:
 func _draw_dots(c: Control) -> void:
 	for i in KidDefs.UNITS.size():
 		var p := _node_pos(i)
+		if not _shows(p.y, 140.0):
+			continue
 		var s := 1.0 if i % 2 == 0 else -1.0
 		var q := p + Vector2(s * (172.0 + 34.0 * sin(float(i) * 2.1)),
 			-56.0 + 52.0 * cos(float(i) * 1.3))

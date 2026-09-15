@@ -34,6 +34,13 @@ var next_btn: Button
 var answered := false
 var root: VBoxContainer
 
+## 一覧の カードと、それを 入れた スクロール。
+## 101 まい ぜんぶを 出しっぱなしに すると、見えていない ぶんまで 毎コマ
+## 描く ことに なって スクロールが つっかえる。画面に 入る ぶんだけ 出す
+var _cards: Array = []
+var _scroll: ScrollContainer
+var _last_scroll := -1.0
+
 
 func _ready() -> void:
 	GameState.play_bgm("map")
@@ -72,6 +79,9 @@ func _build_list() -> void:
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	root.add_child(scroll)
 	DragScroll.attach(scroll)
+	_scroll = scroll
+	_cards = []
+	_last_scroll = -1.0
 	var list := VBoxContainer.new()
 	list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	list.add_theme_constant_override("separation", 8)
@@ -82,7 +92,11 @@ func _build_list() -> void:
 	list.add_child(_run_card(true))
 	list.add_child(_run_card(false))
 	for i in nets.size():
-		list.add_child(_card(i))
+		var card := _card(i)
+		list.add_child(card)
+		_cards.append(card)
+	# ならび終わってから いちど 間引く(位置が 決まるのは 次の コマ)
+	_cull.call_deferred()
 
 
 ## 一覧の むきを 切りかえる。
@@ -223,15 +237,13 @@ func _card(i: int) -> Button:
 	row.add_theme_constant_override("separation", 14)
 	btn.add_child(row)
 
-	# 見本。むきに よって 展開図か 立体か を 出す(答えが 見えないように)
+	# 見本。むきに よって 展開図か 立体か を 出す(答えが 見えないように)。
+	# ★ 中みを 入れるのは 画面に 入ってから(_cull)。101 まいぶんの 見本を
+	#   はじめに ぜんぶ 組むと、一覧を 開くのにも 待たされる
 	var mini := NetView.new()
 	mini.custom_minimum_size = Vector2(148, 104)
 	mini.modulate = Color(1, 1, 1, 0.35) if locked else Color(1, 1, 1, 1)
 	row.add_child(mini)
-	if list_reverse:
-		mini.show_solid(net, false, true)
-	else:
-		mini.show_net(net, true)
 
 	var col := VBoxContainer.new()
 	col.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -263,7 +275,62 @@ func _card(i: int) -> Button:
 		mark.add_child(Icons.lock(40.0, Color(1, 1, 1, 0.7)))
 	elif done:
 		mark.add_child(Icons.star(40.0, HEAD))
+	# 間引きで 出し入れする ところ。row は 四すみ止めなので、
+	# 見えなく しても カードの 高さ(132)は 変わらない
+	btn.set_meta("body", row)
+	btn.set_meta("mini", mini)
+	btn.set_meta("net_i", i)
+	row.visible = false
 	return btn
+
+
+## 画面に 入る カードだけ 中みを 出す。
+##
+## 展開図は 101 まい ある。カード 1 まいに 見本(多角形と ふちの 線)と
+## ふりがな付きの 字が のっていて、字は 1 文字ずつ 描いている。
+## ぜんぶ 出しっぱなしだと、見えていない ぶんも 毎コマ 描くことに なり、
+## Android の 実機で スクロールが つっかえた。
+##
+## カードの 高さは 決め打ち(132)で、中みは 四すみ止め。だから 中みを
+## 見えなく しても ならびは ずれない。
+func _cull() -> void:
+	if _scroll == null or not is_instance_valid(_scroll) or _cards.is_empty():
+		return
+	var top := float(_scroll.scroll_vertical)
+	var bottom := top + _scroll.size.y
+	# すこし はみ出して 出しておく(急に わいて 見えないように)
+	var margin := 240.0
+	for c in _cards:
+		if not is_instance_valid(c):
+			continue
+		var btn: Control = c
+		var a := btn.position.y
+		var b := a + btn.size.y
+		var want := b >= top - margin and a <= bottom + margin
+		var body: Control = btn.get_meta("body")
+		if body.visible == want:
+			continue
+		body.visible = want
+		if want and not btn.has_meta("filled"):
+			# はじめて 出す ときだけ 見本を 組む
+			btn.set_meta("filled", true)
+			var mini: NetView = btn.get_meta("mini")
+			var net: Dictionary = nets[int(btn.get_meta("net_i"))]
+			if list_reverse:
+				mini.show_solid(net, false, true)
+			else:
+				mini.show_net(net, true)
+
+
+## スクロールは ゆびでも つまみでも 動く。値が 変わった ときだけ 間引き直す
+func _process(_delta: float) -> void:
+	if _scroll == null or not is_instance_valid(_scroll):
+		return
+	var v := float(_scroll.scroll_vertical)
+	if absf(v - _last_scroll) < 0.5:
+		return
+	_last_scroll = v
+	_cull()
 
 
 func _done_count() -> int:
@@ -574,6 +641,9 @@ func _build_run_result() -> void:
 # =========================================================
 
 func _reset_root() -> void:
+	# 一覧から 別の 画面へ 移る。もう 間引く ものは 無い
+	_scroll = null
+	_cards = []
 	if root != null and is_instance_valid(root):
 		# queue_free は つぎの コマまで のこる。その 1 コマの あいだ
 		# 古い ボタンが 見えたり 押せたり しないように、先に 消して 止める

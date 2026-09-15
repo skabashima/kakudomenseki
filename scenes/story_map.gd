@@ -228,6 +228,24 @@ func _scroll_to(p: Vector2, jump: bool) -> void:
 # 図を描く
 # =========================================================
 
+## いま 画面に 見えている たての はんい(すこし はみ出して 返す)。
+##
+## 地図の キャンバスは 画面の 何倍も 高い。ぜんぶ 描くと 見えていない
+## ところまで 毎回 描く ことに なる(星は 300 こ ちかく ある)。
+## 描く 前に ここで はじく
+func _view_y() -> Vector2:
+	if scroll == null or not is_instance_valid(scroll):
+		return Vector2(-1e9, 1e9)
+	var top := float(scroll.scroll_vertical) - 200.0
+	return Vector2(top, top + scroll.size.y + 400.0)
+
+
+## その たて位置は 画面に 入るか(r は その もの の 大きさ)
+func _shows(y: float, r := 0.0) -> bool:
+	var v := _view_y()
+	return y + r >= v.x and y - r <= v.y
+
+
 func _draw_map() -> void:
 	var c := canvas
 	var w := c.size.x
@@ -252,8 +270,11 @@ func _draw_map() -> void:
 
 ## 高校生: 星空
 func _draw_stars(c: Control, w: float, h: float) -> void:
+	var v := _view_y()
 	for i in int(h / 26.0):
 		var y := 13.0 + 26.0 * float(i)
+		if y < v.x or y > v.y:
+			continue
 		var x := fposmod(sin(float(i) * 12.9898) * 43758.5453, w)
 		var r := 1.2 + fposmod(float(i) * 0.37, 1.0) * 1.8
 		c.draw_circle(Vector2(x, y), r, Color(1, 1, 1, 0.25 + 0.35 * fposmod(float(i) * 0.21, 1.0)))
@@ -265,8 +286,12 @@ func _draw_grid(c: Control, w: float, h: float) -> void:
 	var col := Color(th["edge"].r, th["edge"].g, th["edge"].b, 0.7)
 	for i in int(w / s) + 1:
 		c.draw_line(Vector2(s * float(i), 0), Vector2(s * float(i), h), col, 1.0)
+	var v2 := _view_y()
 	for j in int(h / s) + 1:
-		c.draw_line(Vector2(0, s * float(j)), Vector2(w, s * float(j)), col, 1.0)
+		var y := s * float(j)
+		if y < v2.x or y > v2.y:
+			continue
+		c.draw_line(Vector2(0, y), Vector2(w, y), col, 1.0)
 
 
 ## 進む帯(中学生は測る土地、高校生は航路の帯)
@@ -296,6 +321,8 @@ func _draw_lane(c: Control) -> void:
 	# 丸を つないで 帯に する(太い 線を つなぐと ふちが ぎざぎざに なるため)
 	var col := Color(th["land"].r, th["land"].g, th["land"].b, 0.95)
 	for i in chapters.size() - 1:
+		if not _shows(_node_pos(i).y, STEP + 200.0):
+			continue
 		for s in 13:
 			c.draw_circle(_path_point(i, float(s) / 12.0), 78.0, col)
 	c.draw_circle(_node_pos(chapters.size() - 1), 78.0, col)
@@ -306,6 +333,8 @@ func _draw_lane(c: Control) -> void:
 func _draw_path(c: Control) -> void:
 	var reached := _cleared_count()
 	for i in chapters.size() - 1:
+		if not _shows(_node_pos(i).y, STEP + 200.0):
+			continue
 		var col: Color = th["path"] if i < reached else Color(
 			th["path"].r, th["path"].g, th["path"].b, 0.28)
 		var prev := _node_pos(i)
