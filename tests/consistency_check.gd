@@ -14,6 +14,7 @@ extends SceneTree
 ##   6. ストア文書に 書いた 数が 実装と 合っているか
 ##   7. 鳴らそうとしている 音が 実在するか
 ##   8. 絵の部品(Icons)の 呼び出しが 実在するか
+##   8b. 展開図(NetDefs)の id が 実在するか
 ##   9. どこからも 行けない 画面が ないか
 
 var fails: Array = []
@@ -28,6 +29,7 @@ func _init() -> void:
 	_check_store_numbers()
 	_check_sfx()
 	_check_icons()
+	_check_net_ids()
 	_check_reachable()
 
 	if fails.is_empty():
@@ -270,6 +272,33 @@ func _check_sfx() -> void:
 
 
 ## 8. 絵の部品(Icons)の 呼び出しが 実在するか
+## ソースに 書いた 展開図の id が ほんとうに あるか。
+##
+## 無い id を 書くと by_id が 空の 辞書を かえし、NetDefs.fold が
+## net["faces"] を 読めずに 落ちる。Android では アプリごと 終わる。
+## 実際に 1.3 で "cube_cross"(そんな id は 無い)と 書いてしまい、
+## たからのちず 19話で 落ちていた。目で 見て 気づけないので 機械で 見張る。
+func _check_net_ids() -> void:
+	var known := {}
+	for n in NetDefs.all():
+		known[String((n as Dictionary)["id"])] = true
+	for src in _sources():
+		var s := _text(src)
+		var p := 0
+		while true:
+			var a := s.find("NetDefs.by_id(\"", p)
+			if a < 0:
+				break
+			var b := s.find("\"", a + 15)
+			if b < 0:
+				break
+			var id := s.substr(a + 15, b - a - 15)
+			p = b + 1
+			if not known.has(id):
+				fails.append("%s: 展開図の id \"%s\" が 無い(NetDefs に %d 個 ある)" % [
+					src.get_file(), id, known.size()])
+
+
 func _check_icons() -> void:
 	var icons := _text("res://ui/icons.gd")
 	for src in _sources():

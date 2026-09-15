@@ -213,9 +213,16 @@ func _act_done() -> void:
 	st["done"] = true          # 図の 上に 大きな ○ を 出す しるし
 	if fold_view != null:
 		# ひらいた 図を そのまま 立ち上げて、箱に なる ところを 見せる。
-		# 目の ならびは ひらいた 図と 同じ(向かい合う 面を たすと 7)
-		fold_view.pips = ["1", "2", "5", "6", "4", "3"]
-		fold_view.show_net(NetDefs.by_id("cube_cross"))
+		#
+		# ★ 展開図は id で 引く。"cube_cross" という id は 無いので、
+		#   by_id が 空の 辞書を かえし、NetDefs.fold が net["faces"] を
+		#   読めずに 落ちていた(Android では そのまま アプリが 終了した)。
+		#   十字の 展開図は cube_4(よこ 4 枚 + 上下 1 枚ずつ)。
+		#
+		# 目は cube_4 の 面の ならび順。向かい合う 面を たすと どれも 7 で、
+		# ひらいた 図に 書いてある 数とも そろえてある
+		fold_view.pips = ["3", "4", "5", "1", "2", "6"]
+		fold_view.show_net(NetDefs.by_id("cube_4"))
 		fold_view.visible = true
 		fold_view.fold_up()
 	GameState.play_sfx("clear" if tries >= 3 else "correct")
