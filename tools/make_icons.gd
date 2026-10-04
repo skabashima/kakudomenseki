@@ -8,6 +8,9 @@ extends SceneTree
 ##   store/icon/adaptive_bg_432.png … アダプティブアイコンの背景(432×432)
 ##   store/icon/adaptive_fg_432.png … アダプティブアイコンの前景(432×432・透過)
 ##   store/icon/adaptive_mono_432.png … テーマ付きアイコンの単色版(432×432・透過)
+##   store/icon/splash_icon_1024.png … 起動画面の絵(Android 12 以降 / エンジンの起動画面)
+##   store/icon/splash_icon_512.png  … iOS の起動画面 @2x(512×512・透過)
+##   store/icon/splash_icon_768.png  … iOS の起動画面 @3x(768×768・透過)
 ##
 ## アダプティブアイコンは 432×432 のうち **中央 66%(288px)しか必ず見える保証がない**
 ## (端末ごとに円・角丸・しずくなど任意の形でくり抜かれる)。
@@ -23,6 +26,9 @@ const ART_MAX := 884.0
 ## アダプティブアイコンの一辺と、そこに収める絵柄の大きさ
 const ADAPTIVE := 432.0
 const ART_TARGET := 276.0
+## 起動画面の 絵。Android 12 以降は まわりが 円などで くり抜かれるので、
+## アダプティブアイコンと 同じ 割合(中央 64%)に 絵柄を 収める
+const SPLASH := 1024.0
 
 
 func _init() -> void:
@@ -68,6 +74,25 @@ func _init() -> void:
 		return
 	_save(mono, "adaptive_mono_432.png")
 
+	# 6) 起動画面(Android 12 以降)の絵。
+	#    ★ 書き出し設定の splash_screen/icon を空のままにすると
+	#    Godot 既定のロゴが入る。実機の起動でそれが出ていた
+	var splash := _rasterize(_foreground_svg(full, SPLASH,
+		SPLASH * ART_TARGET / ADAPTIVE), 1.0)
+	if splash == null:
+		return
+	_save(splash, "splash_icon_1024.png")
+
+	# 7) iOS の起動画面。@2x と @3x は表示の倍率がちがうので、
+	#    同じ画像を使い回すと端末によって絵の大きさが変わる。
+	#    どちらも 256pt で同じ大きさに見えるように 512 と 768 を作る
+	for side in [512.0, 768.0]:
+		var ios := _rasterize(_foreground_svg(full, side,
+			side * ART_TARGET / ADAPTIVE), 1.0)
+		if ios == null:
+			return
+		_save(ios, "splash_icon_%d.png" % int(side))
+
 	print("done")
 	quit(0)
 
@@ -83,15 +108,16 @@ func _background_svg(full: String) -> String:
 		+ 'viewBox="0 0 1024 1024"><defs>' + defs + "</defs>" + rect + "</svg>")
 
 
-## 絵柄だけの SVG(432×432・透過)。マスクで欠けないよう中央 276px に収める
-func _foreground_svg(full: String) -> String:
+## 絵柄だけの SVG(既定は 432×432・透過)。マスクで欠けないよう中央に収める。
+## side(一辺)と art(その中の絵柄の大きさ)を変えれば、起動画面用の大きい版も作れる
+func _foreground_svg(full: String, side := ADAPTIVE, art_size := ART_TARGET) -> String:
 	var i := full.find("<rect")
 	var art := full.substr(full.find("/>", i) + 2)
 	art = art.replace("</svg>", "")
-	var s := ART_TARGET / (ART_MAX - ART_MIN)
-	var t := ADAPTIVE * 0.5 - 512.0 * s
-	return ('<svg xmlns="http://www.w3.org/2000/svg" width="432" height="432" '
-		+ 'viewBox="0 0 432 432"><g transform="translate(%f,%f) scale(%f)">' % [t, t, s]
+	var s := art_size / (ART_MAX - ART_MIN)
+	var t := side * 0.5 - 512.0 * s
+	return ('<svg xmlns="http://www.w3.org/2000/svg" width="%d" height="%d" ' % [int(side), int(side)]
+		+ 'viewBox="0 0 %d %d"><g transform="translate(%f,%f) scale(%f)">' % [int(side), int(side), t, t, s]
 		+ art + "</g></svg>")
 
 

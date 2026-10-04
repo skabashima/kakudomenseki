@@ -16,6 +16,7 @@ extends SceneTree
 ##   8. 絵の部品(Icons)の 呼び出しが 実在するか
 ##   8b. 展開図(NetDefs)の id が 実在するか
 ##   9. どこからも 行けない 画面が ないか
+##  10. 起動画面の 絵が 空に なっていないか(空だと Godot の ロゴが 出る)
 
 var fails: Array = []
 
@@ -31,6 +32,7 @@ func _init() -> void:
 	_check_icons()
 	_check_net_ids()
 	_check_reachable()
+	_check_splash()
 
 	if fails.is_empty():
 		print("CONSISTENCY OK: つなぎ目に くいちがい なし")
@@ -278,6 +280,39 @@ func _check_sfx() -> void:
 ## net["faces"] を 読めずに 落ちる。Android では アプリごと 終わる。
 ## 実際に 1.3 で "cube_cross"(そんな id は 無い)と 書いてしまい、
 ## たからのちず 19話で 落ちていた。目で 見て 気づけないので 機械で 見張る。
+## 10. 起動画面の 絵
+##
+## ★ 書き出し設定の `splash_screen/icon`(Android)と `storyboard/custom_image@2x`
+##   `@3x`(iOS)、プロジェクト設定の `boot_splash/image` を 空の ままに すると、
+##   Godot 既定の ロゴが 起動時に 出る。1.3.4 まで 実際に 出ていた。
+##   気づけるのは 実機に 入れた あとなので、ここで 止める
+func _check_splash() -> void:
+	var boot := String(ProjectSettings.get_setting("application/boot_splash/image", ""))
+	if boot == "":
+		fails.append("起動画面: boot_splash/image が 空(Godot の ロゴが 出る)")
+	elif not FileAccess.file_exists(boot):
+		fails.append("起動画面: boot_splash/image の %s が 無い" % boot)
+	var cfg := _text("res://export_presets.cfg")
+	for key_v in ["splash_screen/icon", "storyboard/custom_image@2x",
+			"storyboard/custom_image@3x"]:
+		var key := String(key_v)
+		var head: String = key + "=\""
+		var a: int = cfg.find(head)
+		if a < 0:
+			fails.append("起動画面: 書き出し設定に %s が 無い" % key)
+			continue
+		var at: int = a + head.length()
+		var b: int = cfg.find("\"", at)
+		if b < 0:
+			fails.append("起動画面: %s の 書き方が おかしい" % key)
+			continue
+		var path := cfg.substr(at, b - at)
+		if path == "":
+			fails.append("起動画面: %s が 空(Godot の ロゴが 出る)" % key)
+		elif not FileAccess.file_exists(path):
+			fails.append("起動画面: %s の %s が 無い" % [key, path])
+
+
 func _check_net_ids() -> void:
 	var known := {}
 	for n in NetDefs.all():

@@ -300,6 +300,12 @@ python store/check_store_images.py                         # 寸法・枚数・�
   前景は絵柄を 276px に収めて中央に置いている(円マスクでは枠の角は外れ、三角形が残る)
 - `store/icon/adaptive_mono_432.png` … Android 13 以降のテーマ付きアイコン用の単色版。
   **指定しないと Godot 既定のロボットのロゴが入る**ので必ず設定する
+- `store/icon/splash_icon_1024.png` … 起動画面の絵。Android 12 以降のスプラッシュ
+  (`splash_screen/icon`)と、エンジンの起動画面(`boot_splash/image`)の両方で使う
+- `store/icon/splash_icon_512.png` / `splash_icon_768.png` … iOS の起動画面の @2x / @3x。
+  倍率がちがうので同じ画像を使い回すと端末によって絵の大きさが変わる。どちらも 256pt になる大きさ
+- **起動画面の絵を指定しないと、Godot 既定のロゴが起動時に出る**(1.3.4 まで Android・iOS とも
+  実際に出ていた)。まわりが円などでくり抜かれるので、絵柄は中央 64% に収めている
 
 SVG を直したら PNG を作り直す:
 
