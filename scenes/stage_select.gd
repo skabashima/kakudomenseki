@@ -153,7 +153,7 @@ func _stage_card(index: int, stage: Dictionary, col: Color) -> Control:
 		rv.ruby_size = 11
 		rv.color = Color(1.0, 0.85, 0.45)
 		rv.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		rv.set_ruby_text("まちがえた 問題 %d" % back, kids)
+		rv.set_ruby_text(L.t("まちがえた 問題 %d") % back, kids)
 		mid.add_child(rv)
 
 	var right := VBoxContainer.new()
@@ -176,7 +176,7 @@ func _stage_card(index: int, stage: Dictionary, col: Color) -> Control:
 		right.add_child(stars_lbl)
 	if best > 0:
 		var b := Label.new()
-		b.text = "%d点" % best
+		b.text = L.t("%d点") % best
 		b.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 		b.add_theme_font_size_override("font_size", 20)
 		b.add_theme_color_override("font_color", Color(0.85, 0.9, 1.0, 0.8))
@@ -189,7 +189,7 @@ func _stage_card(index: int, stage: Dictionary, col: Color) -> Control:
 		var crowned := g_best >= GameState.GAUNTLET_QUESTIONS
 		var gbtn := Button.new()
 		gbtn.custom_minimum_size = Vector2(120, 108)
-		gbtn.text = "" if crowned else ("挑戦\n%d/%d" % [g_best, GameState.GAUNTLET_QUESTIONS] if g_best > 0 else "挑戦\n10問")
+		gbtn.text = "" if crowned else (L.t("挑戦\n%d/%d") % [g_best, GameState.GAUNTLET_QUESTIONS] if g_best > 0 else "挑戦\n10問")
 		gbtn.add_theme_font_size_override("font_size", 22)
 		GameState.style_button(gbtn,
 			Color(0.72, 0.56, 0.14) if crowned else Color(0.5, 0.36, 0.5))

@@ -515,7 +515,7 @@ func _draw_treasure(c: Control) -> void:
 		c.draw_line(Vector2(box.position.x, box.position.y + 30),
 			Vector2(box.position.x + box.size.x, box.position.y + 30), INK, 4.0)
 		c.draw_circle(Vector2(box.position.x + box.size.x * 0.5, box.position.y + 30), 9.0, GOLD)
-		c.draw_string(font, p + Vector2(-160, -78), "あと %d こ" % [
+		c.draw_string(font, p + Vector2(-160, -78), L.t("あと %d こ") % [
 			KidDefs.UNITS.size() - _cleared_count()],
 			HORIZONTAL_ALIGNMENT_CENTER, 320, 30, INK)
 

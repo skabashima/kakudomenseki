@@ -165,7 +165,7 @@ func _build_ui() -> void:
 		"survival":
 			title_lbl.text = "サバイバル"
 		"gauntlet":
-			title_lbl.text = "挑戦: " + String(stage["title"])
+			title_lbl.text = L.t("挑戦: %s") % L.t(String(stage["title"]))
 		"net":
 			title_lbl.text = "展開図の 応用 10問"
 		_:
@@ -387,16 +387,16 @@ func _next_question(first := false) -> void:
 func _update_status() -> void:
 	match GameState.mode:
 		"time":
-			progress_lbl.text = "のこり %d 秒" % int(ceil(time_left))
-			hearts_lbl.text = "正解 %d" % challenge_count
+			progress_lbl.text = L.t("のこり %d 秒") % int(ceil(time_left))
+			hearts_lbl.text = L.t("正解 %d") % challenge_count
 		"survival":
-			progress_lbl.text = "正解 %d" % challenge_count
+			progress_lbl.text = L.t("正解 %d") % challenge_count
 			hearts_lbl.text = _hearts_str(lives)
 		_:
-			progress_lbl.text = "問 %d / %d" % [q_index + 1, _q_total()]
+			progress_lbl.text = L.t("問 %d / %d") % [q_index + 1, _q_total()]
 			hearts_lbl.text = _hearts_str(hearts)
-	score_lbl.text = "%d点" % (stage_score if _stage_based() else GameState.total_score())
-	combo_lbl.text = ("コンボ ×%d" % GameState.combo) if GameState.combo > 1 else ""
+	score_lbl.text = L.t("%d点") % (stage_score if _stage_based() else GameState.total_score())
+	combo_lbl.text = (L.t("コンボ ×%d") % GameState.combo) if GameState.combo > 1 else ""
 
 
 func _hearts_str(n: int) -> String:
@@ -473,7 +473,7 @@ func _show_hint() -> void:
 	hints_used += 1
 	var text := _short(String(problem["hint1"]) if hints_used == 1 else String(problem["hint2"]))
 	hint_lbl.color = Color(0.65, 0.9, 1.0)
-	hint_lbl.set_ruby_text("ヒント%d: %s" % [hints_used, text], Ruby.needed(stage_id))
+	hint_lbl.set_ruby_text(L.t("ヒント%d: %s") % [hints_used, text], Ruby.needed(stage_id))
 	if hints_used >= 2:
 		hint_btn.disabled = true
 
@@ -499,7 +499,7 @@ func _on_walkthrough() -> void:
 	if wt_idx >= wt_steps.size():
 		return
 	var step: Dictionary = wt_steps[wt_idx]
-	hint_lbl.set_ruby_text("解き方 %d/%d: %s" % [wt_idx + 1, wt_steps.size(),
+	hint_lbl.set_ruby_text(L.t("解き方 %d/%d: %s") % [wt_idx + 1, wt_steps.size(),
 		_short(String(step.get("say", "")))], Ruby.needed(stage_id))
 	hint_lbl.add_theme_color_override("font_color", Color(1.0, 0.85, 0.5))
 	if step.has("add"):
@@ -615,7 +615,7 @@ func _on_correct() -> void:
 		stage_score += pts
 		_update_status()
 		var last := q_index + 1 >= _q_total()
-		_show_flash("+%d点" % pts, Color(0.55, 1.0, 0.6))
+		_show_flash(L.t("+%d点") % pts, Color(0.55, 1.0, 0.6))
 		await get_tree().create_timer(0.85).timeout
 		if last:
 			if GameState.mode == "gauntlet":
@@ -629,7 +629,7 @@ func _on_correct() -> void:
 	else:
 		challenge_count += 1
 		_update_status()
-		_show_flash("+1  (%d問目)" % challenge_count, Color(0.55, 1.0, 0.6))
+		_show_flash(L.t("+1  (%d問目)") % challenge_count, Color(0.55, 1.0, 0.6))
 		await get_tree().create_timer(0.6).timeout
 		# 演出待ちの間にタイムアップして結果画面が出ていたら何もしない
 		if overlay != null:
@@ -659,7 +659,7 @@ func _on_wrong() -> void:
 			if lives <= 0:
 				_finish_challenge()
 			else:
-				_show_flash("ミス! のこり %s" % _hearts_str(lives), Color(1.0, 0.5, 0.5))
+				_show_flash(L.t("ミス! のこり %s") % _hearts_str(lives), Color(1.0, 0.5, 0.5))
 				await get_tree().create_timer(0.7).timeout
 				if overlay != null:
 					return
@@ -670,7 +670,7 @@ func _on_wrong() -> void:
 			if hearts <= 0:
 				_fail_stage()
 			else:
-				_show_flash("ちがう… %s" % _hearts_str(hearts), Color(1.0, 0.5, 0.5))
+				_show_flash(L.t("ちがう… %s") % _hearts_str(hearts), Color(1.0, 0.5, 0.5))
 				await get_tree().create_timer(0.7).timeout
 				input_text = ""
 				_update_answer()
@@ -734,16 +734,16 @@ func _finish_stage() -> void:
 	var v := panel.get_node("v") as VBoxContainer
 	_add_label(v, "ステージクリア!", 52, Color(1.0, 0.9, 0.5))
 	var stars_lbl := _add_label(v, "", 64, Color(1.0, 0.84, 0.3))
-	_add_label(v, "スコア %d点(自己ベスト %d点)" % [stage_score, int(GameState.scores.get(stage_id, 0))],
+	_add_label(v, L.t("スコア %d点(自己ベスト %d点)") % [stage_score, int(GameState.scores.get(stage_id, 0))],
 		28, Color.WHITE)
 	if GameState.combo > 1:
-		_add_label(v, "コンボ継続中 ×%d" % GameState.combo, 24, Color(0.6, 0.95, 1.0))
+		_add_label(v, L.t("コンボ継続中 ×%d") % GameState.combo, 24, Color(0.6, 0.95, 1.0))
 	var stages: Array = course["stages"]
 	var has_next: bool = GameState.current_stage + 1 < stages.size()
 	if has_next and GameState.needs_purchase(GameState.current_stage + 1):
 		# 無料範囲の最後をクリアした直後。ここが一番の購入どころなので、
 		# つぎへ進むボタンをそのまま解放画面への入口にする
-		_add_button(v, "つづきの %d ステージをひらく" % GameState.paid_stage_count(),
+		_add_button(v, L.t("つづきの %d ステージをひらく") % GameState.paid_stage_count(),
 			Color(0.78, 0.55, 0.15), func() -> void:
 				GameState.change_scene("res://scenes/store.tscn"))
 	elif has_next:
@@ -783,10 +783,10 @@ func _fail_stage() -> void:
 	var panel := _overlay_panel()
 	var v := panel.get_node("v") as VBoxContainer
 	if GameState.mode == "gauntlet" or GameState.mode == "net":
-		_add_label(v, "挑戦失敗… %d/%d 問まで" % [q_index, _q_total()], 40, Color(1.0, 0.55, 0.55))
+		_add_label(v, L.t("挑戦失敗… %d/%d 問まで") % [q_index, _q_total()], 40, Color(1.0, 0.55, 0.55))
 	else:
 		_add_label(v, "ハートがなくなった…", 44, Color(1.0, 0.55, 0.55))
-	_add_label(v, "正解は %s%s" % [ProblemGen.fmt(float(problem["answer"])), String(problem["unit"])],
+	_add_label(v, L.t("正解は %s%s") % [ProblemGen.fmt(float(problem["answer"])), String(problem["unit"])],
 		34, Color(1.0, 0.9, 0.5))
 	var expl := RubyLabel.new()
 	expl.font_size = 26
@@ -826,8 +826,8 @@ func _finish_net() -> void:
 	crown.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	v.add_child(crown)
 	_add_label(v, "展開図の 応用クリア!", 48, Color(1.0, 0.84, 0.3))
-	_add_label(v, "%d 問れんぞく" % _q_total(), 34, Color.WHITE)
-	_add_label(v, "スコア %d点(自己ベスト %d点)" % [stage_score,
+	_add_label(v, L.t("%d 問れんぞく") % _q_total(), 34, Color.WHITE)
+	_add_label(v, L.t("スコア %d点(自己ベスト %d点)") % [stage_score,
 		GameState.net_challenge_best], 26, Color.WHITE)
 	if best:
 		_add_label(v, "自己ベスト こうしん!", 28, Color(0.6, 1.0, 0.7))
@@ -853,13 +853,13 @@ func _finish_gauntlet() -> void:
 	crown.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	v.add_child(crown)
 	_add_label(v, "挑戦クリア!", 52, Color(1.0, 0.84, 0.3))
-	_add_label(v, "%d 問連続クリア" % _q_total(), 34, Color.WHITE)
-	_add_label(v, "スコア %d点(自己ベスト %d点)" % [stage_score, int(GameState.scores.get("g:" + stage_id, 0))],
+	_add_label(v, L.t("%d 問連続クリア") % _q_total(), 34, Color.WHITE)
+	_add_label(v, L.t("スコア %d点(自己ベスト %d点)") % [stage_score, int(GameState.scores.get("g:" + stage_id, 0))],
 		26, Color.WHITE)
 	if first_crown:
 		_add_label(v, "この単元の王冠を獲得!", 28, Color(0.6, 1.0, 0.7))
 	if GameState.combo > 1:
-		_add_label(v, "コンボ継続中 ×%d" % GameState.combo, 24, Color(0.6, 0.95, 1.0))
+		_add_label(v, L.t("コンボ継続中 ×%d") % GameState.combo, 24, Color(0.6, 0.95, 1.0))
 	_add_button(v, "もういちど(べつの数値で)", Color(0.24, 0.42, 0.72), func() -> void:
 		GameState.change_scene("res://scenes/problem.tscn"))
 	_add_button(v, "ステージ一覧へ", Color(0.28, 0.32, 0.44), func() -> void:
@@ -877,11 +877,11 @@ func _finish_challenge() -> void:
 	var v := panel.get_node("v") as VBoxContainer
 	_add_label(v, "タイムアップ!" if GameState.mode == "time" else "ゲームオーバー",
 		46, Color(1.0, 0.9, 0.5))
-	_add_label(v, "正解 %d 問" % challenge_count, 56, Color.WHITE)
+	_add_label(v, L.t("正解 %d 問") % challenge_count, 56, Color.WHITE)
 	if improved:
 		_add_label(v, "自己ベスト更新!", 30, Color(0.6, 1.0, 0.7))
 	else:
-		_add_label(v, "自己ベスト %d 問" % int(GameState.challenge_best.get(key, 0)),
+		_add_label(v, L.t("自己ベスト %d 問") % int(GameState.challenge_best.get(key, 0)),
 			26, Color(0.8, 0.87, 1.0))
 	_add_button(v, "もういちど", Color(0.2, 0.55, 0.35), func() -> void:
 		GameState.change_scene("res://scenes/problem.tscn"))

@@ -320,4 +320,5 @@ static func _all_plain(word: String) -> bool:
 
 ## そのステージが小学生むけ(中学受験レベル)か
 static func needed(stage_id: String) -> bool:
-	return stage_id.begins_with("e")
+	# 英語では ふりがな は 無い
+	return stage_id.begins_with("e") and not L.en()

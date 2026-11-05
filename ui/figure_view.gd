@@ -695,7 +695,7 @@ func _draw_tick(sh: Dictionary) -> void:
 
 func _draw_label(sh: Dictionary) -> void:
 	var col: Color = sh.get("color", COL_LINE)
-	_draw_text_at(_px(sh["at"]), sh["s"], col, sh.get("size", 30))
+	_draw_text_at(_px(sh["at"]), L.t(String(sh["s"])), col, sh.get("size", 30))
 
 
 func _draw_arrow(sh: Dictionary) -> void:

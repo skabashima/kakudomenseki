@@ -228,13 +228,13 @@ func _act_done() -> void:
 	GameState.play_sfx("clear" if tries >= 3 else "correct")
 	big.text = _act_cheer()
 	if tries >= 3:
-		talk.set_ruby_text("3 回とも 合っていた。%s" % String(unit["found"]), true)
+		talk.set_ruby_text(L.t("3 回とも 合っていた。%s") % String(unit["found"]), true)
 		act_btn.text = "しるしを 見る"
 	else:
 		# 「もう いちど」だと、まちがえて やりなおしだと 思われた。
 		# 合っていた うえで つぎの 形を ためす、と 分かる ことばにする
-		talk.set_ruby_text("合っていたよ。" + _act_after(), true)
-		act_btn.text = "%d かいめを ためす" % (tries + 1)
+		talk.set_ruby_text(L.t("合っていたよ。%s") % L.t(_act_after()), true)
+		act_btn.text = L.t("%d かいめを ためす") % (tries + 1)
 	act_btn.disabled = false
 
 
@@ -256,7 +256,7 @@ func _start_quiz() -> void:
 	answer_row.visible = true
 	act_btn.visible = false
 	big.text = ""
-	talk.set_ruby_text("地図の しるし。" + _short(String(problem["q"])), true)
+	talk.set_ruby_text(L.t("地図の しるし。%s") % L.t(_short(String(problem["q"]))), true)
 
 
 func _short(text: String) -> String:
@@ -295,7 +295,7 @@ func _submit() -> void:
 	if absf(v - float(problem["answer"])) < maxf(float(problem.get("tol", 0.01)), 0.01):
 		GameState.play_sfx("win")
 		big.text = "あたり！"
-		talk.set_ruby_text("しるしが とけた。%s" % String(unit["found"]), true)
+		talk.set_ruby_text(L.t("しるしが とけた。%s") % String(unit["found"]), true)
 		keypad.visible = false
 		answer_row.visible = false
 		act_btn.visible = true
@@ -390,11 +390,11 @@ func _act_after() -> String:
 				return "折り線を はさんで、同じ かどが 2 つ できた。ななめの むきを 変えても 同じかな?"
 			return "ぴったり 重なった。ほかの 形でも そうかな?"
 		"diag":
-			return "三角形 %d こ × 180° ＝ %d° に 分けられた。角の 数が ちがっても 同じ やり方かな?" % [
+			return L.t("三角形 %d こ × 180° ＝ %d° に 分けられた。角の 数が ちがっても 同じ やり方かな?") % [
 				int(st.get("tri", 3)), int(st.get("tri", 3)) * 180]
 		"spoke":
 			var sn: int = int(st.get("n", 6))
-			return "まん中の 360° が %d こに 等分された。360 ÷ %d ＝ %d°。かどの 数が ちがっても 同じ やり方かな?" % [
+			return L.t("まん中の 360° が %d こに 等分された。360 ÷ %d ＝ %d°。かどの 数が ちがっても 同じ やり方かな?") % [
 				sn, sn, roundi(360.0 / float(sn))]
 		"clock":
 			if tries == 1:
@@ -405,12 +405,12 @@ func _act_after() -> String:
 				"k10":
 					return "三角は いつも 四角の 半分だった(たて × よこ ÷ 2)。ほかの 大きさでも 同じかな?"
 				"k16":
-					return "底辺が %d 倍に なったら、広さも %d 倍。高さは 変えていない。ほかの のばし方でも 同じかな?" % [
+					return L.t("底辺が %d 倍に なったら、広さも %d 倍。高さは 変えていない。ほかの のばし方でも 同じかな?") % [
 						_k16_times(), _k16_times()]
 				_:
 					return "ますの 数は たて × よこ に なっていた。ほかの 大きさでも 同じかな?"
 		"point":
-			return "1 つずつは 変わるのに、上 + 下 も 左 + 右 も %d のまま。ほかの 場所でも 同じ?" % [
+			return L.t("1 つずつは 変わるのに、上 + 下 も 左 + 右 も %d のまま。ほかの 場所でも 同じ?") % [
 				roundi(float(st.get("pw", 8.0)) * float(st.get("ph", 4.0)) * 0.5)]
 		"cut":
 			match String(unit["id"]):
@@ -426,7 +426,7 @@ func _act_after() -> String:
 			if String(unit["id"]) == "k21":
 				# k13(道)の「動かしても 変わらない」を そのまま 使っていたが、
 				# k21 は 逆に「進んだ ぶん ふえる」回。まるきり 逆の ことを 言っていた
-				return "重なりの たては ずっと %d のまま。よこだけ 進んだ ぶん ふえた。ほかの 進み方でも 同じかな?" % [
+				return L.t("重なりの たては ずっと %d のまま。よこだけ 進んだ ぶん ふえた。ほかの 進み方でも 同じかな?") % [
 					K21_TALL]
 			return "道を 動かしても のこりの 広さは 変わらなかった。ほかの 場所でも?"
 		"stack":
@@ -434,7 +434,7 @@ func _act_after() -> String:
 		"open":
 			if String(unit["id"]) == "k19":
 				return "1 つ おいた 先の 面が 向かい合っていた。どの ペアも たすと 7。ほかの 目でも 同じかな?"
-			return "2 つで たて %d の まっすぐな 箱。1 つ分は その 半分 ―― 手前と 奥の 平均だった。ほかの 高さでも 同じかな?" % [
+			return L.t("2 つで たて %d の まっすぐな 箱。1 つ分は その 半分 ―― 手前と 奥の 平均だった。ほかの 高さでも 同じかな?") % [
 				int(st.get("h1", 2)) + int(st.get("h2", 4))]
 		"pour":
 			return "はばを 変えると 深さが 変わる。でも かけ算は 同じ。"
@@ -446,20 +446,20 @@ func _act_cheer() -> String:
 	match String(unit["act"]):
 		"tear":
 			if String(unit["id"]) == "k7":
-				return "へこんだ かどと 同じ！ %d°" % roundi(float(st.get("dent", 0.0)))
+				return L.t("へこんだ かどと 同じ！ %d°") % roundi(float(st.get("dent", 0.0)))
 			return "ぴったり まっすぐ！ 180°"
 		"slide":
 			return "ぴったり 重なった！"
 		"fold":
 			if String(unit["id"]) == "k8":
-				return "同じ かどが 2 つ！ %d° と %d°" % [
+				return L.t("同じ かどが 2 つ！ %d° と %d°") % [
 					roundi(float(st.get("angle", 45.0))), roundi(float(st.get("angle", 45.0)))]
 			return "ぴったり 重なった！"
 		"diag":
-			return "三角形 %d こ × 180° ＝ %d°" % [
+			return L.t("三角形 %d こ × 180° ＝ %d°") % [
 				int(st.get("tri", 3)), int(st.get("tri", 3)) * 180]
 		"spoke":
-			return "360° ÷ %d ＝ %d°" % [
+			return L.t("360° ÷ %d ＝ %d°") % [
 				int(st.get("n", 6)), roundi(360.0 / float(int(st.get("n", 6))))]
 		"clock":
 			match int(float(st.get("goal", 360.0))):
@@ -475,18 +475,18 @@ func _act_cheer() -> String:
 			match String(unit["id"]):
 				"k10":
 					# 四角の ます目と、その 半分の 三角 ―― 「÷ 2」まで 数で 見せる
-					return "四角 %d × %d ＝ %d ます、三角は 半分の %s ます" % [
+					return L.t("四角 %d × %d ＝ %d ます、三角は 半分の %s ます") % [
 						gh, gw, gw * gh, ProblemGen.fmt(float(gw * gh) * 0.5)]
 				"k16":
 					var s0: int = int(st.get("w0", 1))
-					return "底辺 %d → %d(%d 倍)、広さ %s → %s(%d 倍)" % [
+					return L.t("底辺 %d → %d(%d 倍)、広さ %s → %s(%d 倍)") % [
 						s0, gw, _k16_times(),
 						ProblemGen.fmt(float(s0 * gh) * 0.5),
 						ProblemGen.fmt(float(gw * gh) * 0.5), _k16_times()]
 				_:
-					return "%d × %d ＝ %d ます" % [gh, gw, gw * gh]
+					return L.t("%d × %d ＝ %d ます") % [gh, gw, gw * gh]
 		"point":
-			return "上 + 下 ＝ 左 + 右 ＝ %d" % roundi(
+			return L.t("上 + 下 ＝ 左 + 右 ＝ %d") % roundi(
 				float(st.get("pw", 8.0)) * float(st.get("ph", 4.0)) * 0.5)
 		"cut":
 			match String(unit["id"]):
@@ -501,17 +501,17 @@ func _act_cheer() -> String:
 		"shift":
 			if String(unit["id"]) == "k21":
 				var mv := int(round(float(st.get("pos", 0.0))))
-				return "進んだ %d × たて %d ＝ %d" % [mv, K21_TALL, mv * K21_TALL]
+				return L.t("進んだ %d × たて %d ＝ %d") % [mv, K21_TALL, mv * K21_TALL]
 			return "道を どこへ 動かしても 同じ 広さ！"
 		"stack":
-			return "%d × %d × %d ＝ %d こ" % [int(st.get("bh", 1)), int(st.get("bd", 1)),
+			return L.t("%d × %d × %d ＝ %d こ") % [int(st.get("bh", 1)), int(st.get("bd", 1)),
 				int(st.get("bw", 1)), int(st.get("bw", 1)) * int(st.get("bd", 1)) * int(st.get("bh", 1))]
 		"open":
 			if String(unit["id"]) == "k19":
 				return "1 と 6、2 と 5、3 と 4 ―― どれも 7"
 			var a1: int = int(st.get("h1", 2))
 			var a2: int = int(st.get("h2", 4))
-			return "高さ %d と %d ＝ %d、1 つ分は 平均の %s" % [
+			return L.t("高さ %d と %d ＝ %d、1 つ分は 平均の %s") % [
 				a1, a2, a1 + a2, ProblemGen.fmt(float(a1 + a2) * 0.5)]
 		"pour":
 			return "かけ算は いつも 24"
@@ -855,7 +855,7 @@ func _draw_tear(c: Control) -> void:
 	if n_placed >= 3:
 		lab = "そろった！"
 	elif n_placed > 0:
-		lab = "つぎも ここへ(あと %d こ)" % (3 - n_placed)
+		lab = L.t("つぎも ここへ(あと %d こ)") % (3 - n_placed)
 	c.draw_string(ThemeDB.fallback_font, zone.position + Vector2(16.0, 36.0), lab,
 		HORIZONTAL_ALIGNMENT_LEFT, -1, 28, GOLD)
 	c.draw_line(Vector2(20, ly), Vector2(c.size.x - 20, ly), Color(1, 1, 1, 0.85), 5.0)
@@ -1196,7 +1196,7 @@ func _draw_diag(c: Control) -> void:
 	var k := made.size()
 	var sum_msg := "三角形 1 つで 180°"
 	if k > 0:
-		sum_msg = "三角形 %d こ × 180° ＝ %d°" % [k, k * 180]
+		sum_msg = L.t("三角形 %d こ × 180° ＝ %d°") % [k, k * 180]
 	c.draw_string(f, Vector2(24, c.size.y - 58), sum_msg,
 		HORIZONTAL_ALIGNMENT_LEFT, -1, 30, GOLD if k >= n - 2 else Color(0.85, 0.9, 1.0))
 	c.draw_string(f, Vector2(24, c.size.y - 20),
@@ -1286,9 +1286,9 @@ func _draw_spoke(c: Control) -> void:
 	var k := picked.size()
 	var sum_msg := "まん中の まわりは ぜんぶで 360°"
 	if k > 0 and k < n:
-		sum_msg = "線 %d 本。まん中は まだ 分けきれていない" % k
+		sum_msg = L.t("線 %d 本。まん中は まだ 分けきれていない") % k
 	elif k >= n:
-		sum_msg = "360° ÷ %d ＝ %d°" % [n, roundi(step_deg)]
+		sum_msg = L.t("360° ÷ %d ＝ %d°") % [n, roundi(step_deg)]
 	c.draw_string(f, Vector2(24, c.size.y - 58), sum_msg,
 		HORIZONTAL_ALIGNMENT_LEFT, -1, 30, GOLD if k >= n else Color(0.85, 0.9, 1.0))
 	c.draw_string(f, Vector2(24, c.size.y - 20),
@@ -1386,12 +1386,12 @@ func _draw_clock(c: Control) -> void:
 			c.draw_arc(center, r + 12.0, 0.0, TAU, 60, Color(0.55, 0.85, 1.0, 0.8), 4.0)
 	# 何 こ分 まわしたかを 大きく
 	var whole := int(floor(deg / 30.0 + 0.01))
-	c.draw_string(f, Vector2(0, 52), "%d こ分" % whole,
+	c.draw_string(f, Vector2(0, 52), L.t("%d こ分") % whole,
 		HORIZONTAL_ALIGNMENT_CENTER, c.size.x, 44, GOLD if done else Color(0.85, 0.9, 1.0))
 	# 数えた 1 こ分(30°)が、そのまま 式に なる ところまで 出す
 	var sum_msg := "1 こ分 ＝ 30°"
 	if whole > 0:
-		sum_msg = "30° × %d こ ＝ %d°" % [whole, whole * 30]
+		sum_msg = L.t("30° × %d こ ＝ %d°") % [whole, whole * 30]
 	c.draw_string(f, Vector2(24, c.size.y - 58), sum_msg,
 		HORIZONTAL_ALIGNMENT_LEFT, -1, 30, GOLD if done else Color(0.85, 0.9, 1.0))
 	c.draw_string(f, Vector2(24, c.size.y - 20), _clock_note(),
@@ -1514,13 +1514,13 @@ func _draw_grid(c: Control) -> void:
 		c.draw_colored_polygon(PackedVector2Array([o, o + Vector2(s * w, 0),
 			o + Vector2(s * w, -s * h)]), Color(1.0, 0.78, 0.35, 0.35))
 		_draw_tag(c, o + Vector2(s * w * 0.72, -s * h * 0.30),
-			"%s ます" % ProblemGen.fmt(float(w * h) * 0.5), 24, Color(1.0, 0.97, 0.85))
+			L.t("%s ます") % ProblemGen.fmt(float(w * h) * 0.5), 24, Color(1.0, 0.97, 0.85))
 	elif uid == "k16":
 		# 底辺だけ のばす。広さは 底辺 × 高さ ÷ 2 で、そのつど 数で 出す
 		c.draw_colored_polygon(PackedVector2Array([o, o + Vector2(s * w, 0),
 			o + Vector2(s * _k16_apex(), -s * h)]), Color(1.0, 0.78, 0.35, 0.45))
 		_draw_tag(c, o + Vector2(s * w * 0.45, -s * h * 0.30),
-			"%s ます" % ProblemGen.fmt(float(w * h) * 0.5), 24, Color(1.0, 0.97, 0.85))
+			L.t("%s ます") % ProblemGen.fmt(float(w * h) * 0.5), 24, Color(1.0, 0.97, 0.85))
 	# つまむ ところ(k16 は 底辺の はし。高さは 動かさない)
 	c.draw_circle(o + Vector2(s * w, 0.0 if uid == "k16" else -s * h), 16.0, GOLD)
 	c.draw_string(font, o + Vector2(s * w * 0.5 - 30.0, 34.0),
@@ -1529,11 +1529,11 @@ func _draw_grid(c: Control) -> void:
 	c.draw_string(font, o + Vector2(-96.0, -s * h * 0.5),
 		("高さ %d" if uid == "k16" else "たて %d") % h,
 		HORIZONTAL_ALIGNMENT_LEFT, -1, 26, INK)
-	var foot := "金色の 点を つまんで、うすい 形に あわせよう(たて %d よこ %d)" % [th, tw]
+	var foot := L.t("金色の 点を つまんで、うすい 形に あわせよう(たて %d よこ %d)") % [th, tw]
 	if uid == "k10":
-		foot = "四角 %d × %d ＝ %d ます。金色の 三角は その 半分" % [h, w, w * h]
+		foot = L.t("四角 %d × %d ＝ %d ます。金色の 三角は その 半分") % [h, w, w * h]
 	elif uid == "k16":
-		foot = "高さ %d は そのまま。底辺を %d まで のばそう(いま %d)" % [h, tw, w]
+		foot = L.t("高さ %d は そのまま。底辺を %d まで のばそう(いま %d)") % [h, tw, w]
 	c.draw_string(font, Vector2(24, map.size.y - 18), foot,
 		HORIZONTAL_ALIGNMENT_LEFT, -1, 25, DIM)
 
@@ -1570,13 +1570,13 @@ func _draw_point(c: Control) -> void:
 	c.draw_polyline(PackedVector2Array([bl, br, tr, tl, bl]), INK, 4.0)
 	# 広さは 三角形の 外(へり の むこう)に 出す。細い 三角形でも 読める
 	_draw_tag(c, Vector2((tl.x + tr.x) * 0.5, tl.y - 22.0),
-		"上 %d" % roundi(up), 24, Color(0.55, 0.85, 1.0))
+		L.t("上 %d") % roundi(up), 24, Color(0.55, 0.85, 1.0))
 	_draw_tag(c, Vector2((bl.x + br.x) * 0.5, bl.y + 26.0),
-		"下 %d" % roundi(down), 24, Color(1.0, 0.78, 0.35))
+		L.t("下 %d") % roundi(down), 24, Color(1.0, 0.78, 0.35))
 	_draw_tag(c, Vector2(bl.x - 52.0, (bl.y + tl.y) * 0.5),
-		"左 %d" % roundi(left), 24, Color(1.0, 0.60, 0.68))
+		L.t("左 %d") % roundi(left), 24, Color(1.0, 0.60, 0.68))
 	_draw_tag(c, Vector2(br.x + 52.0, (br.y + tr.y) * 0.5),
-		"右 %d" % roundi(right), 24, Color(0.65, 0.95, 0.70))
+		L.t("右 %d") % roundi(right), 24, Color(0.65, 0.95, 0.70))
 	# つまむ ところ
 	var puls := 1.0 + sin(float(Time.get_ticks_msec()) * 0.005) * 0.15
 	var moved := Vector2(px, py).distance_to(Vector2(float(st["sx"]), float(st["sy"])))
@@ -1585,13 +1585,13 @@ func _draw_point(c: Control) -> void:
 	c.draw_circle(p, 14.0, GOLD)
 	# 数えた ものを、そのまま 式に する
 	c.draw_string(f, Vector2(24, map.size.y - 94),
-		"上 %d ＋ 下 %d ＝ %d" % [roundi(up), roundi(down), roundi(up + down)],
+		L.t("上 %d ＋ 下 %d ＝ %d") % [roundi(up), roundi(down), roundi(up + down)],
 		HORIZONTAL_ALIGNMENT_LEFT, -1, 28, Color(0.85, 0.9, 1.0))
 	c.draw_string(f, Vector2(24, map.size.y - 58),
-		"左 %d ＋ 右 %d ＝ %d" % [roundi(left), roundi(right), roundi(left + right)],
+		L.t("左 %d ＋ 右 %d ＝ %d") % [roundi(left), roundi(right), roundi(left + right)],
 		HORIZONTAL_ALIGNMENT_LEFT, -1, 28, Color(0.85, 0.9, 1.0))
 	c.draw_string(f, Vector2(24, map.size.y - 20),
-		"どこへ 動かしても どちらも %d(四角の 半分)" % roundi(w * h * 0.5) if moved >= 2.0
+		L.t("どこへ 動かしても どちらも %d(四角の 半分)") % roundi(w * h * 0.5) if moved >= 2.0
 			else "金色の 点を つまんで、あちこちへ 動かそう",
 		HORIZONTAL_ALIGNMENT_LEFT, -1, 25, GOLD if moved >= 2.0 else DIM)
 
@@ -1728,7 +1728,7 @@ func _draw_roll(c: Control) -> void:
 	var mark := deg_to_rad(-90.0 + 360.0 * turns)
 	c.draw_line(Vector2(x, y), Vector2(x, y) + Vector2(cos(mark), sin(mark)) * r, SKY, 4.0)
 	c.draw_string(ThemeDB.fallback_font, Vector2(24, map.size.y - 18),
-		"円を 右へ ころがそう(いま %.2f まわり ＝ さしわたし %.2f こ分)" % [
+		L.t("円を 右へ ころがそう(いま %.2f まわり ＝ さしわたし %.2f こ分)") % [
 			turns, TAU * turns * 0.5], HORIZONTAL_ALIGNMENT_LEFT, -1, 25, DIM)
 
 
@@ -1774,7 +1774,7 @@ func _draw_shift(c: Control) -> void:
 			# 重なりの よこ・たて・広さを その場で 出す。
 			# 「よこだけ ふえて たては 変わらない」が 数でも 読める
 			_draw_tag(c, Vector2((left + right) * 0.5, gate.position.y + gate.size.y * 0.5),
-				"%s × %d ＝ %s" % [ProblemGen.fmt(over), K21_TALL,
+				L.t("%s × %d ＝ %s") % [ProblemGen.fmt(over), K21_TALL,
 					ProblemGen.fmt(over * tall)], 26, Color(1.0, 0.97, 0.85))
 		# 進んだ 長さの ものさしは 図の 上に 出す
 		# (下に 置くと、つまむ ○ と 重なって どちらも 読めなかった)
@@ -1784,11 +1784,11 @@ func _draw_shift(c: Control) -> void:
 		c.draw_line(Vector2(gx, my - 7.0), Vector2(gx, my + 7.0), Color(1, 0.85, 0.4, 0.9), 3.0)
 		c.draw_line(Vector2(gx + s * over, my - 7.0), Vector2(gx + s * over, my + 7.0),
 			Color(1, 0.85, 0.4, 0.9), 3.0)
-		c.draw_string(f2, Vector2(gx + 6.0, my - 14.0), "進んだ %s" % ProblemGen.fmt(over),
+		c.draw_string(f2, Vector2(gx + 6.0, my - 14.0), L.t("進んだ %s") % ProblemGen.fmt(over),
 			HORIZONTAL_ALIGNMENT_LEFT, -1, 24, GOLD)
 		c.draw_circle(Vector2(bx + s * float(K21_WIDE) * 0.5, o.y + 26.0), 16.0, GOLD)
 		c.draw_string(f2, Vector2(24, map.size.y - 50),
-			"重なりの たては ずっと %d。よこ だけが 進んだ ぶん ふえる" % K21_TALL,
+			L.t("重なりの たては ずっと %d。よこ だけが 進んだ ぶん ふえる") % K21_TALL,
 			HORIZONTAL_ALIGNMENT_LEFT, -1, 25, DIM)
 		c.draw_string(f2, Vector2(24, map.size.y - 18),
 			"板を 右へ 動かそう。重なった ところが 広がっていく",
@@ -1830,7 +1830,7 @@ func _draw_stack(c: Control) -> void:
 				c.draw_polyline(quad + PackedVector2Array([quad[0]]), Color(1, 1, 1, 0.5), 1.5)
 				placed += 1
 	c.draw_string(ThemeDB.fallback_font, Vector2(24, map.size.y - 18),
-		"タップして さいころを つもう(%d / %d こ)" % [n, w * d * h],
+		L.t("タップして さいころを つもう(%d / %d こ)") % [n, w * d * h],
 		HORIZONTAL_ALIGNMENT_LEFT, -1, 25, DIM)
 
 
@@ -1904,17 +1904,17 @@ func _draw_open(c: Control) -> void:
 			moving.append((from_pts[i] as Vector2).lerp(to_pts[i] as Vector2, t))
 		c.draw_colored_polygon(moving, Color(1.0, 0.78, 0.35, 0.55))
 		c.draw_polyline(moving + PackedVector2Array([moving[0]]), GOLD, 3.0)
-		_draw_tag(c, o + Vector2(-34.0, -s * n1 * 0.5), "手前 %d" % int(n1), 24, SKY)
-		_draw_tag(c, o + Vector2(w + 40.0, -s * n2 * 0.5), "奥 %d" % int(n2), 24, SKY)
+		_draw_tag(c, o + Vector2(-34.0, -s * n1 * 0.5), L.t("手前 %d") % int(n1), 24, SKY)
+		_draw_tag(c, o + Vector2(w + 40.0, -s * n2 * 0.5), L.t("奥 %d") % int(n2), 24, SKY)
 		if t > 0.9:
 			# まっすぐな 箱に なった。たては 手前 + 奥
 			c.draw_rect(Rect2(o + Vector2(0, -s * (n1 + n2)), Vector2(w, s * (n1 + n2))),
 				Color(1, 0.95, 0.5, 0.95), false, 4.0)
 			_draw_tag(c, o + Vector2(w * 0.5, -s * (n1 + n2) - 26.0),
-				"たて %d + %d ＝ %d" % [int(n1), int(n2), int(n1 + n2)], 26,
+				L.t("たて %d + %d ＝ %d") % [int(n1), int(n2), int(n1 + n2)], 26,
 				Color(1.0, 0.97, 0.85))
 		c.draw_string(f2, Vector2(24, map.size.y - 50),
-			"2 つ 合わせると たて %d の まっすぐな 箱。1 つ分は その 半分 ＝ %s"
+			L.t("2 つ 合わせると たて %d の まっすぐな 箱。1 つ分は その 半分 ＝ %s")
 				% [int(n1 + n2), ProblemGen.fmt((n1 + n2) * 0.5)],
 			HORIZONTAL_ALIGNMENT_LEFT, -1, 25, DIM if t < 0.9 else GOLD)
 		c.draw_string(f2, Vector2(24, map.size.y - 18),
@@ -1940,7 +1940,7 @@ func _draw_pour(c: Control) -> void:
 		Color(0.30, 0.60, 0.95, 0.5))
 	c.draw_circle(Vector2(rx + s * w, o.y + 26.0), 16.0, GOLD)
 	c.draw_string(ThemeDB.fallback_font, Vector2(24, map.size.y - 18),
-		"右の 器の はばを 変えよう(はば %.1f・深さ %.1f・かけると %.0f)" % [w, depth, w * depth],
+		L.t("右の 器の はばを 変えよう(はば %.1f・深さ %.1f・かけると %.0f)") % [w, depth, w * depth],
 		HORIZONTAL_ALIGNMENT_LEFT, -1, 25, DIM)
 
 
@@ -1980,7 +1980,7 @@ func _draw_shadow(c: Control) -> void:
 	c.draw_circle(sun, 24.0, Color(1.0, 0.9, 0.4))
 	c.draw_string(font, sun + Vector2(-18.0, -32.0), "太陽", HORIZONTAL_ALIGNMENT_LEFT, -1, 22, DIM)
 	c.draw_string(font, Vector2(24, c.size.y - 18),
-		"太陽を 上下に 動かそう(くい %.1f ÷ %.1f ＝ %.2f ・ 木 %.1f ÷ %.1f ＝ %.2f)" % [
+		L.t("太陽を 上下に 動かそう(くい %.1f ÷ %.1f ＝ %.2f ・ 木 %.1f ÷ %.1f ＝ %.2f)") % [
 			pole, s1, pole / s1, tree, s2, tree / s2],
 		HORIZONTAL_ALIGNMENT_LEFT, -1, 24, DIM)
 

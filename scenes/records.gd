@@ -54,11 +54,11 @@ func _ready() -> void:
 	panel.add_child(pv)
 	_lbl(pv, "段位", 24, Color(0.8, 0.87, 1.0))
 	_lbl(pv, GameState.rank_name(), 48, Color(1.0, 0.84, 0.3))
-	_lbl(pv, "総得点 %s 点" % GameState.comma(GameState.total_score()), 30, Color.WHITE)
+	_lbl(pv, L.t("総得点 %s 点") % GameState.comma(GameState.total_score()), 30, Color.WHITE)
 	var gap: Array = GameState.next_rank_gap()
 	if String(gap[0]) != "":
-		_lbl(pv, "「%s」まで あと %d 点" % [gap[0], gap[1]], 22, Color(0.75, 0.83, 0.95))
-	_lbl(pv, "解いた問題 %d 問(一発正解 %d 問)   最高コンボ ×%d" % [
+		_lbl(pv, L.t("「%s」まで あと %d 点") % [gap[0], gap[1]], 22, Color(0.75, 0.83, 0.95))
+	_lbl(pv, L.t("解いた問題 %d 問(一発正解 %d 問)   最高コンボ ×%d") % [
 		int(GameState.stats.get("correct", 0)), int(GameState.stats.get("perfect", 0)),
 		GameState.best_combo], 24, Color(0.6, 0.95, 1.0))
 
@@ -85,7 +85,7 @@ func _ready() -> void:
 			course_score += int(GameState.scores.get(id, 0)) + int(GameState.scores.get("g:" + id, 0))
 		var col: Color = c["color"]
 		_lbl(cv, String(c["name"]), 28, col.lightened(0.45))
-		_lbl(cv, "クリア %d/%d   ★ %d/%d   王冠 %d/%d   %d点" % [
+		_lbl(cv, L.t("クリア %d/%d   ★ %d/%d   王冠 %d/%d   %d点") % [
 			cleared, stages.size(), got, stages.size() * 3,
 			crowns, stages.size(), course_score], 24, Color.WHITE)
 
@@ -100,7 +100,7 @@ func _ready() -> void:
 	var snd := Button.new()
 	snd.toggle_mode = true
 	snd.button_pressed = GameState.bgm_on
-	snd.text = "♪ BGM: " + ("入" if GameState.bgm_on else "切")
+	snd.text = L.t("♪ BGM: %s") % L.t("入" if GameState.bgm_on else "切")
 	snd.custom_minimum_size = Vector2(0, 76)
 	snd.focus_mode = Control.FOCUS_NONE
 	snd.add_theme_font_size_override("font_size", 26)
@@ -108,7 +108,7 @@ func _ready() -> void:
 	snd.toggled.connect(func(on: bool) -> void:
 		GameState.play_sfx("tap")
 		GameState.set_bgm_on(on)
-		snd.text = "♪ BGM: " + ("入" if on else "切")
+		snd.text = L.t("♪ BGM: %s") % L.t("入" if on else "切")
 		if on:
 			GameState.play_bgm("map"))
 	list.add_child(snd)
@@ -117,14 +117,14 @@ func _ready() -> void:
 	for c in ProblemGen.COURSES:
 		var key := "time:" + String(c["id"])
 		if GameState.challenge_best.has(key):
-			_lbl(chv, "タイムアタック %s: %d 問" % [String(c["name"]), int(GameState.challenge_best[key])],
+			_lbl(chv, L.t("タイムアタック %s: %d 問") % [String(c["name"]), int(GameState.challenge_best[key])],
 				22, Color.WHITE)
 			any = true
 	if GameState.challenge_best.has("time:all"):
-		_lbl(chv, "タイムアタック 全コース: %d 問" % int(GameState.challenge_best["time:all"]), 22, Color.WHITE)
+		_lbl(chv, L.t("タイムアタック 全コース: %d 問") % int(GameState.challenge_best["time:all"]), 22, Color.WHITE)
 		any = true
 	if GameState.challenge_best.has("survival"):
-		_lbl(chv, "サバイバル: %d 問" % int(GameState.challenge_best["survival"]), 22, Color.WHITE)
+		_lbl(chv, L.t("サバイバル: %d 問") % int(GameState.challenge_best["survival"]), 22, Color.WHITE)
 		any = true
 	if not any:
 		_lbl(chv, "まだ記録がありません", 22, Color(0.7, 0.76, 0.88))

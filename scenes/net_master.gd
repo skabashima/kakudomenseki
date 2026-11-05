@@ -59,7 +59,7 @@ func _ready() -> void:
 func _build_list() -> void:
 	idx = -1
 	_reset_root()
-	_head("展開図マスター  %d / %d" % [_done_count(), nets.size()],
+	_head(L.t("展開図マスター  %d / %d") % [_done_count(), nets.size()],
 		func() -> void: GameState.change_scene("res://scenes/main.tscn"), "もどる")
 
 	var lead := RubyLabel.new()
@@ -67,10 +67,8 @@ func _build_list() -> void:
 	lead.ruby_size = 11
 	lead.color = Color(0.80, 0.86, 1.0)
 	lead.custom_minimum_size = Vector2(0, 56)
-	lead.set_ruby_text(("この 立体の 展開図は どれ? えらんだら、その 展開図が "
-		+ "立ち上がります。") if list_reverse else
-		("この 展開図は どの 立体に なる? 当てたら、"
-		+ "その場で 立ち上がって 立体に なります。"), true)
+	lead.set_ruby_text("この 立体の 展開図は どれ? えらんだら、その 展開図が 立ち上がります。" if list_reverse else
+		"この 展開図は どの 立体に なる? 当てたら、その場で 立ち上がって 立体に なります。", true)
 	root.add_child(lead)
 	root.add_child(_flip_button())
 
@@ -174,13 +172,13 @@ func _run_card(quiz: bool) -> Button:
 	t2.color = Color(1.0, 0.92, 0.78)
 	var sub := ""
 	if quiz:
-		sub = "%d とおりから 10 問。どの 立体に なる?" % nets.size()
+		sub = L.t("%d とおりから 10 問。どの 立体に なる?") % nets.size()
 		if GameState.net_quiz_best > 0:
-			sub += "  自己ベスト %d 問" % GameState.net_quiz_best
+			sub += L.t("  自己ベスト %d 問") % GameState.net_quiz_best
 	else:
 		sub = "展開図の 問題を 10 問 つづけて"
 		if GameState.net_challenge_best > 0:
-			sub += "  自己ベスト %d点" % GameState.net_challenge_best
+			sub += L.t("  自己ベスト %d点") % GameState.net_challenge_best
 	t2.set_ruby_text(sub, true)
 	col.add_child(t2)
 	if not open:
@@ -255,7 +253,7 @@ func _card(i: int) -> Button:
 	name_lbl.font_size = 26
 	name_lbl.ruby_size = 12
 	name_lbl.color = Color(1, 1, 1, 0.95)
-	name_lbl.set_ruby_text("その %d" % (i + 1), true)
+	name_lbl.set_ruby_text(L.t("その %d") % (i + 1), true)
 	col.add_child(name_lbl)
 	# ★ 一覧に「長方形 3 枚と 三角形 2 枚」のような 中みを 出さない ―
 	#   それだけで 答えが 分かって しまう。答えた あとに 出す
@@ -353,9 +351,9 @@ func _build_quiz(i: int, rev := false) -> void:
 	answered = false
 	_reset_root()
 	var net: Dictionary = nets[i]
-	var head_text := "その %d" % (i + 1)
+	var head_text := L.t("その %d") % (i + 1)
 	if not run_ids.is_empty():
-		head_text = "挑戦 10問  %d / %d" % [run_at + 1, run_ids.size()]
+		head_text = L.t("挑戦 10問  %d / %d") % [run_at + 1, run_ids.size()]
 	_head(head_text, func() -> void:
 		run_ids = []
 		_build_list(), "一覧へ")
@@ -543,11 +541,11 @@ func _answer(btn: Button, picked: String, correct: String) -> void:
 		GameState.record_net_clear(String(net["id"]))
 	var name_str := String(net["solid"])
 	if ok:
-		result_label.set_ruby_text("せいかい! %s。 立ち上がる ところを 見てみよう。"
+		result_label.set_ruby_text(L.t("せいかい! %s。 立ち上がる ところを 見てみよう。")
 			% name_str, true)
 	else:
 		# ★ まちがえても 折り上がりを 見せる。ここが いちばん 分かる ところ
-		result_label.set_ruby_text("ざんねん。正しくは %s。 立ち上がる ところを 見てみよう。"
+		result_label.set_ruby_text(L.t("ざんねん。正しくは %s。 立ち上がる ところを 見てみよう。")
 			% (name_str if not reverse else "この 中の 1 つ"), true)
 	# 逆向きの ときは 立体を 見せていたので、正しい 展開図に もどしてから 立ち上げる
 	if reverse:
@@ -577,7 +575,7 @@ func _on_folded() -> void:
 		next_btn.text = "つぎへ" if run_at + 1 < run_ids.size() else "けっかを 見る"
 	elif idx + 1 < nets.size() and GameState.net_needs_purchase(idx + 1):
 		next_btn.text = "一覧へ"
-	result_label.set_ruby_text("%s に なった。%s" % [String(net["solid"]),
+	result_label.set_ruby_text(L.t("%s に なった。%s") % [String(net["solid"]),
 		String(net["hint"])], true)
 
 
@@ -602,16 +600,16 @@ func _build_run_result() -> void:
 	big.ruby_size = 18
 	big.center = true
 	big.color = HEAD
-	big.set_ruby_text("%d 問の うち %d 問 せいかい" % [total, got], true)
+	big.set_ruby_text(L.t("%d 問の うち %d 問 せいかい") % [total, got], true)
 	box.add_child(big)
 	var sub := RubyLabel.new()
 	sub.font_size = 24
 	sub.ruby_size = 12
 	sub.center = true
 	sub.color = Color(0.85, 0.9, 1.0)
-	var msg := "自己ベスト %d 問" % GameState.net_quiz_best
+	var msg := L.t("自己ベスト %d 問") % GameState.net_quiz_best
 	if best:
-		msg = "自己ベスト こうしん! %d 問" % GameState.net_quiz_best
+		msg = L.t("自己ベスト こうしん! %d 問") % GameState.net_quiz_best
 	sub.set_ruby_text(msg, true)
 	box.add_child(sub)
 	var again := Button.new()

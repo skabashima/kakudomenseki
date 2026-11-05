@@ -194,7 +194,7 @@ static func _road(p: Vector2) -> Dictionary:
 		ProblemGen.label(Vector2(rx * 0.5, ry + rw + high * 0.5), "%.1f" % (left * high), GOLD, 24),
 		ProblemGen.label(Vector2(rx + rw + right * 0.5, ry + rw + high * 0.5),
 			"%.1f" % (right * high), GOLD, 24),
-		ProblemGen.label(Vector2(w * 0.5, -1.1), "畑 %.0f × %.0f、道のはば %.0f" % [w, h, rw], DIM, 26),
+		ProblemGen.label(Vector2(w * 0.5, -1.1), L.t("畑 %.0f × %.0f、道のはば %.0f") % [w, h, rw], DIM, 26),
 	]}
 
 
@@ -349,8 +349,8 @@ static func _euler(p: Vector2) -> Dictionary:
 	var n := int(round(p.x))
 	var out: Array = _prism(n, 4.0, 5.0, WHITE)
 	out += [
-		ProblemGen.label(Vector2(0.0, 9.5), "%d 角柱" % n, GOLD, 30),
-		ProblemGen.label(Vector2(0.0, -7.0), "頂点 %d ・ 辺 %d ・ 面 %d" % [2 * n, 3 * n, n + 2],
+		ProblemGen.label(Vector2(0.0, 9.5), L.t("%d 角柱") % n, GOLD, 30),
+		ProblemGen.label(Vector2(0.0, -7.0), L.t("頂点 %d ・ 辺 %d ・ 面 %d") % [2 * n, 3 * n, n + 2],
 			SKY, 26),
 	]
 	return {"shapes": out}
@@ -462,9 +462,9 @@ static func _radian(p: Vector2) -> Dictionary:
 		ProblemGen.seg(Vector2.ZERO, Vector2(r, 0), GOLD, 3.0),
 		ProblemGen.seg(Vector2.ZERO, Vector2(cos(th), sin(th)) * r, GOLD, 3.0),
 		ProblemGen.arc(Vector2.ZERO, r, 0.0, deg, SKY, 4.5),
-		ProblemGen.label(Vector2(r * 0.5, -1.0), "半径 %.1f" % r, GOLD, 26),
+		ProblemGen.label(Vector2(r * 0.5, -1.0), L.t("半径 %.1f") % r, GOLD, 26),
 		ProblemGen.label(Vector2(cos(th * 0.5), sin(th * 0.5)) * (r + 1.6),
-			"弧 %.2f" % (r * th), SKY, 26),
+			L.t("弧 %.2f") % (r * th), SKY, 26),
 		ProblemGen.ang(Vector2.ZERO, Vector2(r, 0), Vector2(cos(th), sin(th)) * r, "同じ角", 1.5),
 	]}
 
@@ -501,7 +501,7 @@ static func _circle_eq(p: Vector2) -> Dictionary:
 		ProblemGen.right(Vector2(p.x, c.y), c, p),
 		ProblemGen.circle(p, 0.22, GOLD, null, 0.0),
 		ProblemGen.label(p + Vector2(0.8, 0.7), "(%.1f, %.1f)" % [p.x, p.y], GOLD, 26),
-		ProblemGen.label(c + Vector2(-1.4, -0.8), "中心 (%.0f, %.0f)" % [c.x, c.y], DIM, 24),
+		ProblemGen.label(c + Vector2(-1.4, -0.8), L.t("中心 (%.0f, %.0f)") % [c.x, c.y], DIM, 24),
 	]}
 
 

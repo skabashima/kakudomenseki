@@ -599,7 +599,7 @@ func _draw_goal(c: Control) -> void:
 	if all_done:
 		msg = "すべての星に届いた!" if mode == "hs" else "国じゅうを測り終えた!"
 	else:
-		msg = "あと %d %s" % [chapters.size() - _cleared_count(), String(th["unit"])]
+		msg = L.t("あと %d %s") % [chapters.size() - _cleared_count(), String(th["unit"])]
 	c.draw_string(font, p + Vector2(-170, -86), msg,
 		HORIZONTAL_ALIGNMENT_CENTER, 340, 30, th["accent"] if all_done else th["ink"])
 

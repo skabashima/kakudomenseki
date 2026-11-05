@@ -46,8 +46,7 @@ const CHAPTERS := [
 				"親方のトトは何も言わず、砂に三角形を描いて棒を渡してきた。測れ、ということだ。",
 			]},
 			{"type": "measure", "title": "頂点を動かしてみる", "fig": "triangle", "trials": 3,
-				"lead": "三角形の上の頂点(金色の点)をゆびで動かすと、3 つの角が変わる。"
-					+ "とがった形、平べったい形 ― いくつか作って記録し、カラスの言い分を確かめよう。",
+				"lead": "三角形の上の頂点(金色の点)をゆびで動かすと、3 つの角が変わる。とがった形、平べったい形 ― いくつか作って記録し、カラスの言い分を確かめよう。",
 				"question": "頂点を動かすと、3 つの角の和はどうなった?",
 				"choices": [
 					"カラスの言うとおり、とがった形ほど和は小さかった",
@@ -84,8 +83,7 @@ const CHAPTERS := [
 				"トトは壁を指でなぞって、ここで曲がってみろ、という顔をした。",
 			]},
 			{"type": "measure", "title": "曲がる場所を変える", "fig": "zigzag", "trials": 3,
-				"lead": "金色の点(曲がり角)を動かすと、上の角・下の角・折れ角の 3 つとも変わる。"
-					+ "場所をいくつか変えて記録し、3 つの数を見くらべよう。",
+				"lead": "金色の点(曲がり角)を動かすと、上の角・下の角・折れ角の 3 つとも変わる。場所をいくつか変えて記録し、3 つの数を見くらべよう。",
 				"question": "折れ角は、上の角と下の角とどんな関係だった?",
 				"choices": [
 					"いつも 上の角 + 下の角 になっていた",
@@ -155,8 +153,7 @@ const CHAPTERS := [
 				"トトは型を一つ手に取り、へこみの点を指でぐっと押しこんでみせた。",
 			]},
 			{"type": "measure", "title": "へこみを動かす", "fig": "dart", "trials": 3,
-				"lead": "金色の点(へこみ P)を動かすと、4 つの角がいっしょに変わる。"
-					+ "先・左・右の 3 つと、へこみの角を記録しよう。",
+				"lead": "金色の点(へこみ P)を動かすと、4 つの角がいっしょに変わる。先・左・右の 3 つと、へこみの角を記録しよう。",
 				"question": "へこみの角は、ほかの 3 つとどんな関係だった?",
 				"choices": [
 					"3 つをたした大きさだった",
@@ -191,8 +188,7 @@ const CHAPTERS := [
 				"トトは帯を一枚取り、折り目の角をゆっくり変えながら折ってみせた。",
 			]},
 			{"type": "measure", "title": "折り目の角を変える", "fig": "fold", "trials": 3,
-				"lead": "金色の点を動かすと折り目の角が変わる。"
-					+ "折り目の角と、折り返した辺がふちと作る角を記録しよう。",
+				"lead": "金色の点を動かすと折り目の角が変わる。折り目の角と、折り返した辺がふちと作る角を記録しよう。",
 				"question": "折り目の角と、重なった角の関係は?",
 				"choices": [
 					"折り目 × 2 と重なった角をたすと、いつも 180° だった",
@@ -227,8 +223,7 @@ const CHAPTERS := [
 				"トトが巻き尺を投げてよこした。大きさを変えて、自分で巻いてみろということらしい。",
 			]},
 			{"type": "measure", "title": "大きさを変えて測る", "fig": "circle", "trials": 3,
-				"lead": "金色の点を左右に動かすと、円の大きさが変わる。"
-					+ "直径と、巻き尺で測った円周を記録しよう。",
+				"lead": "金色の点を左右に動かすと、円の大きさが変わる。直径と、巻き尺で測った円周を記録しよう。",
 				"question": "円の大きさを変えると、円周 ÷ 直径 はどうなった?",
 				"choices": [
 					"カラスの言うとおり、大きい円ほど倍率も大きかった",
@@ -262,8 +257,7 @@ const CHAPTERS := [
 				"だが広さは? ― 二人が見ている前で、確かめることになった。",
 			]},
 			{"type": "measure", "title": "頂点を横に滑らせる", "fig": "equal_area", "trials": 3,
-				"lead": "金色の点は左右にしか動かない(高さは変わらない)。"
-					+ "形が変わるたびに、辺の長さと面積を記録しよう。",
+				"lead": "金色の点は左右にしか動かない(高さは変わらない)。形が変わるたびに、辺の長さと面積を記録しよう。",
 				"question": "頂点を横に動かすと、面積はどうなった?",
 				"choices": [
 					"カラスの言うとおり、とがるほど狭くなった",
@@ -298,8 +292,7 @@ const CHAPTERS := [
 				"トトは畦に立って、道の位置を右へ左へと動かしてみせた。",
 			]},
 			{"type": "measure", "title": "道の位置を動かす", "fig": "road", "trials": 3,
-				"lead": "金色の点を動かすと、たての道とよこの道の位置が変わる。"
-					+ "4 つに割れた区画の面積をたして記録しよう。",
+				"lead": "金色の点を動かすと、たての道とよこの道の位置が変わる。4 つに割れた区画の面積をたして記録しよう。",
 				"question": "道の位置を変えると、残る畑の広さはどうなった?",
 				"choices": [
 					"真ん中に通すほど狭くなった",
@@ -334,8 +327,7 @@ const CHAPTERS := [
 				"村人が財布を出しかけたところで、トトが柄杓をこちらへ放ってよこした。",
 			]},
 			{"type": "measure", "title": "器の幅を変える", "fig": "tank", "trials": 3,
-				"lead": "金色の点をつまむと、水そうの右の壁が動いて幅が変わる。"
-					+ "水の量は同じまま。幅と深さを記録しよう。",
+				"lead": "金色の点をつまむと、水そうの右の壁が動いて幅が変わる。水の量は同じまま。幅と深さを記録しよう。",
 				"question": "幅を変えると、深さはどうなった?",
 				"choices": [
 					"カラスの言うとおり、幅が広いほど深かった",
@@ -370,8 +362,7 @@ const CHAPTERS := [
 				"トトは地面に杭を一本立て、その影を指でなぞった。まず、これで確かめろということだ。",
 			]},
 			{"type": "measure", "title": "太陽の高さを変える", "fig": "shadow", "trials": 3,
-				"lead": "金色の点を動かすと太陽の向きが変わり、杭と木の影が同時にのびちぢみする。"
-					+ "それぞれの 高さ ÷ 影 を記録しよう。",
+				"lead": "金色の点を動かすと太陽の向きが変わり、杭と木の影が同時にのびちぢみする。それぞれの 高さ ÷ 影 を記録しよう。",
 				"question": "杭と木で、高さ ÷ 影 はどうだった?",
 				"choices": [
 					"背の高いものほど大きかった",
@@ -442,8 +433,7 @@ const CHAPTERS := [
 				"棟梁は答えず、板に正方形を三つ描いた。二辺の正方形と、斜辺の正方形。",
 			]},
 			{"type": "measure", "title": "二辺を変えてみる", "fig": "pythagoras", "trials": 3,
-				"lead": "金色の点を動かすと、直角をはさむ 2 辺の長さが変わる。"
-					+ "a²・b² と、斜辺を測って出した c² を記録しよう。",
+				"lead": "金色の点を動かすと、直角をはさむ 2 辺の長さが変わる。a²・b² と、斜辺を測って出した c² を記録しよう。",
 				"question": "2 辺を変えると、a² + b² と c² の関係はどうなった?",
 				"choices": [
 					"いつも a² + b² = c² だった",
@@ -477,8 +467,7 @@ const CHAPTERS := [
 				"トトは三角定規を一枚置き、大きさを変えながら同じ形を何度も描いてみせた。",
 			]},
 			{"type": "measure", "title": "大きさを変える", "fig": "special_tri", "trials": 3,
-				"lead": "金色の点を動かすと三角定規の大きさが変わる(角は 30°・60°・90° のまま)。"
-					+ "短い辺と斜辺を記録しよう。",
+				"lead": "金色の点を動かすと三角定規の大きさが変わる(角は 30°・60°・90° のまま)。短い辺と斜辺を記録しよう。",
 				"question": "大きさを変えると、斜辺 ÷ 短い辺 はどうなった?",
 				"choices": [
 					"大きいほど比も大きくなった",
@@ -513,8 +502,7 @@ const CHAPTERS := [
 				"トトは分度器を渡してよこした。席を移りながら、舞台の端から端を見こむ角を測れ。",
 			]},
 			{"type": "measure", "title": "席を移してみる", "fig": "inscribed", "trials": 3,
-				"lead": "円の上の金色の点(あなたの席)を動かして、"
-					+ "席の位置・見こむ角(円周角)・中心から見た角を記録しよう。",
+				"lead": "円の上の金色の点(あなたの席)を動かして、席の位置・見こむ角(円周角)・中心から見た角を記録しよう。",
 				"question": "席を動かすと、見こむ角はどうなった?",
 				"choices": [
 					"カラスの言うとおり、中央の席ほど大きかった",
@@ -549,8 +537,7 @@ const CHAPTERS := [
 				"トトは接点に立ち、対岸の杭の位置を左右へずらしながら、縄の角を測れという顔をした。",
 			]},
 			{"type": "measure", "title": "対岸の杭を動かす", "fig": "tangent_chord", "trials": 3,
-				"lead": "金色の点(対岸の杭 A)を動かすと、縄の向きが変わる。"
-					+ "道と縄の角、そして向こう側の点 B から見こむ角を記録しよう。",
+				"lead": "金色の点(対岸の杭 A)を動かすと、縄の向きが変わる。道と縄の角、そして向こう側の点 B から見こむ角を記録しよう。",
 				"question": "接線と弦の角は、向こう側から見た角とどうだった?",
 				"choices": [
 					"いつも等しかった",
@@ -585,8 +572,7 @@ const CHAPTERS := [
 				"トトは星形の頂点をひとつつまんで、ぐっとずらしてみせた。",
 			]},
 			{"type": "measure", "title": "頂点をずらす", "fig": "star", "trials": 3,
-				"lead": "金色の点を円の上で動かすと、星の形がゆがむ。"
-					+ "とがった 5 つの角を記録して、合計しよう。",
+				"lead": "金色の点を円の上で動かすと、星の形がゆがむ。とがった 5 つの角を記録して、合計しよう。",
 				"question": "形をゆがめると、とがった 5 つの角の和はどうなった?",
 				"choices": [
 					"カラスの言うとおり 540° だった",
@@ -621,8 +607,7 @@ const CHAPTERS := [
 				"帆を拡大しながら、必要な布を自分で測ってみよう。",
 			]},
 			{"type": "measure", "title": "拡大してみる", "fig": "similar", "trials": 3,
-				"lead": "金色の点を動かすと、相似比(何倍に拡大したか)が変わる。"
-					+ "小さい帆と大きい帆の面積を記録しよう。",
+				"lead": "金色の点を動かすと、相似比(何倍に拡大したか)が変わる。小さい帆と大きい帆の面積を記録しよう。",
 				"question": "長さを k 倍にすると、面積は何倍になった?",
 				"choices": [
 					"カラスの言うとおり、同じ k 倍",
@@ -656,8 +641,7 @@ const CHAPTERS := [
 				"トトは床に膝をついて、まず床の対角線だけを縄で測ってみせた。",
 			]},
 			{"type": "measure", "title": "倉の形を変える", "fig": "box_diag", "trials": 3,
-				"lead": "金色の点を動かすと、おくゆきと高さが変わる。"
-					+ "対角線を測って、その 2 乗と 3 辺の平方の和を記録しよう。",
+				"lead": "金色の点を動かすと、おくゆきと高さが変わる。対角線を測って、その 2 乗と 3 辺の平方の和を記録しよう。",
 				"question": "対角線と 3 辺には、どんな関係があった?",
 				"choices": [
 					"カラスの言うとおり、3 辺をたした長さと同じだった",
@@ -692,8 +676,7 @@ const CHAPTERS := [
 				"帆の話(長さ二倍なら布は四倍)を覚えている。だが今度は入れ物 ― 中身の話だ。",
 			]},
 			{"type": "measure", "title": "箱を大きくする", "fig": "cube_scale", "trials": 3,
-				"lead": "金色の点を動かすと、右の箱が何倍かに拡大される。"
-					+ "もとの体積と、大きい箱の体積を記録しよう。",
+				"lead": "金色の点を動かすと、右の箱が何倍かに拡大される。もとの体積と、大きい箱の体積を記録しよう。",
 				"question": "長さを k 倍にすると、体積は何倍になった?",
 				"choices": [
 					"親方の言うとおり k 倍",
@@ -728,8 +711,7 @@ const CHAPTERS := [
 				"トトは帽子を一つ、はさみで縦に切りひらいて、ぺたりと台に広げた。",
 			]},
 			{"type": "measure", "title": "斜めの辺を変える", "fig": "cone_net", "trials": 3,
-				"lead": "金色の点を動かすと母線(斜めの辺)が長くなる。"
-					+ "中心角と、ひらいた弧の長さ、底面の円周を記録しよう。",
+				"lead": "金色の点を動かすと母線(斜めの辺)が長くなる。中心角と、ひらいた弧の長さ、底面の円周を記録しよう。",
 				"question": "母線を変えると、弧の長さはどうなった?",
 				"choices": [
 					"母線が長いほど弧も長くなった",
@@ -764,8 +746,7 @@ const CHAPTERS := [
 				"トトは角柱の模型を並べ、底面の角を三つ、四つ、五つと増やして見せた。",
 			]},
 			{"type": "measure", "title": "底面の角を増やす", "fig": "euler", "trials": 3,
-				"lead": "金色の点を動かすと、角柱の底面の角の数が変わる。"
-					+ "頂点・辺・面の数を記録して、頂点 − 辺 + 面 を計算しよう。",
+				"lead": "金色の点を動かすと、角柱の底面の角の数が変わる。頂点・辺・面の数を記録して、頂点 − 辺 + 面 を計算しよう。",
 				"question": "頂点 − 辺 + 面 はどうなった?",
 				"choices": [
 					"いつも 2 になった",
@@ -803,8 +784,7 @@ const CHAPTERS := [
 				"トトは杭を一本、池の外に打ち込んだ。ここから何本か渡してみろ、ということらしい。",
 			]},
 			{"type": "measure", "title": "渡す向きを変える", "fig": "power", "trials": 3,
-				"lead": "金色の点を動かすと、杭 P から引く板の向きが変わる。"
-					+ "近い岸までと遠い岸までの長さを記録して、かけ算してみよう。",
+				"lead": "金色の点を動かすと、杭 P から引く板の向きが変わる。近い岸までと遠い岸までの長さを記録して、かけ算してみよう。",
 				"question": "向きを変えると、二つの長さのかけ算はどうなった?",
 				"choices": [
 					"まっすぐ渡すときが一番大きかった",
@@ -839,8 +819,7 @@ const CHAPTERS := [
 				"トトは三角形の中に石を一つ置き、そこを通るように三本を引いてみせた。",
 			]},
 			{"type": "measure", "title": "交点を動かす", "fig": "ceva", "trials": 3,
-				"lead": "金色の点(交点 O)を三角形の中で動かすと、三つの辺の分かれ方が同時に変わる。"
-					+ "三つの比を記録して、かけ算してみよう。",
+				"lead": "金色の点(交点 O)を三角形の中で動かすと、三つの辺の分かれ方が同時に変わる。三つの比を記録して、かけ算してみよう。",
 				"question": "三つの比をかけると、どうなった?",
 				"choices": [
 					"三つの比はいつも等しかった",
@@ -875,8 +854,7 @@ const CHAPTERS := [
 				"トトは砂に三角形を描き、はさむ角をゆっくり開いたり閉じたりしてみせた。",
 			]},
 			{"type": "measure", "title": "はさむ角を変える", "fig": "cosine", "trials": 3,
-				"lead": "金色の点を動かすと、二辺のはさむ角 C が変わる(辺の長さは変わらない)。"
-					+ "測った c の 2 乗と、a² + b² − 2ab cos C を記録して見くらべよう。",
+				"lead": "金色の点を動かすと、二辺のはさむ角 C が変わる(辺の長さは変わらない)。測った c の 2 乗と、a² + b² − 2ab cos C を記録して見くらべよう。",
 				"question": "測った c² と、a² + b² − 2ab cos C はどうだった?",
 				"choices": [
 					"いつもぴたりと同じだった",
@@ -911,8 +889,7 @@ const CHAPTERS := [
 				"だが井戸から二つの村を見こむ角なら、掘る前に計算できるはずだ。",
 			]},
 			{"type": "measure", "title": "村の位置を動かす", "fig": "incenter", "trials": 3,
-				"lead": "金色の点(上の村 A)を動かすと三角形の形が変わる。"
-					+ "∠A と、井戸から見こむ角 ∠BIC を記録しよう。",
+				"lead": "金色の点(上の村 A)を動かすと三角形の形が変わる。∠A と、井戸から見こむ角 ∠BIC を記録しよう。",
 				"question": "∠BIC は ∠A とどんな関係だった?",
 				"choices": [
 					"∠A の半分に 90 をたした値だった",
@@ -1018,8 +995,7 @@ const CHAPTERS := [
 				"トトは軸の太さを変えながら、出た縄の長さを軸の半径で割ってみろと合図した。",
 			]},
 			{"type": "measure", "title": "軸の太さを変える", "fig": "radian", "trials": 3,
-				"lead": "金色の点を動かすと軸の半径が変わる(回す角は同じまま)。"
-					+ "半径と、出た縄(弧)の長さを記録して、割ってみよう。",
+				"lead": "金色の点を動かすと軸の半径が変わる(回す角は同じまま)。半径と、出た縄(弧)の長さを記録して、割ってみよう。",
 				"question": "弧 ÷ 半径 はどうなった?",
 				"choices": [
 					"軸が太いほど大きくなった",
@@ -1054,8 +1030,7 @@ const CHAPTERS := [
 				"トトは地面に格子を描いた。杭と木に印をつけ、座標で呼べるようにする。",
 			]},
 			{"type": "measure", "title": "囲いの上を歩く", "fig": "circle_eq", "trials": 3,
-				"lead": "金色の点を円の上で動かすと、囲いのいろいろな場所に立てる。"
-					+ "杭からのよこの差とたての差を、それぞれ 2 乗して記録しよう。",
+				"lead": "金色の点を円の上で動かすと、囲いのいろいろな場所に立てる。杭からのよこの差とたての差を、それぞれ 2 乗して記録しよう。",
 				"question": "よこの差² + たての差² はどうなった?",
 				"choices": [
 					"立つ場所によって変わった",
@@ -1090,8 +1065,7 @@ const CHAPTERS := [
 				"妙、で終わらせない方法をあなたはもう知っている。動かして、記録する。",
 			]},
 			{"type": "measure", "title": "水面の高さを変える", "fig": "parabola", "trials": 3,
-				"lead": "金色の点を上下に動かすと、水面(直線)の高さが変わる。"
-					+ "交点の差と、囲まれた面積を記録しよう。",
+				"lead": "金色の点を上下に動かすと、水面(直線)の高さが変わる。交点の差と、囲まれた面積を記録しよう。",
 				"question": "面積 ÷ (交点の差 を 3 回かけたもの) はどうなった?",
 				"choices": [
 					"高いほど大きくなった",
@@ -1415,35 +1389,35 @@ static func readout_of(kind: String, p: Vector2) -> Dictionary:
 		"triangle":
 			var d: Array = rounded_angles(angles_of(p, TRI_B, TRI_C))
 			var sum := int(d[0]) + int(d[1]) + int(d[2])
-			return {"row": "∠A %d°  ∠B %d°  ∠C %d°  → 合計 %d°" % [
+			return {"row": L.t("∠A %d°  ∠B %d°  ∠C %d°  → 合計 %d°") % [
 				int(d[0]), int(d[1]), int(d[2]), sum], "value": float(sum)}
 		"zigzag":
 			var z := zigzag_angles(p)
-			return {"row": "上の角 %d°  下の角 %d°  折れ角 %d°  → 上+下 %d°" % [
+			return {"row": L.t("上の角 %d°  下の角 %d°  折れ角 %d°  → 上+下 %d°") % [
 				roundi(z[0]), roundi(z[1]), roundi(z[2]), roundi(z[0] + z[1])],
 				"value": z[2] - (z[0] + z[1])}
 		"circle":
 			var r: float = p.x
-			return {"row": "直径 %.1f  円周 %.2f  → 円周÷直径 %.3f" % [
+			return {"row": L.t("直径 %.1f  円周 %.2f  → 円周÷直径 %.3f") % [
 				2.0 * r, TAU * r, (TAU * r) / (2.0 * r)], "value": (TAU * r) / (2.0 * r)}
 		"equal_area":
 			# 面積だけが動かない。辺の長さは動くので、そこを見せて「変わらなさ」を出す
 			var ab: float = p.distance_to(TRI_B)
 			var ac: float = p.distance_to(TRI_C)
-			return {"row": "辺 AB %.2f  辺 AC %.2f  高さ 6  → 面積 %.1f" % [
+			return {"row": L.t("辺 AB %.2f  辺 AC %.2f  高さ 6  → 面積 %.1f") % [
 				ab, ac, 30.0], "value": 30.0}
 		"pythagoras":
 			# c は「斜辺を測った長さ」から出す(a²+b² を 2 回書くと出来レースに見える)
 			var a2: float = p.x * p.x
 			var b2: float = p.y * p.y
 			var c_side: float = Vector2(p.x, 0.0).distance_to(Vector2(0.0, p.y))
-			return {"row": "a² %.1f ＋ b² %.1f ＝ %.1f   斜辺 %.2f → c² %.1f" % [
+			return {"row": L.t("a² %.1f ＋ b² %.1f ＝ %.1f   斜辺 %.2f → c² %.1f") % [
 				a2, b2, a2 + b2, c_side, c_side * c_side],
 				"value": c_side * c_side - (a2 + b2)}
 		"inscribed":
 			# 席の位置は変わるのに角が変わらない、という形にする
 			var deg := inscribed_angles(p)
-			return {"row": "席の位置 %d°  円周角 %d°  中心角 %d°  → 中心角 − 円周角×2 = %d°" % [
+			return {"row": L.t("席の位置 %d°  円周角 %d°  中心角 %d°  → 中心角 − 円周角×2 = %d°") % [
 				roundi(rad_to_deg(atan2(p.y, p.x))), roundi(deg[0]), roundi(deg[1]),
 				roundi(deg[1] - 2.0 * deg[0])],
 				"value": deg[1] - 2.0 * deg[0]}
@@ -1458,13 +1432,13 @@ static func readout_of(kind: String, p: Vector2) -> Dictionary:
 			var k: float = p.x
 			var s1 := polygon_area(tri_shape(1.0))
 			var s2 := polygon_area(tri_shape(k))
-			return {"row": "相似比 %.2f  小 %.2f  大 %.2f  → 面積比 %.2f ÷ (%.2f×%.2f) = %.2f" % [
+			return {"row": L.t("相似比 %.2f  小 %.2f  大 %.2f  → 面積比 %.2f ÷ (%.2f×%.2f) = %.2f") % [
 				k, s1, s2, s2 / s1, k, k, (s2 / s1) / (k * k)],
 				"value": (s2 / s1) / (k * k)}
 		"area_sin":
 			var t := atan2(p.y, p.x)
 			var area2 := 0.5 * SIDE_A * SIDE_B * sin(t)
-			return {"row": "∠C %d°  sin C %.3f  面積 %.2f  → 面積÷sin C %.2f" % [
+			return {"row": L.t("∠C %d°  sin C %.3f  面積 %.2f  → 面積÷sin C %.2f") % [
 				roundi(rad_to_deg(t)), sin(t), area2, area2 / maxf(sin(t), 0.0001)],
 				"value": area2 / maxf(sin(t), 0.0001)}
 		"polygon":
@@ -1474,13 +1448,13 @@ static func readout_of(kind: String, p: Vector2) -> Dictionary:
 			var psum := 0
 			for v in pd:
 				psum += int(v)
-			return {"row": "%d° %d° %d° %d° %d°  → 合計 %d°" % [
+			return {"row": L.t("%d° %d° %d° %d° %d°  → 合計 %d°") % [
 				int(pd[0]), int(pd[1]), int(pd[2]), int(pd[3]), int(pd[4]), psum],
 				"value": float(psum)}
 		"dart":
 			# ブーメラン形。へこんだ角と、ほかの 3 つの角
 			var da := dart_angles(p)
-			return {"row": "先 %d°  左 %d°  右 %d°  へこみ %d°  → 3 つの和 %d°" % [
+			return {"row": L.t("先 %d°  左 %d°  右 %d°  へこみ %d°  → 3 つの和 %d°") % [
 				roundi(da[0]), roundi(da[1]), roundi(da[2]), roundi(da[3]),
 				roundi(da[0] + da[1] + da[2])],
 				"value": da[3] - (da[0] + da[1] + da[2])}
@@ -1488,7 +1462,7 @@ static func readout_of(kind: String, p: Vector2) -> Dictionary:
 			# 折り目の角 a と、折り返された辺がテープと作る角 x
 			var fa := rad_to_deg(atan2(p.y, maxf(p.x, 0.1)))
 			var fx := 180.0 - 2.0 * fa
-			return {"row": "折り目の角 %d°  重なった角 %d°  → 折り目 × 2 + 重なった角 %d°" % [
+			return {"row": L.t("折り目の角 %d°  重なった角 %d°  → 折り目 × 2 + 重なった角 %d°") % [
 				roundi(fa), roundi(fx), roundi(2.0 * fa + fx)],
 				"value": 2.0 * fa + fx - 180.0}
 		"road":
@@ -1500,7 +1474,7 @@ static func readout_of(kind: String, p: Vector2) -> Dictionary:
 			var low := ry
 			var high := FIELD_H - ry - ROAD_W
 			var parts := left * low + right * low + left * high + right * high
-			return {"row": "4 つの区画 %.1f + %.1f + %.1f + %.1f → 残りの畑 %.1f" % [
+			return {"row": L.t("4 つの区画 %.1f + %.1f + %.1f + %.1f → 残りの畑 %.1f") % [
 				left * low, right * low, left * high, right * high, parts],
 				"value": parts}
 		"star":
@@ -1509,19 +1483,19 @@ static func readout_of(kind: String, p: Vector2) -> Dictionary:
 			var ssum := 0.0
 			for v in st:
 				ssum += float(v)
-			return {"row": "とがった 5 つの角 %d° %d° %d° %d° %d°  → 合計 %d°" % [
+			return {"row": L.t("とがった 5 つの角 %d° %d° %d° %d° %d°  → 合計 %d°") % [
 				roundi(st[0]), roundi(st[1]), roundi(st[2]), roundi(st[3]), roundi(st[4]),
 				roundi(ssum)], "value": ssum}
 		"tangent_chord":
 			var tc := tangent_chord_angles(p)
-			return {"row": "接線と弦の角 %d°  向こう側から見た角 %d°  → 差 %d°" % [
+			return {"row": L.t("接線と弦の角 %d°  向こう側から見た角 %d°  → 差 %d°") % [
 				roundi(tc[0]), roundi(tc[1]), roundi(tc[0] - tc[1])],
 				"value": tc[0] - tc[1]}
 		"special_tri":
 			# 30-60-90 の三角定規。大きさを変えても辺の比は変わらない
 			var short: float = p.x * 0.5
 			var long_side: float = p.x * 0.5 * sqrt(3.0)
-			return {"row": "短い辺 %.2f  長い辺 %.2f  斜辺 %.2f  → 斜辺 ÷ 短い辺 %.3f" % [
+			return {"row": L.t("短い辺 %.2f  長い辺 %.2f  斜辺 %.2f  → 斜辺 ÷ 短い辺 %.3f") % [
 				short, long_side, p.x, p.x / maxf(short, 0.0001)],
 				"value": p.x / maxf(short, 0.0001)}
 		"euler":
@@ -1529,14 +1503,14 @@ static func readout_of(kind: String, p: Vector2) -> Dictionary:
 			var vv := 2 * n
 			var ee := 3 * n
 			var ff := n + 2
-			return {"row": "%d 角柱  頂点 %d  辺 %d  面 %d  → 頂点 − 辺 + 面 %d" % [
+			return {"row": L.t("%d 角柱  頂点 %d  辺 %d  面 %d  → 頂点 − 辺 + 面 %d") % [
 				n, vv, ee, ff, vv - ee + ff], "value": float(vv - ee + ff)}
 		"cosine":
 			# 角 C を変えると c も変わる。c² と a² + b² − 2ab cos C を見くらべる
 			var cth := atan2(p.y, p.x)
 			var c_side := p.distance_to(Vector2(COS_A, 0.0))
 			var formula := COS_A * COS_A + COS_B * COS_B - 2.0 * COS_A * COS_B * cos(cth)
-			return {"row": "∠C %d°  測った c %.2f  c² %.1f   a²+b²−2ab cosC %.1f" % [
+			return {"row": L.t("∠C %d°  測った c %.2f  c² %.1f   a²+b²−2ab cosC %.1f") % [
 				roundi(rad_to_deg(cth)), c_side, c_side * c_side, formula],
 				"value": c_side * c_side - formula}
 		"incenter":
@@ -1551,26 +1525,26 @@ static func readout_of(kind: String, p: Vector2) -> Dictionary:
 			# 半径を変えても 弧 ÷ 半径 は同じ。これが角の新しい測り方
 			var rr: float = p.x
 			var arc_len := rr * RAD_TH
-			return {"row": "半径 %.2f  弧の長さ %.2f  → 弧 ÷ 半径 %.3f" % [
+			return {"row": L.t("半径 %.2f  弧の長さ %.2f  → 弧 ÷ 半径 %.3f") % [
 				rr, arc_len, arc_len / rr], "value": arc_len / rr}
 		"circle_eq":
 			var dx: float = p.x - CIRCLE_EQ_C.x
 			var dy: float = p.y - CIRCLE_EQ_C.y
-			return {"row": "点 (%.1f, %.1f)  よこの差² %.2f + たての差² %.2f = %.2f" % [
+			return {"row": L.t("点 (%.1f, %.1f)  よこの差² %.2f + たての差² %.2f = %.2f") % [
 				p.x, p.y, dx * dx, dy * dy, dx * dx + dy * dy],
 				"value": dx * dx + dy * dy}
 		"tank":
 			# 水の量は変わらない。幅を広げた分だけ深さが減る
 			var w: float = p.x
 			var depth := TANK_V / w
-			return {"row": "幅 %.2f  深さ %.2f  → 幅 × 深さ %.2f" % [w, depth, w * depth],
+			return {"row": L.t("幅 %.2f  深さ %.2f  → 幅 × 深さ %.2f") % [w, depth, w * depth],
 				"value": w * depth}
 		"shadow":
 			# 杭と木、それぞれの 高さ ÷ 影 を出して見くらべる
 			var th := atan2(p.y, p.x)
 			var s1 := SHADOW_POLE / tan(th)
 			var s2 := SHADOW_TREE / tan(th)
-			return {"row": "太陽の高さ %d°  杭 %.2f÷%.2f = %.2f   木 %.2f÷%.2f = %.2f" % [
+			return {"row": L.t("太陽の高さ %d°  杭 %.2f÷%.2f = %.2f   木 %.2f÷%.2f = %.2f") % [
 				roundi(rad_to_deg(th)), SHADOW_POLE, s1, SHADOW_POLE / s1,
 				SHADOW_TREE, s2, SHADOW_TREE / s2],
 				"value": SHADOW_POLE / s1 - SHADOW_TREE / s2}
@@ -1578,7 +1552,7 @@ static func readout_of(kind: String, p: Vector2) -> Dictionary:
 			# 重なりは長方形。進んだ分だけよこが伸びる
 			var moved: float = p.x
 			var over_area := moved * OVER_H
-			return {"row": "進んだ長さ %.2f  重なりの面積 %.2f  → 面積 ÷ 長さ %.2f" % [
+			return {"row": L.t("進んだ長さ %.2f  重なりの面積 %.2f  → 面積 ÷ 長さ %.2f") % [
 				moved, over_area, over_area / moved], "value": over_area / moved}
 		"box_diag":
 			# 対角線は 3 次元の距離として測る(3 辺から計算はしない)
@@ -1586,14 +1560,14 @@ static func readout_of(kind: String, p: Vector2) -> Dictionary:
 			var bh: float = p.y
 			var diag := Vector3(BOX_W, bd, bh).length()
 			var sq := BOX_W * BOX_W + bd * bd + bh * bh
-			return {"row": "よこ 6  おくゆき %.1f  高さ %.1f  対角線 %.2f → 対角線² %.1f  3辺の平方の和 %.1f" % [
+			return {"row": L.t("よこ 6  おくゆき %.1f  高さ %.1f  対角線 %.2f → 対角線² %.1f  3辺の平方の和 %.1f") % [
 				bd, bh, diag, diag * diag, sq], "value": diag * diag - sq}
 		"cube_scale":
 			# 体積は 3 辺をかけて出す(k×k×k と書くだけでは確かめたことにならない)
 			var ks: float = p.x
 			var v1 := SCALE_BOX.x * SCALE_BOX.y * SCALE_BOX.z
 			var v2 := (SCALE_BOX.x * ks) * (SCALE_BOX.y * ks) * (SCALE_BOX.z * ks)
-			return {"row": "相似比 %.2f  小 %.2f  大 %.2f  → 体積比 %.2f ÷ (%.2f×%.2f×%.2f) = %.2f" % [
+			return {"row": L.t("相似比 %.2f  小 %.2f  大 %.2f  → 体積比 %.2f ÷ (%.2f×%.2f×%.2f) = %.2f") % [
 				ks, v1, v2, v2 / v1, ks, ks, ks, (v2 / v1) / (ks * ks * ks)],
 				"value": (v2 / v1) / (ks * ks * ks)}
 		"cone_net":
@@ -1602,22 +1576,22 @@ static func readout_of(kind: String, p: Vector2) -> Dictionary:
 			var ang := 360.0 * CONE_R / l
 			var arc_len := l * deg_to_rad(ang)
 			var around := TAU * CONE_R
-			return {"row": "母線 %.2f  中心角 %d°  弧の長さ %.2f  底面の円周 %.2f" % [
+			return {"row": L.t("母線 %.2f  中心角 %d°  弧の長さ %.2f  底面の円周 %.2f") % [
 				l, roundi(ang), arc_len, around], "value": arc_len - around}
 		"power":
 			var pa_pb := power_lengths(p)
-			return {"row": "近い方 %.2f  遠い方 %.2f  → かけ算 %.2f" % [
+			return {"row": L.t("近い方 %.2f  遠い方 %.2f  → かけ算 %.2f") % [
 				pa_pb[0], pa_pb[1], pa_pb[0] * pa_pb[1]], "value": pa_pb[0] * pa_pb[1]}
 		"ceva":
 			var r3 := ceva_ratios(p)
-			return {"row": "AF:FB %.2f  BD:DC %.2f  CE:EA %.2f  → 3 つをかけると %.3f" % [
+			return {"row": L.t("AF:FB %.2f  BD:DC %.2f  CE:EA %.2f  → 3 つをかけると %.3f") % [
 				r3[0], r3[1], r3[2], r3[0] * r3[1] * r3[2]],
 				"value": r3[0] * r3[1] * r3[2]}
 		"parabola":
 			var k2: float = p.y
 			var w := 2.0 * sqrt(k2)
 			var s2 := w * w * w / 6.0
-			return {"row": "交点の差 %.2f  面積 %.2f  → 面積÷(差×差×差) %.3f" % [
+			return {"row": L.t("交点の差 %.2f  面積 %.2f  → 面積÷(差×差×差) %.3f") % [
 				w, s2, s2 / pow(w, 3.0)], "value": s2 / pow(w, 3.0)}
 	return {"row": "", "value": 0.0}
 

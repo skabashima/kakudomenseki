@@ -43,7 +43,7 @@ func _ready() -> void:
 	title.ruby_size = 15
 	title.color = HEAD
 	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	title.set_ruby_text("  図鑑  %d / %d" % [int(prog[0]), int(prog[1])], true)
+	title.set_ruby_text(L.t("  図鑑  %d / %d") % [int(prog[0]), int(prog[1])], true)
 	head.add_child(title)
 
 	var lead := RubyLabel.new()
@@ -51,8 +51,7 @@ func _ready() -> void:
 	lead.ruby_size = 11
 	lead.color = Color(0.80, 0.86, 1.0)
 	lead.custom_minimum_size = Vector2(0, 58)
-	lead.set_ruby_text("ストーリーで 見つけた 決まりが たまっていきます。"
-		+ "まだの ところは 名前だけ 出ています。", true)
+	lead.set_ruby_text("ストーリーで 見つけた 決まりが たまっていきます。まだの ところは 名前だけ 出ています。", true)
 	root.add_child(lead)
 
 	var scroll := ScrollContainer.new()

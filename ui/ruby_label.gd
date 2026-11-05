@@ -38,6 +38,10 @@ var plain := ""
 
 ## 文をセットする。with_ruby が true なら 小 1 以外の漢字に よみ を付ける
 func set_ruby_text(text: String, with_ruby: bool) -> void:
+	# 英語では 表を 引いて、ふりがなは 付けない
+	text = L.t(text)
+	if L.en():
+		with_ruby = false
 	plain = text                       # いま 出している 文(検分や ログ用)
 	_atoms = []
 	var parts: Array = Ruby.parts(text) if with_ruby else [{"s": text, "r": ""}]
@@ -46,12 +50,33 @@ func set_ruby_text(text: String, with_ruby: bool) -> void:
 		if String(seg["r"]) != "":
 			_atoms.append(_atom(String(seg["s"]), String(seg["r"])))
 		else:
-			# ふりがなの付かないところは 1 文字ずつ(どこでも行を折り返せる)
+			# ふりがなの付かないところは 1 文字ずつ(どこでも行を折り返せる)。
+			# ただし 英数字の 続きは 1 語に まとめる(英語を 語の 途中で 切らない)
 			var s := String(seg["s"])
+			var word := ""
 			for i in s.length():
-				_atoms.append(_atom(s.substr(i, 1), ""))
+				var ch := s.substr(i, 1)
+				if _word_char(ch):
+					word += ch
+					continue
+				if word != "":
+					_atoms.append(_atom(word, ""))
+					word = ""
+				_atoms.append(_atom(ch, ""))
+			if word != "":
+				_atoms.append(_atom(word, ""))
 	update_minimum_size()
 	queue_redraw()
+
+
+## 語の 途中で 切らない 文字(英数字と、語の 中の ' - ² ³ °)
+static func _word_char(ch: String) -> bool:
+	var u := ch.unicode_at(0)
+	if u >= 0x30 and u <= 0x39:
+		return true
+	if (u >= 0x41 and u <= 0x5A) or (u >= 0x61 and u <= 0x7A):
+		return true
+	return u in [0x27, 0x2D, 0x2019, 0xB2, 0xB3, 0xB0]
 
 
 func _atom(s: String, r: String) -> Dictionary:
@@ -132,6 +157,9 @@ func _draw() -> void:
 			var line_w := 0.0
 			for a2 in lines[li]:
 				line_w += float((a2 as Dictionary)["w"])
+			var last: Dictionary = lines[li][lines[li].size() - 1]
+			if String(last["s"]) == " ":
+				line_w -= float(last["w"])
 			x = maxf(0.0, (size.x - line_w) * 0.5)
 		for a in lines[li]:
 			var seg: Dictionary = a

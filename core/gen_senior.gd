@@ -157,19 +157,19 @@ static func _s1(rng: RandomNumberGenerator, tier: int) -> Dictionary:
 	var sign_str := "−" if cc == 60 else "+"
 	if ask_sq:
 		return {
-			"q": "三角形 ABC で CA = %d、CB = %d、角 C = %d° のとき、c²(AB の 2 乗)を求めなさい。" % [b, a, cc],
+			"q": L.t("三角形 ABC で CA = %d、CB = %d、角 C = %d° のとき、c²(AB の 2 乗)を求めなさい。") % [b, a, cc],
 			"answer": float(c * c), "unit": "",
-			"hint1": "余弦定理: c² = a² + b² − 2ab cosC。cos%d° = %s だよ。" % [cc, cos_str],
+			"hint1": L.t("余弦定理: c² = a² + b² − 2ab cosC。cos%d° = %s だよ。") % [cc, cos_str],
 			"hint2": "c² = %d² + %d² %s %d×%d" % [a, b, sign_str, a, b],
-			"expl": "c² = %d² + %d² − 2×%d×%d×(%s) = %d です。" % [a, b, a, b, cos_str, c * c],
+			"expl": L.t("c² = %d² + %d² − 2×%d×%d×(%s) = %d です。") % [a, b, a, b, cos_str, c * c],
 			"fig": fig,
 		}
 	return {
-		"q": "三角形 ABC で CA = %d、CB = %d、角 C = %d° のとき、辺 AB の長さ c を求めなさい。" % [b, a, cc],
+		"q": L.t("三角形 ABC で CA = %d、CB = %d、角 C = %d° のとき、辺 AB の長さ c を求めなさい。") % [b, a, cc],
 		"answer": float(c), "unit": "",
-		"hint1": "余弦定理: c² = a² + b² − 2ab cosC。cos%d° = %s だよ。" % [cc, cos_str],
+		"hint1": L.t("余弦定理: c² = a² + b² − 2ab cosC。cos%d° = %s だよ。") % [cc, cos_str],
 		"hint2": "c² = %d² + %d² %s %d×%d = %d" % [a, b, sign_str, a, b, c * c],
-		"expl": "c² = %d + %d %s %d = %d。c = %d です。" % [a * a, b * b, sign_str, a * b, c * c, c],
+		"expl": L.t("c² = %d + %d %s %d = %d。c = %d です。") % [a * a, b * b, sign_str, a * b, c * c, c],
 		"fig": fig,
 	}
 
@@ -183,11 +183,11 @@ static func _s2(rng: RandomNumberGenerator, tier: int) -> Dictionary:
 		var a := rng.randi_range(3, 15)
 		var fig := _sine_fig(float(deg))
 		return {
-			"q": "三角形 ABC で、角 A = %d°、BC = %d です。この三角形の外接円の半径 R を求めなさい。" % [deg, a],
+			"q": L.t("三角形 ABC で、角 A = %d°、BC = %d です。この三角形の外接円の半径 R を求めなさい。") % [deg, a],
 			"answer": float(a), "unit": "",
-			"hint1": "正弦定理: BC / sinA = 2R。sin%d° = 1/2 だよ。" % deg,
+			"hint1": L.t("正弦定理: BC / sinA = 2R。sin%d° = 1/2 だよ。") % deg,
 			"hint2": "2R = %d ÷ (1/2) = %d" % [a, 2 * a],
-			"expl": "2R = %d / sin%d° = %d。R = %d です。" % [a, deg, 2 * a, a],
+			"expl": L.t("2R = %d / sin%d° = %d。R = %d です。") % [a, deg, 2 * a, a],
 			"fig": fig,
 		}
 	elif kind == 1 or kind == 2:
@@ -195,20 +195,20 @@ static func _s2(rng: RandomNumberGenerator, tier: int) -> Dictionary:
 		if kind == 1:
 			var a2 := 2 * rng.randi_range(2, 10)
 			return {
-				"q": "三角形 ABC で、角 A = 90°、BC = %d です。外接円の半径 R を求めなさい。" % a2,
+				"q": L.t("三角形 ABC で、角 A = 90°、BC = %d です。外接円の半径 R を求めなさい。") % a2,
 				"answer": a2 / 2.0, "unit": "",
 				"hint1": "sin90° = 1。正弦定理 BC / sinA = 2R に入れよう。BC が直径になるよ。",
 				"hint2": "R = %d ÷ 2" % a2,
-				"expl": "2R = %d / 1 = %d。R = %s です(直角の対辺は外接円の直径)。" % [a2, a2, ProblemGen.fmt(a2 / 2.0)],
+				"expl": L.t("2R = %d / 1 = %d。R = %s です(直角の対辺は外接円の直径)。") % [a2, a2, ProblemGen.fmt(a2 / 2.0)],
 				"fig": _sine_fig(90.0),
 			}
 		var rr := rng.randi_range(2, 10)
 		return {
-			"q": "外接円の半径が %d の三角形 ABC で、角 A = 30° です。辺 BC の長さを求めなさい。" % rr,
+			"q": L.t("外接円の半径が %d の三角形 ABC で、角 A = 30° です。辺 BC の長さを求めなさい。") % rr,
 			"answer": float(rr), "unit": "",
 			"hint1": "正弦定理 BC = 2R sinA。sin30° = 1/2 だよ。",
 			"hint2": "BC = 2 × %d × 1/2" % rr,
-			"expl": "BC = 2R sinA = 2 × %d × 1/2 = %d です。" % [rr, rr],
+			"expl": L.t("BC = 2R sinA = 2 × %d × 1/2 = %d です。") % [rr, rr],
 			"fig": _sine_fig(30.0),
 		}
 	else:
@@ -217,22 +217,22 @@ static func _s2(rng: RandomNumberGenerator, tier: int) -> Dictionary:
 			var r6 := rng.randi_range(2, 12)
 			var ans6 := r6 * 1.73
 			return {
-				"q": "外接円の半径が %d の三角形 ABC で、角 A = 60° です。辺 BC の長さを求めなさい。√3 = 1.73 として小数で答えなさい。" % r6,
+				"q": L.t("外接円の半径が %d の三角形 ABC で、角 A = 60° です。辺 BC の長さを求めなさい。√3 = 1.73 として小数で答えなさい。") % r6,
 				"answer": ans6, "unit": "", "tol": 0.02,
 				"hint1": "正弦定理 BC = 2R sinA。sin60° = √3/2 だよ。",
 				"hint2": "BC = 2 × %d × 1.73 ÷ 2 = %d × 1.73" % [r6, r6],
-				"expl": "BC = 2R sin60° = %d × √3 = %s です。" % [r6, ProblemGen.fmt(ans6)],
+				"expl": L.t("BC = 2R sin60° = %d × √3 = %s です。") % [r6, ProblemGen.fmt(ans6)],
 				"fig": _sine_fig(60.0),
 			}
 		# A = 45° → R = a√2/2(√2 = 1.41)
 		var a3 := 2 * rng.randi_range(2, 10)
 		var ans := a3 * 1.41 / 2.0
 		return {
-			"q": "三角形 ABC で、角 A = 45°、BC = %d です。外接円の半径 R を求めなさい。√2 = 1.41 として小数で答えなさい。" % a3,
+			"q": L.t("三角形 ABC で、角 A = 45°、BC = %d です。外接円の半径 R を求めなさい。√2 = 1.41 として小数で答えなさい。") % a3,
 			"answer": ans, "unit": "", "tol": 0.02,
 			"hint1": "2R = BC / sin45° = BC × √2 だよ。",
 			"hint2": "R = %d × 1.41 ÷ 2" % a3,
-			"expl": "2R = %d√2。R = %d × 1.41 / 2 = %s です。" % [a3, a3, ProblemGen.fmt(ans)],
+			"expl": L.t("2R = %d√2。R = %d × 1.41 / 2 = %s です。") % [a3, a3, ProblemGen.fmt(ans)],
 			"fig": _sine_fig(45.0),
 		}
 
@@ -282,11 +282,11 @@ static func _s3(rng: RandomNumberGenerator, tier: int) -> Dictionary:
 			ProblemGen.label(Vector2(ha * 0.55, hb * 0.45), "S = %d" % hs, ProblemGen.COL_YELLOW, 26),
 		]}
 		return {
-			"q": "2 辺が %d と %d で面積が %d の三角形があります。2 辺の間の角 C(0° < C ≤ 90°)を求めなさい。" % [ha, hb, hs],
+			"q": L.t("2 辺が %d と %d で面積が %d の三角形があります。2 辺の間の角 C(0° < C ≤ 90°)を求めなさい。") % [ha, hb, hs],
 			"answer": float(deg_c), "unit": "度",
 			"hint1": "S = ½ab sinC を変形して sinC = 2S ÷ (ab)。",
 			"hint2": "sinC = 2×%d ÷ %d = %s" % [hs, ha * hb, "1/2" if deg_c == 30 else "1"],
-			"expl": "sinC = 2S/ab = %s なので C = %d° です。" % ["1/2" if deg_c == 30 else "1", deg_c],
+			"expl": L.t("sinC = 2S/ab = %s なので C = %d° です。") % ["1/2" if deg_c == 30 else "1", deg_c],
 			"fig": figh,
 		}
 	# kind 0: sin が有理数 / 1: √2 の角 / 2: √3 の角
@@ -329,11 +329,11 @@ static func _s3(rng: RandomNumberGenerator, tier: int) -> Dictionary:
 		ProblemGen.side_label(pa, pc, str(b), 1.0),
 	]}
 	return {
-		"q": ("2 辺が %d と %d で、その間の角が %d° の三角形の面積 S を求めなさい。" % [a, b, cc]) + note,
+		"q": (L.t("2 辺が %d と %d で、その間の角が %d° の三角形の面積 S を求めなさい。") % [a, b, cc]) + note,
 		"answer": ans, "unit": "", "tol": 0.02 if note != "" else 0.015,
-		"hint1": "面積公式 S = ½ ab sinC。sin%d° = %s だよ。" % [cc, sin_str],
+		"hint1": L.t("面積公式 S = ½ ab sinC。sin%d° = %s だよ。") % [cc, sin_str],
 		"hint2": "S = ½ × %d × %d × %s" % [a, b, sin_str.replace("√2/2", "0.705").replace("√3/2", "0.865")],
-		"expl": "S = ½ × %d × %d × sin%d° = %s です。" % [a, b, cc, ProblemGen.fmt(ans)],
+		"expl": L.t("S = ½ × %d × %d × sin%d° = %s です。") % [a, b, cc, ProblemGen.fmt(ans)],
 		"fig": fig,
 	}
 
@@ -354,11 +354,11 @@ static func _s4(rng: RandomNumberGenerator, _tier: int) -> Dictionary:
 		ProblemGen.side_label(v[0], v[1], str(c), -1.0),
 	]}
 	return {
-		"q": "3 辺の長さが %d、%d、%d の三角形の面積 S を求めなさい。" % [a, b, c],
+		"q": L.t("3 辺の長さが %d、%d、%d の三角形の面積 S を求めなさい。") % [a, b, c],
 		"answer": float(area), "unit": "",
 		"hint1": "ヘロンの公式: s = (a+b+c)/2 として S = √(s(s−a)(s−b)(s−c))。",
-		"hint2": "s = %s。S = √(%s × %s × %s × %s)" % [ProblemGen.fmt(sp), ProblemGen.fmt(sp), ProblemGen.fmt(sp - a), ProblemGen.fmt(sp - b), ProblemGen.fmt(sp - c)],
-		"expl": "s = %s。S = √(%s×%s×%s×%s) = %d です。" % [ProblemGen.fmt(sp), ProblemGen.fmt(sp), ProblemGen.fmt(sp - a), ProblemGen.fmt(sp - b), ProblemGen.fmt(sp - c), area],
+		"hint2": L.t("s = %s。S = √(%s × %s × %s × %s)") % [ProblemGen.fmt(sp), ProblemGen.fmt(sp), ProblemGen.fmt(sp - a), ProblemGen.fmt(sp - b), ProblemGen.fmt(sp - c)],
+		"expl": L.t("s = %s。S = √(%s×%s×%s×%s) = %d です。") % [ProblemGen.fmt(sp), ProblemGen.fmt(sp), ProblemGen.fmt(sp - a), ProblemGen.fmt(sp - b), ProblemGen.fmt(sp - c), area],
 		"fig": fig,
 	}
 
@@ -384,11 +384,11 @@ static func _s5(rng: RandomNumberGenerator, tier: int) -> Dictionary:
 			ProblemGen.side_label(v[0], v[1], str(c), -1.0),
 		]}
 		return {
-			"q": "3 辺が %d、%d、%d の三角形の外接円の半径 R を求めなさい。(この三角形の面積は %d です)" % [a, b, c, area],
+			"q": L.t("3 辺が %d、%d、%d の三角形の外接円の半径 R を求めなさい。(この三角形の面積は %d です)") % [a, b, c, area],
 			"answer": rr, "unit": "",
 			"hint1": "公式 S = abc / 4R を変形して R = abc / 4S。",
 			"hint2": "R = %d × %d × %d ÷ (4 × %d)" % [a, b, c, area],
-			"expl": "R = abc/4S = %d/(4×%d) = %s です。" % [a * b * c, area, ProblemGen.fmt(rr)],
+			"expl": L.t("R = abc/4S = %d/(4×%d) = %s です。") % [a * b * c, area, ProblemGen.fmt(rr)],
 			"fig": fig2,
 		}
 	var fig := {"shapes": [
@@ -402,19 +402,19 @@ static func _s5(rng: RandomNumberGenerator, tier: int) -> Dictionary:
 	if tier == 1:
 		# 内接円の半径から面積を出す(S = r × s)
 		return {
-			"q": "3 辺が %d、%d、%d の三角形の内接円の半径は %s です。この三角形の面積 S を求めなさい。" % [a, b, c, ProblemGen.fmt(r)],
+			"q": L.t("3 辺が %d、%d、%d の三角形の内接円の半径は %s です。この三角形の面積 S を求めなさい。") % [a, b, c, ProblemGen.fmt(r)],
 			"answer": float(area), "unit": "",
 			"hint1": "公式 S = r × s(s は周の長さの半分)。",
-			"hint2": "s = %s。S = %s × %s" % [ProblemGen.fmt((a + b + c) / 2.0), ProblemGen.fmt(r), ProblemGen.fmt((a + b + c) / 2.0)],
-			"expl": "s = %s。S = r×s = %s × %s = %d です。" % [ProblemGen.fmt((a + b + c) / 2.0), ProblemGen.fmt(r), ProblemGen.fmt((a + b + c) / 2.0), area],
+			"hint2": L.t("s = %s。S = %s × %s") % [ProblemGen.fmt((a + b + c) / 2.0), ProblemGen.fmt(r), ProblemGen.fmt((a + b + c) / 2.0)],
+			"expl": L.t("s = %s。S = r×s = %s × %s = %d です。") % [ProblemGen.fmt((a + b + c) / 2.0), ProblemGen.fmt(r), ProblemGen.fmt((a + b + c) / 2.0), area],
 			"fig": fig,
 		}
 	return {
-		"q": "3 辺が %d、%d、%d の三角形の内接円の半径 r を求めなさい。(この三角形の面積は %d です)" % [a, b, c, area],
+		"q": L.t("3 辺が %d、%d、%d の三角形の内接円の半径 r を求めなさい。(この三角形の面積は %d です)") % [a, b, c, area],
 		"answer": r, "unit": "",
 		"hint1": "公式 S = r × s(s は周の半分)。r = S ÷ s で求まるよ。",
-		"hint2": "s = %s。r = %d ÷ %s" % [ProblemGen.fmt((a + b + c) / 2.0), area, ProblemGen.fmt((a + b + c) / 2.0)],
-		"expl": "s = %s。r = S/s = %d ÷ %s = %s です。" % [ProblemGen.fmt((a + b + c) / 2.0), area, ProblemGen.fmt((a + b + c) / 2.0), ProblemGen.fmt(r)],
+		"hint2": L.t("s = %s。r = %d ÷ %s") % [ProblemGen.fmt((a + b + c) / 2.0), area, ProblemGen.fmt((a + b + c) / 2.0)],
+		"expl": L.t("s = %s。r = S/s = %d ÷ %s = %s です。") % [ProblemGen.fmt((a + b + c) / 2.0), area, ProblemGen.fmt((a + b + c) / 2.0), ProblemGen.fmt(r)],
 		"fig": fig,
 	}
 
@@ -445,11 +445,11 @@ static func _s6(rng: RandomNumberGenerator, tier: int) -> Dictionary:
 			ProblemGen.label(Vector2(pcx, pcy) + Vector2(0, 0.8), "C"),
 		]}
 		return {
-			"q": "3 点 A(%d, %d)、B(%d, %d)、C(%d, %d) を頂点とする三角形の面積 S を求めなさい。" % [pax, pay, pbx, pby, pcx, pcy],
+			"q": L.t("3 点 A(%d, %d)、B(%d, %d)、C(%d, %d) を頂点とする三角形の面積 S を求めなさい。") % [pax, pay, pbx, pby, pcx, pcy],
 			"answer": ansh, "unit": "",
 			"hint1": "A が原点に来るように平行移動してから S = ½|x1 y2 − x2 y1| を使おう。",
 			"hint2": "S = ½ |(%d)×(%d) − (%d)×(%d)|" % [pbx - pax, pcy - pay, pcx - pax, pby - pay],
-			"expl": "平行移動後のベクトルは (%d, %d) と (%d, %d)。S = ½×%d = %s です。" % [
+			"expl": L.t("平行移動後のベクトルは (%d, %d) と (%d, %d)。S = ½×%d = %s です。") % [
 				pbx - pax, pby - pay, pcx - pax, pcy - pay, absi(det2), ProblemGen.fmt(ansh)],
 			"fig": figh,
 		}
@@ -475,19 +475,19 @@ static func _s6(rng: RandomNumberGenerator, tier: int) -> Dictionary:
 	]}
 	if tier >= 1:
 		return {
-			"q": "a→ = (%d, %d)、b→ = (%d, %d) のとき、a→ と b→ が作る三角形 OAB の面積 S を求めなさい。" % [x1, y1, x2, y2],
+			"q": L.t("a→ = (%d, %d)、b→ = (%d, %d) のとき、a→ と b→ が作る三角形 OAB の面積 S を求めなさい。") % [x1, y1, x2, y2],
 			"answer": ans, "unit": "",
 			"hint1": "S = ½ |x1 y2 − x2 y1| に成分を入れるだけだよ。",
 			"hint2": "S = ½ |%d×%d − (%d)×(%d)|" % [x1, y2, x2, y1],
-			"expl": "S = ½|%d − %d| = ½ × %d = %s です。" % [x1 * y2, x2 * y1, absi(det), ProblemGen.fmt(ans)],
+			"expl": L.t("S = ½|%d − %d| = ½ × %d = %s です。") % [x1 * y2, x2 * y1, absi(det), ProblemGen.fmt(ans)],
 			"fig": fig,
 		}
 	return {
-		"q": "O(0,0)、A(%d, %d)、B(%d, %d) を頂点とする三角形の面積 S を求めなさい。" % [x1, y1, x2, y2],
+		"q": L.t("O(0,0)、A(%d, %d)、B(%d, %d) を頂点とする三角形の面積 S を求めなさい。") % [x1, y1, x2, y2],
 		"answer": ans, "unit": "",
 		"hint1": "公式 S = ½ |x1 y2 − x2 y1|(原点を頂点とする三角形)。",
 		"hint2": "S = ½ |%d×%d − (%d)×(%d)|" % [x1, y2, x2, y1],
-		"expl": "S = ½|%d×%d − (%d)×(%d)| = ½×%d = %s です。" % [x1, y2, x2, y1, absi(det), ProblemGen.fmt(ans)],
+		"expl": L.t("S = ½|%d×%d − (%d)×(%d)| = ½×%d = %s です。") % [x1, y2, x2, y1, absi(det), ProblemGen.fmt(ans)],
 		"fig": fig,
 	}
 
@@ -501,11 +501,11 @@ static func _s7(rng: RandomNumberGenerator, tier: int) -> Dictionary:
 		var th_num: float = [1.0, 1.5, 2.0, 2.5, 3.0][rng.randi_range(0, 4)]
 		var l := r * th_num
 		return {
-			"q": "半径 %d、弧の長さ %s のおうぎ形の中心角 θ は何ラジアンですか。" % [r, ProblemGen.fmt(l)],
+			"q": L.t("半径 %d、弧の長さ %s のおうぎ形の中心角 θ は何ラジアンですか。") % [r, ProblemGen.fmt(l)],
 			"answer": th_num, "unit": "rad",
 			"hint1": "弧度法では 弧の長さ l = rθ。θ = l ÷ r だよ。",
 			"hint2": "θ = %s ÷ %d" % [ProblemGen.fmt(l), r],
-			"expl": "θ = l/r = %s/%d = %s rad です。" % [ProblemGen.fmt(l), r, ProblemGen.fmt(th_num)],
+			"expl": L.t("θ = l/r = %s/%d = %s rad です。") % [ProblemGen.fmt(l), r, ProblemGen.fmt(th_num)],
 			"fig": _rad_fig(float(r), th_num),
 		}
 	elif kind == 1:
@@ -514,11 +514,11 @@ static func _s7(rng: RandomNumberGenerator, tier: int) -> Dictionary:
 		var l2 := rng.randi_range(2, mini(18, r2 * 5))   # θ = l/r が 5 rad を超えない範囲で
 		var ans := 0.5 * r2 * l2
 		return {
-			"q": "半径 %d、弧の長さ %d のおうぎ形の面積 S を求めなさい。" % [r2, l2],
+			"q": L.t("半径 %d、弧の長さ %d のおうぎ形の面積 S を求めなさい。") % [r2, l2],
 			"answer": ans, "unit": "",
 			"hint1": "弧度法の便利な公式 S = ½ r l(半径 × 弧 ÷ 2)。",
 			"hint2": "S = ½ × %d × %d" % [r2, l2],
-			"expl": "S = ½rl = ½ × %d × %d = %s です。" % [r2, l2, ProblemGen.fmt(ans)],
+			"expl": L.t("S = ½rl = ½ × %d × %d = %s です。") % [r2, l2, ProblemGen.fmt(ans)],
 			"fig": _rad_fig(float(r2), float(l2) / float(r2)),
 		}
 	else:
@@ -529,11 +529,11 @@ static func _s7(rng: RandomNumberGenerator, tier: int) -> Dictionary:
 		var k: int = o[1]
 		var ans2 := 0.5 * r3 * r3 * 3.14 / k
 		return {
-			"q": "半径 %d、中心角 π/%d ラジアンのおうぎ形の面積 S を求めなさい。π = 3.14 として小数で答えなさい。" % [r3, k],
+			"q": L.t("半径 %d、中心角 π/%d ラジアンのおうぎ形の面積 S を求めなさい。π = 3.14 として小数で答えなさい。") % [r3, k],
 			"answer": ans2, "unit": "", "tol": 0.02,
 			"hint1": "S = ½ r² θ に入れるだけ。角度を 360° に直さなくていいのが弧度法の良さ。",
 			"hint2": "S = ½ × %d² × 3.14/%d" % [r3, k],
-			"expl": "S = ½ × %d × 3.14/%d = %s です。" % [r3 * r3, k, ProblemGen.fmt(ans2)],
+			"expl": L.t("S = ½ × %d × 3.14/%d = %s です。") % [r3 * r3, k, ProblemGen.fmt(ans2)],
 			"fig": _rad_fig(float(r3), PI / k),
 		}
 
@@ -585,11 +585,11 @@ static func _s8(rng: RandomNumberGenerator, _tier: int) -> Dictionary:
 		ProblemGen.label(Vector2(beta + 1.6, a * beta * beta * k), "y = %sx²" % a_str),
 	]}
 	return {
-		"q": "放物線 y = %sx² と直線 y = %s は x = %d と x = %d で交わります。囲まれた部分の面積 S を求めなさい。" % [a_str, m_str, alpha, beta],
+		"q": L.t("放物線 y = %sx² と直線 y = %s は x = %d と x = %d で交わります。囲まれた部分の面積 S を求めなさい。") % [a_str, m_str, alpha, beta],
 		"answer": ans, "unit": "",
 		"hint1": "6分の1公式: S = |a|(β − α)³ / 6。積分を全部やらなくても一発だよ。",
 		"hint2": "S = %d × (%d − (%d))³ ÷ 6 = %d × %d ÷ 6" % [a, beta, alpha, a, d * d * d],
-		"expl": "S = |a|(β−α)³/6 = %d × %d³/6 = %s です。" % [a, d, ProblemGen.fmt(ans)],
+		"expl": L.t("S = |a|(β−α)³/6 = %d × %d³/6 = %s です。") % [a, d, ProblemGen.fmt(ans)],
 		"fig": fig,
 	}
 
@@ -665,19 +665,19 @@ static func _s9(rng: RandomNumberGenerator, kind: int) -> Dictionary:
 	if kind >= 1:
 		# 交点を自分で解かせる(x² = g(x) の 2 次方程式)
 		return {
-			"q": "2 つの放物線 y = x² と y = %s で囲まれた部分の面積 S を求めなさい。" % g_str,
+			"q": L.t("2 つの放物線 y = x² と y = %s で囲まれた部分の面積 S を求めなさい。") % g_str,
 			"answer": ans, "unit": "",
-			"hint1": "まず x² = %s を解いて交点の x 座標を求めよう(x = %d, %d になるよ)。" % [g_str, alpha, beta],
-			"hint2": "S = |係数の差| × (β−α)³ ÷ 6 = %d × %d³ ÷ 6" % [da, d],
-			"expl": "交点は x = %d, %d。係数の差 %d の6分の1公式で S = %d×%d³/6 = %s です。" % [alpha, beta, da, da, d, ProblemGen.fmt(ans)],
+			"hint1": L.t("まず x² = %s を解いて交点の x 座標を求めよう(x = %d, %d になるよ)。") % [g_str, alpha, beta],
+			"hint2": L.t("S = |係数の差| × (β−α)³ ÷ 6 = %d × %d³ ÷ 6") % [da, d],
+			"expl": L.t("交点は x = %d, %d。係数の差 %d の6分の1公式で S = %d×%d³/6 = %s です。") % [alpha, beta, da, da, d, ProblemGen.fmt(ans)],
 			"fig": fig,
 		}
 	return {
-		"q": "2 つの放物線 y = x² と y = %s は x = %d と x = %d で交わります。囲まれた部分の面積 S を求めなさい。" % [g_str, alpha, beta],
+		"q": L.t("2 つの放物線 y = x² と y = %s は x = %d と x = %d で交わります。囲まれた部分の面積 S を求めなさい。") % [g_str, alpha, beta],
 		"answer": ans, "unit": "",
-		"hint1": "差をとると (上) − (下) = %d(x − α)(β − x)。6分の1公式 S = |Δa|(β−α)³/6 が使えるよ。" % da,
+		"hint1": L.t("差をとると (上) − (下) = %d(x − α)(β − x)。6分の1公式 S = |Δa|(β−α)³/6 が使えるよ。") % da,
 		"hint2": "S = %d × (%d − (%d))³ ÷ 6" % [da, beta, alpha],
-		"expl": "2 次の係数の差は %d。S = %d × %d³/6 = %s です。" % [da, da, d, ProblemGen.fmt(ans)],
+		"expl": L.t("2 次の係数の差は %d。S = %d × %d³/6 = %s です。") % [da, da, d, ProblemGen.fmt(ans)],
 		"fig": fig,
 	}
 
@@ -722,11 +722,11 @@ static func _s10(rng: RandomNumberGenerator, tier: int) -> Dictionary:
 			ProblemGen.label(Vector2(PI * 2.2, -0.7), "π"),
 		]}
 		return {
-			"q": "曲線 y = %ssin x (0 ≤ x ≤ π) と x 軸で囲まれた部分の面積 S を求めなさい。" % ("" if a == 1 else str(a)),
+			"q": L.t("曲線 y = %ssin x (0 ≤ x ≤ π) と x 軸で囲まれた部分の面積 S を求めなさい。") % ("" if a == 1 else str(a)),
 			"answer": 2.0 * a, "unit": "",
 			"hint1": "∫sin x dx = −cos x。0 から π まで積分しよう。",
-			"hint2": "S = %s[−cos x] を 0 から π まで = %s × (1 + 1)" % [str(a), str(a)],
-			"expl": "S = %d∫ sin x dx (0 から π) = %d[−cos x] を 0 から π まで = %d × 2 = %d です。" % [a, a, a, 2 * a],
+			"hint2": L.t("S = %s[−cos x] を 0 から π まで = %s × (1 + 1)") % [str(a), str(a)],
+			"expl": L.t("S = %d∫ sin x dx (0 から π) = %d[−cos x] を 0 から π まで = %d × 2 = %d です。") % [a, a, a, 2 * a],
 			"fig": fig,
 		}
 	elif kind == 1:
@@ -740,11 +740,11 @@ static func _s10(rng: RandomNumberGenerator, tier: int) -> Dictionary:
 		]}
 		var p_str := ("x − %d" % p) if p > 0 else (("x + %d" % (-p)) if p < 0 else "x")
 		return {
-			"q": "折れ線 y = −|%s| + %d と x 軸で囲まれた部分の面積 S を求めなさい。" % [p_str, b],
+			"q": L.t("折れ線 y = −|%s| + %d と x 軸で囲まれた部分の面積 S を求めなさい。") % [p_str, b],
 			"answer": float(b * b), "unit": "",
-			"hint1": "グラフは頂点 (%d, %d) の山形。x 軸との交点は %d と %d だよ。" % [p, b, p - b, p + b],
-			"hint2": "底辺 %d、高さ %d の三角形。S = %d × %d ÷ 2" % [2 * b, b, 2 * b, b],
-			"expl": "底辺 = %d、高さ = %d の三角形なので S = %d × %d / 2 = %d です。" % [2 * b, b, 2 * b, b, b * b],
+			"hint1": L.t("グラフは頂点 (%d, %d) の山形。x 軸との交点は %d と %d だよ。") % [p, b, p - b, p + b],
+			"hint2": L.t("底辺 %d、高さ %d の三角形。S = %d × %d ÷ 2") % [2 * b, b, 2 * b, b],
+			"expl": L.t("底辺 = %d、高さ = %d の三角形なので S = %d × %d / 2 = %d です。") % [2 * b, b, 2 * b, b, b * b],
 			"fig": fig2,
 		}
 	else:
@@ -778,11 +778,11 @@ static func _s10(rng: RandomNumberGenerator, tier: int) -> Dictionary:
 			ProblemGen.label(Vector2(q2, 0.6), str(q2)),
 		]}
 		return {
-			"q": "放物線 y = %s と x 軸で囲まれた部分の面積 S を求めなさい。" % _quad_str(a2, bq, cq),
+			"q": L.t("放物線 y = %s と x 軸で囲まれた部分の面積 S を求めなさい。") % _quad_str(a2, bq, cq),
 			"answer": ans, "unit": "",
-			"hint1": "因数分解すると y = %d(x − (%d))(x − (%d))。x 軸との交点は %d と %d。6分の1公式だ!" % [a2, p2, q2, p2, q2],
+			"hint1": L.t("因数分解すると y = %d(x − (%d))(x − (%d))。x 軸との交点は %d と %d。6分の1公式だ!") % [a2, p2, q2, p2, q2],
 			"hint2": "S = %d × (%d − (%d))³ ÷ 6" % [a2, q2, p2],
-			"expl": "交点は x = %d, %d。S = |a|(β−α)³/6 = %d × %d³/6 = %s です。" % [p2, q2, a2, d, ProblemGen.fmt(ans)],
+			"expl": L.t("交点は x = %d, %d。S = |a|(β−α)³/6 = %d × %d³/6 = %s です。") % [p2, q2, a2, d, ProblemGen.fmt(ans)],
 			"fig": fig3,
 		}
 
@@ -830,11 +830,11 @@ static func _s11(rng: RandomNumberGenerator, tier: int) -> Dictionary:
 		ProblemGen.ang(Vector2.ZERO, Vector2(rr, 0), tip, "θ"),
 	]}
 	return {
-		"q": "%d° ≤ θ ≤ %d° のとき、%s を満たす θ を求めなさい。" % [range_min, range_max, expr],
+		"q": L.t("%d° ≤ θ ≤ %d° のとき、%s を満たす θ を求めなさい。") % [range_min, range_max, expr],
 		"answer": float(ans), "unit": "度",
 		"hint1": "30°・45°・60°(と 90°・120°・135°・150°)の sin・cos・tan の値を思い出そう。単位円をかくと確実だよ。",
-		"hint2": "%s になるのは θ = %d° のとき。" % [expr, ans],
-		"expl": "%s を満たすのは θ = %d° です(単位円の図の位置)。" % [expr, ans],
+		"hint2": L.t("%s になるのは θ = %d° のとき。") % [expr, ans],
+		"expl": L.t("%s を満たすのは θ = %d° です(単位円の図の位置)。") % [expr, ans],
 		"fig": fig,
 	}
 
@@ -874,13 +874,13 @@ static func _s12(rng: RandomNumberGenerator, tier: int) -> Dictionary:
 		ProblemGen.ang(Vector2.ZERO, va, vb, "θ"),
 	]}
 	return {
-		"q": "a→ = (%d, %d)、b→ = (%d, %d) のなす角 θ を求めなさい。" % [ax, ay, bx, by],
+		"q": L.t("a→ = (%d, %d)、b→ = (%d, %d) のなす角 θ を求めなさい。") % [ax, ay, bx, by],
 		"answer": float(ans), "unit": "度",
 		"hint1": "cosθ = (a・b) ÷ (|a→| |b→|)。まず内積 a・b を計算しよう。",
-		"hint2": "a・b = %d×%d + %d×%d = %d。cosθ = %s になるよ。" % [
+		"hint2": L.t("a・b = %d×%d + %d×%d = %d。cosθ = %s になるよ。") % [
 			ax, bx, ay, by, dot,
 			"0" if dot == 0 else ("√2/2" if ans == 45 else "−√2/2")],
-		"expl": "a・b = %d。cosθ = %d/(|a||b|) から θ = %d° です。" % [dot, dot, ans],
+		"expl": L.t("a・b = %d。cosθ = %d/(|a||b|) から θ = %d° です。") % [dot, dot, ans],
 		"fig": fig,
 	}
 
@@ -909,11 +909,11 @@ static func _s1_cos(rng: RandomNumberGenerator) -> Dictionary:
 		ProblemGen.side_label(pb, pa, str(c), -1.0),
 	]}
 	return {
-		"q": "三角形 ABC で BC = %d、CA = %d、AB = %d のとき、角 C を求めなさい。" % [a, b, c],
+		"q": L.t("三角形 ABC で BC = %d、CA = %d、AB = %d のとき、角 C を求めなさい。") % [a, b, c],
 		"answer": float(cc), "unit": "度",
 		"hint1": "余弦定理を変形して cosC = (a² + b² − c²) ÷ 2ab。",
 		"hint2": "cosC = (%d + %d − %d) ÷ %d = %s" % [a * a, b * b, c * c, 2 * a * b, "1/2" if cc == 60 else "−1/2"],
-		"expl": "cosC = %s なので C = %d° です。" % ["1/2" if cc == 60 else "−1/2", cc],
+		"expl": L.t("cosC = %s なので C = %d° です。") % ["1/2" if cc == 60 else "−1/2", cc],
 		"fig": fig,
 	}
 
@@ -946,11 +946,11 @@ static func _s4_height(rng: RandomNumberGenerator) -> Dictionary:
 		ProblemGen.label(Vector2(apex.x + 1.1, apex.y * 0.45), "x", ProblemGen.COL_YELLOW, 30),
 	]}
 	return {
-		"q": "3 辺が %d、%d、%d の三角形で、最も長い辺 %d を底辺としたときの高さ x を求めなさい。" % [a, b, c, c],
+		"q": L.t("3 辺が %d、%d、%d の三角形で、最も長い辺 %d を底辺としたときの高さ x を求めなさい。") % [a, b, c, c],
 		"answer": h, "unit": "",
-		"hint1": "まずヘロンの公式で面積を出そう(面積は %d になるよ)。" % area,
+		"hint1": L.t("まずヘロンの公式で面積を出そう(面積は %d になるよ)。") % area,
 		"hint2": "x = 2 × %d ÷ %d" % [area, c],
-		"expl": "ヘロンの公式で S = %d。x = 2S/底辺 = %s です。" % [area, ProblemGen.fmt(h)],
+		"expl": L.t("ヘロンの公式で S = %d。x = 2S/底辺 = %s です。") % [area, ProblemGen.fmt(h)],
 		"fig": fig,
 	}
 
@@ -961,11 +961,11 @@ static func _s7_rev(rng: RandomNumberGenerator) -> Dictionary:
 	var r := rng.randi_range(2, 6)
 	var s := 0.5 * r * r * th
 	return {
-		"q": "半径 %d、面積 %s のおうぎ形の中心角 θ は何ラジアンですか。" % [r, ProblemGen.fmt(s)],
+		"q": L.t("半径 %d、面積 %s のおうぎ形の中心角 θ は何ラジアンですか。") % [r, ProblemGen.fmt(s)],
 		"answer": th, "unit": "rad",
 		"hint1": "S = ½ r²θ を θ について解こう。θ = 2S ÷ r² だよ。",
 		"hint2": "θ = 2 × %s ÷ %d" % [ProblemGen.fmt(s), r * r],
-		"expl": "θ = 2S/r² = %s rad です。" % ProblemGen.fmt(th),
+		"expl": L.t("θ = 2S/r² = %s rad です。") % ProblemGen.fmt(th),
 		"fig": _rad_fig(float(r), th),
 	}
 
@@ -1001,11 +1001,11 @@ static func _s8_horiz(rng: RandomNumberGenerator) -> Dictionary:
 		ProblemGen.label(Vector2(tt + 1.6, k * kk), "y = %d" % k),
 	]}
 	return {
-		"q": "放物線 y = %sx² と直線 y = %d で囲まれた部分の面積 S を求めなさい。" % [a_str, k],
+		"q": L.t("放物線 y = %sx² と直線 y = %d で囲まれた部分の面積 S を求めなさい。") % [a_str, k],
 		"answer": ans, "unit": "",
-		"hint1": "まず %sx² = %d を解こう。交点は x = ±%d になるよ。" % [a_str, k, tt],
-		"hint2": "6分の1公式: S = %d × (%d − (−%d))³ ÷ 6" % [a, tt, tt],
-		"expl": "交点は x = ±%d。S = %d×%d³/6 = %s です。" % [tt, a, d, ProblemGen.fmt(ans)],
+		"hint1": L.t("まず %sx² = %d を解こう。交点は x = ±%d になるよ。") % [a_str, k, tt],
+		"hint2": L.t("6分の1公式: S = %d × (%d − (−%d))³ ÷ 6") % [a, tt, tt],
+		"expl": L.t("交点は x = ±%d。S = %d×%d³/6 = %s です。") % [tt, a, d, ProblemGen.fmt(ans)],
 		"fig": fig,
 	}
 
@@ -1045,11 +1045,11 @@ static func _s8_tangent(rng: RandomNumberGenerator) -> Dictionary:
 		ProblemGen.label(Vector2(beta, beta * beta * kk + 0.8), "x = %d" % beta),
 	]}
 	return {
-		"q": "放物線 y = x² の x = %d における接線と、放物線、直線 x = %d で囲まれた部分の面積 S を求めなさい。" % [tt, beta],
+		"q": L.t("放物線 y = x² の x = %d における接線と、放物線、直線 x = %d で囲まれた部分の面積 S を求めなさい。") % [tt, beta],
 		"answer": ans, "unit": "",
-		"hint1": "接点で囲む面積は S = (β − t)³ ÷ 3(接線の 1/3 公式)。x² − (接線) = (x − %d)² になるからだよ。" % tt,
+		"hint1": L.t("接点で囲む面積は S = (β − t)³ ÷ 3(接線の 1/3 公式)。x² − (接線) = (x − %d)² になるからだよ。") % tt,
 		"hint2": "S = (%d − (%d))³ ÷ 3 = %d³ ÷ 3" % [beta, tt, d],
-		"expl": "∫(x − %d)² dx を %d から %d まで計算して S = %d³/3 = %s です。" % [tt, tt, beta, d, ProblemGen.fmt(ans)],
+		"expl": L.t("∫(x − %d)² dx を %d から %d まで計算して S = %d³/3 = %s です。") % [tt, tt, beta, d, ProblemGen.fmt(ans)],
 		"fig": fig,
 	}
 
@@ -1074,10 +1074,10 @@ static func _s12_perp(rng: RandomNumberGenerator) -> Dictionary:
 		ProblemGen.label(vb + vb.normalized() * 0.8, "b→"),
 	]}
 	return {
-		"q": "a→ = (%d, %d) と b→ = (t, %d) が垂直になるとき、t を求めなさい。" % [p, q, r],
+		"q": L.t("a→ = (%d, %d) と b→ = (t, %d) が垂直になるとき、t を求めなさい。") % [p, q, r],
 		"answer": float(t), "unit": "",
-		"hint1": "垂直 ⇔ 内積が 0。a・b = %d×t + %d×%d = 0 だよ。" % [p, q, r],
+		"hint1": L.t("垂直 ⇔ 内積が 0。a・b = %d×t + %d×%d = 0 だよ。") % [p, q, r],
 		"hint2": "t = −%d × %d ÷ %d" % [q, r, p],
-		"expl": "%d t + %d = 0 より t = %d です。" % [p, q * r, t],
+		"expl": L.t("%d t + %d = 0 より t = %d です。") % [p, q * r, t],
 		"fig": fig,
 	}

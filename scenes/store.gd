@@ -58,7 +58,7 @@ func _ready() -> void:
 
 	var paid := GameState.paid_stage_count()
 	var lead := Label.new()
-	lead.text = "残り %d ステージが すべて 遊べるようになります" % paid
+	lead.text = L.t("残り %d ステージが すべて 遊べるようになります") % paid
 	lead.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	lead.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	lead.add_theme_font_size_override("font_size", 24)
@@ -73,12 +73,12 @@ func _ready() -> void:
 	pv.add_theme_constant_override("separation", 8)
 	panel.add_child(pv)
 	for line in [
-		"・角度編 %d + 面積編 %d ステージ(中学・高校・大学受験)" % [
+		L.t("・角度編 %d + 面積編 %d ステージ(中学・高校・大学受験)") % [
 			(ProblemGen.COURSES[0]["stages"] as Array).size(),
 			(ProblemGen.COURSES[1]["stages"] as Array).size()],
 		"・全ステージの「挑戦 10問」(1 問ごとに解法が変わる難度ラダー)と王冠",
 		"・チャレンジの全コースタイムアタック / サバイバル",
-		"・展開図マスター全 %d 問(展開図が立ち上がって立体になるアニメつき)" % 			NetDefs.all().size(),
+		L.t("・展開図マスター全 %d 問(展開図が立ち上がって立体になるアニメつき)") % 			NetDefs.all().size(),
 		"・買い切り。追加の課金や広告はありません",
 	]:
 		var l := Label.new()
@@ -90,8 +90,8 @@ func _ready() -> void:
 	v.add_child(panel)
 
 	var free_note := Label.new()
-	free_note.text = "※ 各編の最初の %d ステージと、電卓・解き方アニメ・補助線・" % \
-		GameState.FREE_STAGES_PER_COURSE + "ヒント・段位・記録は無料のままです。"
+	free_note.text = L.t("※ 各編の最初の %d ステージと、電卓・解き方アニメ・補助線・ヒント・段位・記録は無料のままです。") % \
+		GameState.FREE_STAGES_PER_COURSE
 	free_note.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	free_note.add_theme_font_size_override("font_size", 20)
 	free_note.add_theme_color_override("font_color", Color(0.68, 0.75, 0.88))
@@ -155,7 +155,7 @@ func _refresh() -> void:
 		status.text = "ありがとうございます。全ステージが遊べます。"
 		return
 	buy_btn.disabled = false
-	buy_btn.text = "全ステージを解放する  %s" % _price()
+	buy_btn.text = L.t("全ステージを解放する  %s") % _price()
 	if not _store_ready():
 		status.text = "この端末ではストアに接続できません(PC版では購入できません)。"
 
@@ -193,7 +193,7 @@ func _on_purchase_done(ok: bool, msg: String) -> void:
 		GameState.play_sfx("clear")
 		status.text = "解放しました。ありがとうございます!"
 	else:
-		status.text = "購入できませんでした: %s" % msg
+		status.text = L.t("購入できませんでした: %s") % msg
 	_refresh()
 
 
@@ -220,4 +220,4 @@ func _on_title_tap() -> void:
 		GameState.change_scene("res://scenes/iap_check.tscn")
 		return
 	if _taps >= 4 and status != null:
-		status.text = "課金の しらべ まで あと %d 回" % (CHECK_TAPS - _taps)
+		status.text = L.t("課金の しらべ まで あと %d 回") % (CHECK_TAPS - _taps)

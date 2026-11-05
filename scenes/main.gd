@@ -74,7 +74,7 @@ func _ready() -> void:
 				done += 1
 			total_stars += got
 	var rank := Label.new()
-	rank.text = "%s ・ ★ %d ・ %s 点" % [GameState.rank_name(), total_stars,
+	rank.text = L.t("%s ・ ★ %d ・ %s 点") % [GameState.rank_name(), total_stars,
 		GameState.comma(GameState.total_score())]
 	rank.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	rank.add_theme_font_size_override("font_size", 28 if portrait else 32)
@@ -88,7 +88,7 @@ func _ready() -> void:
 	var done_today := GameState.daily_done()
 	vbox.add_child(_narrow(_story_card("今日の図形",
 		"きょうの 1 問" if not done_today else "できた!",
-		"%d日れんぞく" % GameState.daily_streak,
+		L.t("%d日れんぞく") % GameState.daily_streak,
 		Color(0.62, 0.42, 0.20) if not done_today else Color(0.30, 0.45, 0.34),
 		Icons.star(64.0, Color(1, 1, 1, 0.95)), func() -> void:
 			GameState.change_scene("res://scenes/daily.tscn")), story_side))
@@ -106,7 +106,7 @@ func _ready() -> void:
 			GameState.change_scene("res://scenes/kid_map.tscn")), story_side))
 	var jhs: Array = StoryDefs.chapters_of("jhs")
 	vbox.add_child(_narrow(_story_card("はかる旅", "中学生",
-		"%d / %d 章" % [_story_done(jhs), jhs.size()], Color(0.45, 0.35, 0.62),
+		L.t("%d / %d 章") % [_story_done(jhs), jhs.size()], Color(0.45, 0.35, 0.62),
 		Icons.book(64.0, Color(1, 1, 1, 0.95)), func() -> void:
 			GameState.story_mode = "jhs"
 			GameState.story_chapter = "ch1"
@@ -114,7 +114,7 @@ func _ready() -> void:
 			GameState.change_scene("res://scenes/story_map.tscn")), story_side))
 	var hs: Array = StoryDefs.chapters_of("hs")
 	vbox.add_child(_narrow(_story_card("軌道計算室", "高校生",
-		"%d / %d 章" % [_story_done(hs), hs.size()], Color(0.24, 0.42, 0.58),
+		L.t("%d / %d 章") % [_story_done(hs), hs.size()], Color(0.24, 0.42, 0.58),
 		Icons.timer(64.0, Color(1, 1, 1, 0.95)), func() -> void:
 			GameState.story_mode = "hs"
 			GameState.story_chapter = "ch17"
@@ -129,7 +129,7 @@ func _ready() -> void:
 		if GameState.island_clear.has(str(i)):
 			isles += 1
 	vbox.add_child(_narrow(_story_card("島取り", "カラスと 島を とりあう",
-		"%d / %d 島" % [isles, IslandDefs.count()], Color(0.24, 0.46, 0.40),
+		L.t("%d / %d 島") % [isles, IslandDefs.count()], Color(0.24, 0.46, 0.40),
 		Icons.flag(64.0, Color(1, 1, 1, 0.95)), func() -> void:
 			GameState.change_scene("res://scenes/island_select.tscn")), story_side))
 
@@ -184,7 +184,7 @@ func _ready() -> void:
 	row2.add_child(_small_card("図鑑", Color(0.42, 0.34, 0.52),
 		Icons.book(52.0, Color(1, 1, 1, 0.92)), func() -> void:
 			GameState.change_scene("res://scenes/zukan.tscn"),
-		"見つけた 決まり %d / %d" % [int(zk[0]), int(zk[1])]))
+		L.t("見つけた 決まり %d / %d") % [int(zk[0]), int(zk[1])]))
 
 
 
@@ -192,7 +192,7 @@ func _ready() -> void:
 	if not GameState.premium:
 		vbox.add_child(_spacer(10))
 		vbox.add_child(_menu_button(
-			"すべてを解放", "残り %d ステージ・ストーリー %d・島 %d・展開図 %d・挑戦・チャレンジ" % [
+			"すべてを解放", L.t("残り %d ステージ・ストーリー %d・島 %d・展開図 %d・挑戦・チャレンジ") % [
 				int(GameState.paid_content_count()["stage"]),
 				int(GameState.paid_content_count()["kid"])
 					+ int(GameState.paid_content_count()["chapter"]),
@@ -200,6 +200,22 @@ func _ready() -> void:
 				int(GameState.paid_content_count()["net"])],
 			Color(0.78, 0.55, 0.15), func() -> void:
 				GameState.change_scene("res://scenes/store.tscn"), true))
+
+	# 言語の 切り替え(右上に 小さく)。いま 出ていない ほうの 言語名を 出す
+	var lang_btn := Button.new()
+	lang_btn.text = "日本語" if L.en() else "English"
+	lang_btn.set_anchors_preset(Control.PRESET_TOP_RIGHT)
+	lang_btn.offset_left = -190.0
+	lang_btn.offset_right = -14.0
+	lang_btn.offset_top = 10.0 + float(ins["top"])
+	lang_btn.offset_bottom = 64.0 + float(ins["top"])
+	lang_btn.add_theme_font_size_override("font_size", 22)
+	lang_btn.pressed.connect(func() -> void:
+		GameState.play_sfx("tap")
+		GameState.set_lang("ja" if L.en() else "en")
+		GameState.change_scene("res://scenes/main.tscn"))
+	GameState.style_button(lang_btn, SECONDARY)
+	add_child(lang_btn)
 
 	# デバッグ: 全ステージ解放トグル(左下に小さく)。
 	# 購入しなくても全ステージが開いてしまうので、リリースビルドでは出さない

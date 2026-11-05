@@ -111,15 +111,15 @@ func _ready() -> void:
 
 
 func _refresh() -> void:
-	head.set_ruby_text("  今日の図形 %s   %d日れんぞく" % [
+	head.set_ruby_text(L.t("  今日の図形 %s   %d日れんぞく") % [
 		Daily.date_label(), GameState.daily_streak], true)
 	if done:
-		msg.set_ruby_text("できた! %s  ―  みんな 今日は 同じ 問題です" % String(problem["q"]), true)
+		msg.set_ruby_text(L.t("できた! %s  ―  みんな 今日は 同じ 問題です") % String(problem["q"]), true)
 		keypad.visible = false
 		answer_row.visible = false
 		share_btn.visible = true
 	elif GameState.daily_done():
-		msg.set_ruby_text("今日の分は もう 解きました。また あした。\n%s" % String(problem["q"]), true)
+		msg.set_ruby_text(L.t("今日の分は もう 解きました。また あした。\n%s") % String(problem["q"]), true)
 	else:
 		msg.set_ruby_text(String(problem["q"]), true)
 
@@ -158,7 +158,7 @@ func _submit() -> void:
 		GameState.play_sfx("fail")
 		input_text = ""
 		keypad.answer_lbl.text = ""
-		msg.set_ruby_text("ちがうみたい(%d回め)。もう一度。\n%s" % [miss, String(problem["q"])], true)
+		msg.set_ruby_text(L.t("ちがうみたい(%d回め)。もう一度。\n%s") % [miss, String(problem["q"])], true)
 		return
 	done = true
 	GameState.play_sfx("win")
@@ -172,4 +172,4 @@ func _share() -> void:
 		String(problem["stage_title"]))
 	DisplayServer.clipboard_set(text)
 	GameState.play_sfx("tap")
-	msg.set_ruby_text("写しました。SNS などに 貼れます。\n" + text, false)
+	msg.set_ruby_text(L.t("写しました。SNS などに 貼れます。\n%s") % text, false)

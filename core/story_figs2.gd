@@ -63,8 +63,8 @@ static func _tank(p: Vector2) -> Dictionary:
 		ProblemGen.seg(Vector2(0, 0), Vector2(w, 0), WHITE, 4.0),
 		ProblemGen.seg(Vector2(w, 0), Vector2(w, h), WHITE, 4.0),
 		ProblemGen.seg(Vector2(0, depth), Vector2(-1.2, depth), GOLD, 2.5, true),
-		ProblemGen.label(Vector2(w * 0.5, -1.0), "幅 %.1f" % w, GOLD, 28),
-		ProblemGen.label(Vector2(-2.6, depth), "深さ %.1f" % depth, GOLD, 28),
+		ProblemGen.label(Vector2(w * 0.5, -1.0), L.t("幅 %.1f") % w, GOLD, 28),
+		ProblemGen.label(Vector2(-2.6, depth), L.t("深さ %.1f") % depth, GOLD, 28),
 		ProblemGen.label(Vector2(w * 0.5, depth * 0.5), "水", SKY, 28),
 	]}
 
@@ -83,8 +83,8 @@ static func _tank_proof() -> Dictionary:
 			ProblemGen.seg(Vector2(x, 13.0), Vector2(x, 0), WHITE, 3.5),
 			ProblemGen.seg(Vector2(x, 0), Vector2(x + w, 0), WHITE, 3.5),
 			ProblemGen.seg(Vector2(x + w, 0), Vector2(x + w, 13.0), WHITE, 3.5),
-			ProblemGen.label(Vector2(x + w * 0.5, -1.1), "幅 %.0f" % w, DIM, 26),
-			ProblemGen.label(Vector2(x + w * 0.5, d + 0.9), "深さ %.0f" % d, GOLD, 26),
+			ProblemGen.label(Vector2(x + w * 0.5, -1.1), L.t("幅 %.0f") % w, DIM, 26),
+			ProblemGen.label(Vector2(x + w * 0.5, d + 0.9), L.t("深さ %.0f") % d, GOLD, 26),
 		]
 	out.append(ProblemGen.label(Vector2(7.5, 14.5), "水の量はどちらも同じ", GOLD, 28))
 	return {"shapes": out}
@@ -108,10 +108,10 @@ static func _shadow(p: Vector2) -> Dictionary:
 		ProblemGen.seg(Vector2(tx, 0), Vector2(tx, tree), GOLD, 4.5),
 		ProblemGen.seg(Vector2(tx, tree), Vector2(tx + s2, 0), DIM, 2.5, true),
 		ProblemGen.seg(Vector2(tx, 0), Vector2(tx + s2, 0), SKY, 4.0),
-		ProblemGen.label(Vector2(-1.6, pole * 0.5), "杭 %.0f" % pole, GOLD, 26),
-		ProblemGen.label(Vector2(s1 * 0.5, -1.1), "影 %.1f" % s1, SKY, 26),
-		ProblemGen.label(Vector2(tx - 1.8, tree * 0.5), "木 %.0f" % tree, GOLD, 26),
-		ProblemGen.label(Vector2(tx + s2 * 0.5, -1.1), "影 %.1f" % s2, SKY, 26),
+		ProblemGen.label(Vector2(-1.6, pole * 0.5), L.t("杭 %.0f") % pole, GOLD, 26),
+		ProblemGen.label(Vector2(s1 * 0.5, -1.1), L.t("影 %.1f") % s1, SKY, 26),
+		ProblemGen.label(Vector2(tx - 1.8, tree * 0.5), L.t("木 %.0f") % tree, GOLD, 26),
+		ProblemGen.label(Vector2(tx + s2 * 0.5, -1.1), L.t("影 %.1f") % s2, SKY, 26),
 		ProblemGen.label(Vector2(0.6, pole + 1.6), "太陽の光", DIM, 24),
 	]}
 
@@ -158,7 +158,7 @@ static func _overlap(p: Vector2) -> Dictionary:
 		ProblemGen.label(Vector2(moved * 0.5, h * 0.5), "重なり", GOLD, 26),
 		ProblemGen.label(Vector2(fix * 0.7, h + 1.0), "止まっている板", DIM, 24),
 		ProblemGen.label(Vector2(left + 0.4, -1.1), "動く板", GOLD, 24),
-		ProblemGen.label(Vector2(moved * 0.5, -1.1), "進んだ %.1f" % moved, SKY, 26),
+		ProblemGen.label(Vector2(moved * 0.5, -1.1), L.t("進んだ %.1f") % moved, SKY, 26),
 	]}
 
 
@@ -172,7 +172,7 @@ static func _overlap_proof() -> Dictionary:
 		out += [
 			ProblemGen.poly([Vector2(x, 0), Vector2(x + w, 0), Vector2(x + w, h), Vector2(x, h)],
 				ProblemGen.FILL_ACCENT, GOLD, 3.0),
-			ProblemGen.label(Vector2(x + w * 0.5, -1.1), "よこ %.1f" % w, SKY, 26),
+			ProblemGen.label(Vector2(x + w * 0.5, -1.1), L.t("よこ %.1f") % w, SKY, 26),
 			ProblemGen.label(Vector2(x - 1.4, h * 0.5), "%.0f" % h, GOLD, 26),
 		]
 	out.append(ProblemGen.label(Vector2(9.0, h + 1.6), "たてはいつも同じ。のびるのは よこ だけ", GOLD, 26))
@@ -211,13 +211,13 @@ static func _box_diag(p: Vector2) -> Dictionary:
 		ProblemGen.seg(ProblemGen.proj3(Vector3.ZERO), ProblemGen.proj3(Vector3(w, d, 0)),
 			SKY, 2.5, true),
 		ProblemGen.label(ProblemGen.proj3(Vector3(w * 0.5, 0, 0)) + Vector2(0, -1.1),
-			"よこ %.0f" % w, DIM, 26),
+			L.t("よこ %.0f") % w, DIM, 26),
 		ProblemGen.label(ProblemGen.proj3(Vector3(w, d * 0.5, 0)) + Vector2(1.2, -0.8),
-			"おくゆき %.1f" % d, DIM, 26),
+			L.t("おくゆき %.1f") % d, DIM, 26),
 		ProblemGen.label(ProblemGen.proj3(Vector3(w, d, h * 0.5)) + Vector2(1.4, 0),
-			"高さ %.1f" % h, DIM, 26),
+			L.t("高さ %.1f") % h, DIM, 26),
 		ProblemGen.label(ProblemGen.proj3(Vector3(w * 0.45, d * 0.45, h * 0.6)) + Vector2(-1.6, 0.6),
-			"対角線 %.2f" % Vector3(w, d, h).length(), GOLD, 26),
+			L.t("対角線 %.2f") % Vector3(w, d, h).length(), GOLD, 26),
 	]
 	return {"shapes": out}
 
@@ -260,11 +260,11 @@ static func _cube_scale(p: Vector2) -> Dictionary:
 		ProblemGen.label(ProblemGen.proj3(Vector3(b.x * 0.5, 0, 0)) + Vector2(0, -1.2),
 			"もとの箱", DIM, 26),
 		ProblemGen.label(ProblemGen.proj3(Vector3(b.x * k * 0.5, 0, 0)) + shift + Vector2(0, -1.2),
-			"%.2f 倍にした箱" % k, GOLD, 26),
+			L.t("%.2f 倍にした箱") % k, GOLD, 26),
 		ProblemGen.label(ProblemGen.proj3(Vector3(0, 0, b.z)) + Vector2(-1.0, 1.2),
-			"体積 %.1f" % (b.x * b.y * b.z), DIM, 26),
+			L.t("体積 %.1f") % (b.x * b.y * b.z), DIM, 26),
 		ProblemGen.label(ProblemGen.proj3(Vector3(0, 0, b.z * k)) + shift + Vector2(-1.0, 1.2),
-			"体積 %.1f" % (b.x * b.y * b.z * k * k * k), GOLD, 26),
+			L.t("体積 %.1f") % (b.x * b.y * b.z * k * k * k), GOLD, 26),
 	]
 	return {"shapes": out}
 
@@ -298,14 +298,14 @@ static func _cone_net(p: Vector2) -> Dictionary:
 	return {"shapes": [
 		ProblemGen.sector(Vector2.ZERO, l, 0.0, ang, ProblemGen.FILL_ACCENT, GOLD),
 		ProblemGen.seg(Vector2.ZERO, Vector2(l, 0), GOLD, 3.0),
-		ProblemGen.label(Vector2(l * 0.5, -1.0), "母線 %.1f" % l, GOLD, 26),
+		ProblemGen.label(Vector2(l * 0.5, -1.0), L.t("母線 %.1f") % l, GOLD, 26),
 		ProblemGen.ang(Vector2.ZERO, Vector2(l, 0),
 			Vector2(cos(deg_to_rad(ang)), sin(deg_to_rad(ang))) * l,
 			"%d°" % roundi(ang), 1.7, ang > 180.0),
 		ProblemGen.circle(Vector2(cx, -r - 1.0), r, ProblemGen.FILL_MAIN, WHITE, 3.0),
-		ProblemGen.label(Vector2(cx, -2.0 * r - 2.4), "底面 半径 %.0f" % r, DIM, 26),
-		ProblemGen.label(Vector2(cx, r + 0.6), "円周 %.2f" % (TAU * r), SKY, 26),
-		ProblemGen.label(Vector2(l * 0.35, l * 0.75), "弧 %.2f" % arc_len, SKY, 26),
+		ProblemGen.label(Vector2(cx, -2.0 * r - 2.4), L.t("底面 半径 %.0f") % r, DIM, 26),
+		ProblemGen.label(Vector2(cx, r + 0.6), L.t("円周 %.2f") % (TAU * r), SKY, 26),
+		ProblemGen.label(Vector2(l * 0.35, l * 0.75), L.t("弧 %.2f") % arc_len, SKY, 26),
 	]}
 
 
@@ -342,8 +342,8 @@ static func _power(p: Vector2) -> Dictionary:
 		ProblemGen.circle(a, 0.22, GOLD, null, 0.0),
 		ProblemGen.circle(b, 0.22, GOLD, null, 0.0),
 		ProblemGen.label(pp + Vector2(-1.0, 0.0), "P", GOLD, 28),
-		ProblemGen.label((pp + a) * 0.5 + Vector2(0, 1.0), "近い方 %.2f" % float(t[0]), SKY, 26),
-		ProblemGen.label(b + Vector2(1.4, 1.0), "遠い方 %.2f" % float(t[1]), SKY, 26),
+		ProblemGen.label((pp + a) * 0.5 + Vector2(0, 1.0), L.t("近い方 %.2f") % float(t[0]), SKY, 26),
+		ProblemGen.label(b + Vector2(1.4, 1.0), L.t("遠い方 %.2f") % float(t[1]), SKY, 26),
 		ProblemGen.label(Vector2(0, -r - 1.4), "池", DIM, 24),
 	]}
 

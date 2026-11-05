@@ -87,8 +87,7 @@ static func _t_triangle(rng: RandomNumberGenerator) -> Dictionary:
 	var c := rng.randi_range(35, 75)
 	var pts: Array = ProblemGen.tri_from_angles(float(b), float(c), 10.0)
 	return {
-		"q": "農夫の畑。読める角は %d 度と %d 度だけで、残りひとつは石碑が欠けている。"
-			% [b, c] + "杭を打ち直すには、あと何度と分かればいい?",
+		"q": L.t("農夫の畑。読める角は %d 度と %d 度だけで、残りひとつは石碑が欠けている。杭を打ち直すには、あと何度と分かればいい?") % [b, c],
 		"answer": float(180 - b - c), "unit": "度", "tol": 0.5,
 		"fig": {"shapes": [
 			ProblemGen.poly(pts, ProblemGen.FILL_MAIN, WHITE, 4.0),
@@ -109,8 +108,7 @@ static func _t_zigzag(rng: RandomNumberGenerator) -> Dictionary:
 	var d2 := Vector2(-cos(deg_to_rad(float(low))), sin(deg_to_rad(float(low))))
 	var p := _cross(hi, d1, lo, d2)
 	return {
-		"q": "曲がり角には足場が無くて登れない。壁ぎわで測れたのは上の角 %d 度と下の角 %d 度だけだ。"
-			% [up, low] + "大工に伝える梁の角は何度?",
+		"q": L.t("曲がり角には足場が無くて登れない。壁ぎわで測れたのは上の角 %d 度と下の角 %d 度だけだ。大工に伝える梁の角は何度?") % [up, low],
 		"answer": float(up + low), "unit": "度", "tol": 0.5,
 		"fig": {"shapes": [
 			ProblemGen.seg(Vector2(-8.0, 0.0), Vector2(14.0, 0.0), WHITE, 4.0),
@@ -130,13 +128,12 @@ static func _t_circle(rng: RandomNumberGenerator) -> Dictionary:
 	var d := rng.randi_range(6, 24) * 2
 	var r := float(d) * 0.5
 	return {
-		"q": "さしわたし %d cm の車輪に、ふちを一周する鉄の輪をはめたい。" % d
-			+ "鉄は何 cm 切ればいい? 円周率は 3.14 とする。",
+		"q": L.t("さしわたし %d cm の車輪に、ふちを一周する鉄の輪をはめたい。鉄は何 cm 切ればいい? 円周率は 3.14 とする。") % [d],
 		"answer": float(d) * 3.14, "unit": "cm", "tol": 0.05,
 		"fig": {"shapes": [
 			ProblemGen.circle(Vector2.ZERO, r, ProblemGen.FILL_MAIN, WHITE, 4.0),
 			ProblemGen.seg(Vector2(-r, 0.0), Vector2(r, 0.0), GOLD, 3.0),
-			ProblemGen.label(Vector2(0.0, -r * 0.22), "さしわたし %d cm" % d),
+			ProblemGen.label(Vector2(0.0, -r * 0.22), L.t("さしわたし %d cm") % d),
 			ProblemGen.label(Vector2(0.0, r + 1.2), "ここに鉄の輪をはめる"),
 		]}}
 
@@ -147,8 +144,7 @@ static func _t_equal_area(rng: RandomNumberGenerator) -> Dictionary:
 	var h := rng.randi_range(4, 12)
 	var shift := rng.randf_range(-3.0, 5.0)
 	return {
-		"q": "兄の畑は頂点が右に寄り、弟の畑は左に寄っている。どちらも底辺 %d m、高さ %d m。"
-			% [base, h] + "一人分の広さは何 m²?",
+		"q": L.t("兄の畑は頂点が右に寄り、弟の畑は左に寄っている。どちらも底辺 %d m、高さ %d m。一人分の広さは何 m²?") % [base, h],
 		"answer": float(base) * float(h) * 0.5, "unit": "m²", "tol": 0.05,
 		"fig": {"shapes": [
 			ProblemGen.seg(Vector2(-4.0, float(h)), Vector2(float(base) + 5.0, float(h)),
@@ -158,9 +154,9 @@ static func _t_equal_area(rng: RandomNumberGenerator) -> Dictionary:
 			ProblemGen.seg(Vector2(float(base) * 0.5 + shift, float(h)),
 				Vector2(float(base) * 0.5 + shift, 0.0), GOLD, 2.5, true),
 			ProblemGen.side_label(Vector2.ZERO, Vector2(float(base), 0.0),
-				"底辺 %d m" % base, -1.0, 0.9),
+				L.t("底辺 %d m") % base, -1.0, 0.9),
 			ProblemGen.label(Vector2(float(base) * 0.5 + shift + 1.4, float(h) * 0.5),
-				"高さ %d m" % h),
+				L.t("高さ %d m") % h),
 		]}}
 
 
@@ -171,15 +167,14 @@ static func _t_pythagoras(rng: RandomNumberGenerator) -> Dictionary:
 	var a := float(s[0])
 	var b := float(s[1])
 	return {
-		"q": "土台の直角を出す。柱から %d 尺、もう一方へ %d 尺のところに印をつけた。"
-			% [int(a), int(b)] + "この二点を結ぶ筋交いは何尺で切ればいい?",
+		"q": L.t("土台の直角を出す。柱から %d 尺、もう一方へ %d 尺のところに印をつけた。この二点を結ぶ筋交いは何尺で切ればいい?") % [int(a), int(b)],
 		"answer": float(s[2]), "unit": "尺", "tol": 0.05,
 		"fig": {"shapes": [
 			ProblemGen.poly([Vector2.ZERO, Vector2(a, 0.0), Vector2(0.0, b)],
 				ProblemGen.FILL_MAIN, WHITE, 4.0),
 			ProblemGen.right(Vector2.ZERO, Vector2(a, 0.0), Vector2(0.0, b)),
-			ProblemGen.side_label(Vector2.ZERO, Vector2(a, 0.0), "%d 尺" % int(a), -1.0, 0.9),
-			ProblemGen.side_label(Vector2.ZERO, Vector2(0.0, b), "%d 尺" % int(b), -1.0, 0.9),
+			ProblemGen.side_label(Vector2.ZERO, Vector2(a, 0.0), L.t("%d 尺") % int(a), -1.0, 0.9),
+			ProblemGen.side_label(Vector2.ZERO, Vector2(0.0, b), L.t("%d 尺") % int(b), -1.0, 0.9),
 			ProblemGen.side_label(Vector2(a, 0.0), Vector2(0.0, b), "筋交い ?", 1.0, 0.9),
 		]}}
 
@@ -190,8 +185,7 @@ static func _t_inscribed(rng: RandomNumberGenerator) -> Dictionary:
 	var e := StoryDefs.chord_ends()
 	var a := Vector2(cos(deg_to_rad(95.0)), sin(deg_to_rad(95.0))) * StoryDefs.R_CIRCLE
 	return {
-		"q": "舞台の端から端を、中心から見ると %d 度だった。" % cen
-			+ "客席から見こむ角は何度? これが同じなら、券は同じ値段でいい。",
+		"q": L.t("舞台の端から端を、中心から見ると %d 度だった。客席から見こむ角は何度? これが同じなら、券は同じ値段でいい。") % [cen],
 		"answer": float(cen) * 0.5, "unit": "度", "tol": 0.5,
 		"fig": {"shapes": [
 			ProblemGen.circle(Vector2.ZERO, StoryDefs.R_CIRCLE, null, DIM, 3.0),
@@ -212,14 +206,13 @@ static func _t_similar(rng: RandomNumberGenerator) -> Dictionary:
 	var small := StoryDefs.tri_shape(1.0)
 	var big := StoryDefs.tri_shape(float(k))
 	return {
-		"q": "いまの帆に布が %d 反かかっている。長さを %d 倍にした帆を張りたい。"
-			% [cloth, k] + "布は何反いる?",
+		"q": L.t("いまの帆に布が %d 反かかっている。長さを %d 倍にした帆を張りたい。布は何反いる?") % [cloth, k],
 		"answer": float(cloth * k * k), "unit": "反", "tol": 0.05,
 		"fig": {"shapes": [
 			ProblemGen.poly(big, ProblemGen.FILL_SUB, GOLD, 3.5),
 			ProblemGen.poly(small, ProblemGen.FILL_MAIN, WHITE, 3.5),
-			ProblemGen.label(Vector2(1.4, 1.0), "いま %d 反" % cloth),
-			ProblemGen.label(Vector2(float(k) * 2.2, float(k) * 2.4), "%d 倍の帆 ?" % k),
+			ProblemGen.label(Vector2(1.4, 1.0), L.t("いま %d 反") % cloth),
+			ProblemGen.label(Vector2(float(k) * 2.2, float(k) * 2.4), L.t("%d 倍の帆 ?") % k),
 		]}}
 
 
@@ -230,8 +223,7 @@ static func _t_sine_law(rng: RandomNumberGenerator) -> Dictionary:
 	var e := StoryDefs.chord_ends()
 	var a := Vector2(cos(deg_to_rad(100.0)), sin(deg_to_rad(100.0))) * StoryDefs.R_CIRCLE
 	return {
-		"q": "二つの星の隔たりは %d、その向かいの角は %d 度と測れた。" % [side, ang]
-			+ "三つの星を通る円の直径はいくつ? sin30° = 0.5、sin90° = 1、sin150° = 0.5 とする。",
+		"q": L.t("二つの星の隔たりは %d、その向かいの角は %d 度と測れた。三つの星を通る円の直径はいくつ? sin30° = 0.5、sin90° = 1、sin150° = 0.5 とする。") % [side, ang],
 		"answer": float(side) / (0.5 if ang != 90 else 1.0), "unit": "", "tol": 0.05,
 		"fig": {"shapes": [
 			ProblemGen.circle(Vector2.ZERO, StoryDefs.R_CIRCLE, null, DIM, 3.0),
@@ -254,8 +246,7 @@ static func _t_area_sin(rng: RandomNumberGenerator) -> Dictionary:
 	var b0 := Vector2(float(a), 0.0)
 	var ap := Vector2(cos(deg_to_rad(float(deg))), sin(deg_to_rad(float(deg)))) * float(b)
 	return {
-		"q": "崖の上の土地。二辺は %d m と %d m、そのはさむ角は %d 度。高さは測れない。"
-			% [a, b, deg] + "広さは何 m²? sin%d° = %s とする。" % [deg, ProblemGen.fmt(sn)],
+		"q": L.t("崖の上の土地。二辺は %d m と %d m、そのはさむ角は %d 度。高さは測れない。広さは何 m²? sin%d° = %s とする。") % [a, b, deg, deg, ProblemGen.fmt(sn)],
 		"answer": 0.5 * float(a) * float(b) * sn, "unit": "m²", "tol": 0.05,
 		"fig": {"shapes": [
 			ProblemGen.poly([c0, b0, ap], ProblemGen.FILL_MAIN, WHITE, 4.0),
@@ -279,8 +270,7 @@ static func _t_parabola(rng: RandomNumberGenerator) -> Dictionary:
 		var x := -half + 2.0 * half * float(i) / float(n)
 		region.append(Vector2(x, x * x))
 	return {
-		"q": "噴水の水が描く放物線を、水面が切り取っている。水面との交点の隔たりは %d m。" % w
-			+ "石を敷く面積は何 m²? (交点の差)³ ÷ 6 で出る。",
+		"q": L.t("噴水の水が描く放物線を、水面が切り取っている。水面との交点の隔たりは %d m。石を敷く面積は何 m²? (交点の差)³ ÷ 6 で出る。") % [w],
 		"answer": pow(float(w), 3.0) / 6.0, "unit": "m²", "tol": 0.05,
 		"fig": {"shapes": [
 			ProblemGen.axes(Vector2(-half - 1.5, -0.5), Vector2(half + 1.5, k + 2.0)),
@@ -288,7 +278,7 @@ static func _t_parabola(rng: RandomNumberGenerator) -> Dictionary:
 			ProblemGen.curve(_parab(-half - 1.0, half + 1.0), WHITE, 3.5),
 			ProblemGen.seg(Vector2(-half - 1.0, k), Vector2(half + 1.0, k), GOLD, 3.0),
 			ProblemGen.label(Vector2(0.0, k + 1.2), "水面"),
-			ProblemGen.label(Vector2(0.0, -1.3), "交点の隔たり %d m" % w),
+			ProblemGen.label(Vector2(0.0, -1.3), L.t("交点の隔たり %d m") % w),
 		]}}
 
 
@@ -300,8 +290,7 @@ static func _t_tank(rng: RandomNumberGenerator) -> Dictionary:
 	var vol := w * d * depth
 	var hh := float(depth) + 3.0
 	return {
-		"q": "村の水そうは 底が %d × %d。井戸から汲んだ水は %d ぶんある。" % [w, d, vol]
-			+ "ふちから何をどれだけ空けておけばいいか知りたい ― 水はどこまで来る?",
+		"q": L.t("村の水そうは 底が %d × %d。井戸から汲んだ水は %d ぶんある。ふちから何をどれだけ空けておけばいいか知りたい ― 水はどこまで来る?") % [w, d, vol],
 		"answer": float(depth), "unit": "", "tol": 0.05,
 		"fig": {"shapes": [
 			ProblemGen.poly([Vector2(0, 0), Vector2(w, 0), Vector2(w, depth), Vector2(0, depth)],
@@ -309,8 +298,8 @@ static func _t_tank(rng: RandomNumberGenerator) -> Dictionary:
 			ProblemGen.seg(Vector2(0, hh), Vector2(0, 0), WHITE, 4.0),
 			ProblemGen.seg(Vector2(0, 0), Vector2(w, 0), WHITE, 4.0),
 			ProblemGen.seg(Vector2(w, 0), Vector2(w, hh), WHITE, 4.0),
-			ProblemGen.label(Vector2(w * 0.5, -1.0), "幅 %d" % w, GOLD, 28),
-			ProblemGen.label(Vector2(w * 0.5, depth * 0.5), "水 %d" % vol, DIM, 26),
+			ProblemGen.label(Vector2(w * 0.5, -1.0), L.t("幅 %d") % w, GOLD, 28),
+			ProblemGen.label(Vector2(w * 0.5, depth * 0.5), L.t("水 %d") % vol, DIM, 26),
 			ProblemGen.label(Vector2(-1.6, depth), "?", GOLD, 30),
 		]}}
 
@@ -323,8 +312,7 @@ static func _t_shadow(rng: RandomNumberGenerator) -> Dictionary:
 	var s_tower := s_pole * mult
 	var tower := pole * mult
 	return {
-		"q": "塔の高さを知りたいが、登る手だてがない。同じ時刻に、%d の杭の影が %d、" % [pole, s_pole]
-			+ "塔の影は %d だった。塔はどれくらいの高さか?" % s_tower,
+		"q": L.t("塔の高さを知りたいが、登る手だてがない。同じ時刻に、%d の杭の影が %d、塔の影は %d だった。塔はどれくらいの高さか?") % [pole, s_pole, s_tower],
 		"answer": float(tower), "unit": "", "tol": 0.05,
 		"fig": {"shapes": [
 			ProblemGen.seg(Vector2(-1, 0), Vector2(float(s_tower) * 0.6 + 8.0, 0), WHITE, 4.0),
@@ -350,8 +338,7 @@ static func _t_overlap(rng: RandomNumberGenerator) -> Dictionary:
 	var moved := speed * sec
 	var area := moved * h
 	return {
-		"q": "荷車の板が、毎秒 %d ずつ戸口の前を横切っていく。板のたては %d。" % [speed, h]
-			+ "%d 秒たった今、戸口はどれだけふさがれている?" % sec,
+		"q": L.t("荷車の板が、毎秒 %d ずつ戸口の前を横切っていく。板のたては %d。%d 秒たった今、戸口はどれだけふさがれている?") % [speed, h, sec],
 		"answer": float(area), "unit": "", "tol": 0.5,
 		"fig": {"shapes": [
 			ProblemGen.poly([Vector2(0, 0), Vector2(moved + 4.0, 0), Vector2(moved + 4.0, h),
@@ -360,7 +347,7 @@ static func _t_overlap(rng: RandomNumberGenerator) -> Dictionary:
 				ProblemGen.FILL_ACCENT, GOLD, 3.0),
 			ProblemGen.arrow(Vector2(-3.0, float(h) * 0.5), Vector2(-0.8, float(h) * 0.5), GOLD),
 			ProblemGen.label(Vector2(float(moved) * 0.5, float(h) * 0.5), "?", GOLD, 30),
-			ProblemGen.label(Vector2(float(moved) * 0.5, -1.1), "毎秒 %d × %d 秒" % [speed, sec],
+			ProblemGen.label(Vector2(float(moved) * 0.5, -1.1), L.t("毎秒 %d × %d 秒") % [speed, sec],
 				Color(0.55, 0.85, 1.0), 26),
 			ProblemGen.label(Vector2(-1.4, float(h) * 0.5), "%d" % h, GOLD, 26),
 			ProblemGen.label(Vector2(float(moved) + 2.0, float(h) + 1.0), "戸口", DIM, 24),
@@ -390,8 +377,7 @@ static func _t_box_diag(rng: RandomNumberGenerator) -> Dictionary:
 			+ Vector2(-1.2, 0.6), "?", GOLD, 30),
 	]
 	return {
-		"q": "倉のすみからすみへ、斜めに梁を一本渡したい。倉は よこ %d・おくゆき %d・高さ %d。" % [w, d, h]
-			+ "梁は何ぶんの長さに切ればいい?",
+		"q": L.t("倉のすみからすみへ、斜めに梁を一本渡したい。倉は よこ %d・おくゆき %d・高さ %d。梁は何ぶんの長さに切ればいい?") % [w, d, h],
 		"answer": float(diag), "unit": "", "tol": 0.05,
 		"fig": {"shapes": out}}
 
@@ -413,15 +399,14 @@ static func _t_cube_scale(rng: RandomNumberGenerator) -> Dictionary:
 			GOLD, 2.5, bool(dd.get("dash", false))))
 	out += [
 		ProblemGen.label(ProblemGen.proj3(Vector3(b.x * 0.5, 0, 0)) + Vector2(0, -1.2),
-			"%d 入る" % small, DIM, 26),
+			L.t("%d 入る") % small, DIM, 26),
 		ProblemGen.label(ProblemGen.proj3(Vector3(b.x * k * 0.5, 0, 0)) + shift + Vector2(0, -1.2),
-			"長さ %d 倍" % k, GOLD, 26),
+			L.t("長さ %d 倍") % k, GOLD, 26),
 		ProblemGen.label(ProblemGen.proj3(Vector3(b.x * k * 0.5, 0, b.z * k)) + shift
 			+ Vector2(0, 1.2), "?", GOLD, 30),
 	]
 	return {
-		"q": "樽づくりの親方が、いまの樽と同じ形で 長さだけ %d 倍の樽を注文された。" % k
-			+ "いまの樽には %d 入る。大きい樽にはどれだけ入るか答えてやろう。" % small,
+		"q": L.t("樽づくりの親方が、いまの樽と同じ形で 長さだけ %d 倍の樽を注文された。いまの樽には %d 入る。大きい樽にはどれだけ入るか答えてやろう。") % [k, small],
 		"answer": float(big), "unit": "", "tol": 0.5,
 		"fig": {"shapes": out}}
 
@@ -436,8 +421,7 @@ static func _t_cone_net(rng: RandomNumberGenerator) -> Dictionary:
 	var ang: int = s[2]
 	var lf := float(l)
 	return {
-		"q": "祭りの三角帽子を布から切り出す。かぶる口の半径は %d、横から見た斜めの辺は %d。" % [r, l]
-			+ "布は何度のおうぎ形に切ればちょうど巻ける?",
+		"q": L.t("祭りの三角帽子を布から切り出す。かぶる口の半径は %d、横から見た斜めの辺は %d。布は何度のおうぎ形に切ればちょうど巻ける?") % [r, l],
 		"answer": float(ang), "unit": "度", "tol": 0.5,
 		"fig": {"shapes": [
 			ProblemGen.sector(Vector2.ZERO, lf, 0.0, float(ang), ProblemGen.FILL_ACCENT, GOLD),
@@ -445,11 +429,11 @@ static func _t_cone_net(rng: RandomNumberGenerator) -> Dictionary:
 			ProblemGen.ang(Vector2.ZERO, Vector2(lf, 0),
 				Vector2(cos(deg_to_rad(float(ang))), sin(deg_to_rad(float(ang)))) * lf,
 				"?", 1.7, ang > 180),
-			ProblemGen.label(Vector2(lf * 0.5, -1.0), "斜めの辺 %d" % l, GOLD, 26),
+			ProblemGen.label(Vector2(lf * 0.5, -1.0), L.t("斜めの辺 %d") % l, GOLD, 26),
 			ProblemGen.circle(Vector2(lf + float(r) + 3.0, -float(r) - 1.0), float(r),
 				ProblemGen.FILL_MAIN, WHITE, 3.0),
 			ProblemGen.label(Vector2(lf + float(r) + 3.0, -2.0 * float(r) - 2.4),
-				"かぶる口 半径 %d" % r, DIM, 26),
+				L.t("かぶる口 半径 %d") % r, DIM, 26),
 		]}}
 
 
@@ -467,8 +451,7 @@ static func _t_power(rng: RandomNumberGenerator) -> Dictionary:
 	var u1 := Vector2(cos(deg_to_rad(12.0)), sin(deg_to_rad(12.0)))
 	var u2 := Vector2(cos(deg_to_rad(-14.0)), sin(deg_to_rad(-14.0)))
 	return {
-		"q": "丸い池の外の杭 P から、島へ板を渡す。1 本目の板は岸に %d と %d のところで当たった。" % [a, b]
-			+ "2 本目は向きを変えて、近い岸まで %d だった。遠い岸まではどれだけある?" % c,
+		"q": L.t("丸い池の外の杭 P から、島へ板を渡す。1 本目の板は岸に %d と %d のところで当たった。2 本目は向きを変えて、近い岸まで %d だった。遠い岸まではどれだけある?") % [a, b, c],
 		"answer": ans, "unit": "", "tol": 0.05,
 		"fig": {"shapes": [
 			ProblemGen.circle(Vector2.ZERO, r, ProblemGen.FILL_MAIN, WHITE, 3.0),
@@ -499,9 +482,7 @@ static func _t_ceva(rng: RandomNumberGenerator) -> Dictionary:
 	var o := _cross(a, d - a, c, f - c)
 	var e := _cross(b, o - b, c, a - c)
 	return {
-		"q": "見張り台をつなぐ綱を三本、一点で交わるように張る。二本の張り方は決まっていて、"
-			+ "AF:FB = %d:%d、BD:DC = %d:%d。残る一本の CE:EA を x:1 で伝えたい ― x はいくつか?" % [
-				f1, f2, d1, d2],
+		"q": L.t("見張り台をつなぐ綱を三本、一点で交わるように張る。二本の張り方は決まっていて、AF:FB = %d:%d、BD:DC = %d:%d。残る一本の CE:EA を x:1 で伝えたい ― x はいくつか?") % [f1, f2, d1, d2],
 		"answer": ans, "unit": "", "tol": 0.02,
 		"fig": {"shapes": [
 			ProblemGen.poly([a, b, c], ProblemGen.FILL_MAIN, WHITE, 3.5),
@@ -538,9 +519,7 @@ static func _t_polygon(rng: RandomNumberGenerator) -> Dictionary:
 		var txt := "?" if i == 0 else "%d°" % int(known[i - 1])
 		out.append(ProblemGen.ang(pts[i], pts[(i + 4) % 5], pts[(i + 1) % 5], txt, 1.6))
 	return {
-		"q": "五角形の飾り窓に鉄の骨を入れる。読めるのは %d°・%d°・%d°・%d° の 4 か所だけで、"
-			% [known[0], known[1], known[2], known[3]]
-			+ "残る 1 か所は塗りつぶされている。そこは何度で組めばいい?",
+		"q": L.t("五角形の飾り窓に鉄の骨を入れる。読めるのは %d°・%d°・%d°・%d° の 4 か所だけで、残る 1 か所は塗りつぶされている。そこは何度で組めばいい?") % [known[0], known[1], known[2], known[3]],
 		"answer": float(rest), "unit": "度", "tol": 0.5,
 		"fig": {"shapes": out}}
 
@@ -556,8 +535,7 @@ static func _t_dart(rng: RandomNumberGenerator) -> Dictionary:
 	var pc := StoryDefs.DART_C
 	var pp := Vector2(0.0, 1.0)
 	return {
-		"q": "矢じりの形をした紋章を鋳型で作る。先の角が %d°、左右の角が %d° と %d°。" % [a, b, c]
-			+ "へこんだところは何度で彫ればいい?",
+		"q": L.t("矢じりの形をした紋章を鋳型で作る。先の角が %d°、左右の角が %d° と %d°。へこんだところは何度で彫ればいい?") % [a, b, c],
 		"answer": float(x), "unit": "度", "tol": 0.5,
 		"fig": {"shapes": [
 			ProblemGen.poly([pa, pb, pp, pc], ProblemGen.FILL_MAIN, WHITE, 3.5),
@@ -579,8 +557,7 @@ static func _t_fold(rng: RandomNumberGenerator) -> Dictionary:
 		sin(deg_to_rad(180.0 + 2.0 * float(a))))
 	var k := g + dir * (h / maxf(absf(dir.y), 0.0001))
 	return {
-		"q": "帯を斜めに一度だけ折って、包みのふたにする。折り目が帯のふちと作る角は %d°。" % a
-			+ "折り返した辺は、ふちと何度で交わることになる?",
+		"q": L.t("帯を斜めに一度だけ折って、包みのふたにする。折り目が帯のふちと作る角は %d°。折り返した辺は、ふちと何度で交わることになる?") % [a],
 		"answer": float(x), "unit": "度", "tol": 0.5,
 		"fig": {"shapes": [
 			ProblemGen.seg(Vector2(-10.0, 0), Vector2(10.0, 0), WHITE, 4.0),
@@ -601,8 +578,7 @@ static func _t_road(rng: RandomNumberGenerator) -> Dictionary:
 	var ry := float(rng.randi_range(2, h - rw - 2))
 	var road := Color(0.55, 0.50, 0.42, 0.75)
 	return {
-		"q": "%d × %d の畑に、はば %d の道をたてとよこに 1 本ずつ通す。" % [w, h, rw]
-			+ "道を引いたあと、畑として残るのはどれだけか?",
+		"q": L.t("%d × %d の畑に、はば %d の道をたてとよこに 1 本ずつ通す。道を引いたあと、畑として残るのはどれだけか?") % [w, h, rw],
 		"answer": float(rest), "unit": "", "tol": 0.5,
 		"fig": {"shapes": [
 			ProblemGen.poly([Vector2(0, 0), Vector2(w, 0), Vector2(w, h), Vector2(0, h)],
@@ -611,7 +587,7 @@ static func _t_road(rng: RandomNumberGenerator) -> Dictionary:
 				Vector2(rx, h)], road, null, 0.0),
 			ProblemGen.poly([Vector2(0, ry), Vector2(w, ry), Vector2(w, ry + rw),
 				Vector2(0, ry + rw)], road, null, 0.0),
-			ProblemGen.label(Vector2(float(w) * 0.5, -1.2), "%d × %d、道のはば %d" % [w, h, rw],
+			ProblemGen.label(Vector2(float(w) * 0.5, -1.2), L.t("%d × %d、道のはば %d") % [w, h, rw],
 				DIM, 26),
 			ProblemGen.label(Vector2(rx * 0.5, ry * 0.5), "?", GOLD, 30),
 		]}}
@@ -639,9 +615,7 @@ static func _t_star(rng: RandomNumberGenerator) -> Dictionary:
 		var txt := "?" if i == 0 else "%d°" % int(known[i - 1])
 		out.append(ProblemGen.ang(pts[i], pts[(i + 2) % 5], pts[(i + 3) % 5], txt, 1.5))
 	return {
-		"q": "祭りの星形の飾りを、五本の板を組んで作る。とがった先のうち 4 つは "
-			+ "%d°・%d°・%d°・%d° に切ってある。最後の一本は何度に切る?" % [
-				known[0], known[1], known[2], known[3]],
+		"q": L.t("祭りの星形の飾りを、五本の板を組んで作る。とがった先のうち 4 つは %d°・%d°・%d°・%d° に切ってある。最後の一本は何度に切る?") % [known[0], known[1], known[2], known[3]],
 		"answer": float(rest), "unit": "度", "tol": 0.5,
 		"fig": {"shapes": out}}
 
@@ -655,8 +629,7 @@ static func _t_tangent_chord(rng: RandomNumberGenerator) -> Dictionary:
 	var a := Vector2(cos(deg_to_rad(90.0 - 2.0 * float(deg))),
 		sin(deg_to_rad(90.0 - 2.0 * float(deg)))) * r
 	return {
-		"q": "円い堀のふちに、接するように道が走っている。道と、接点から対岸の杭 A へ張った縄との角が"
-			+ " %d°。堀の向こう側の点 B から同じ縄を見こむ角は、どれだけになる?" % deg,
+		"q": L.t("円い堀のふちに、接するように道が走っている。道と、接点から対岸の杭 A へ張った縄との角が %d°。堀の向こう側の点 B から同じ縄を見こむ角は、どれだけになる?") % [deg],
 		"answer": float(deg), "unit": "度", "tol": 0.5,
 		"fig": {"shapes": [
 			ProblemGen.circle(Vector2.ZERO, r, ProblemGen.FILL_MAIN, WHITE, 3.0),
@@ -681,8 +654,7 @@ static func _t_special_tri(rng: RandomNumberGenerator) -> Dictionary:
 	var c := Vector2(long_side, 0.0)
 	var a := Vector2(long_side, float(short_side))
 	return {
-		"q": "屋根を 30° の勾配で葺く。棟から軒までの高さは %d。" % short_side
-			+ "垂木は何ぶんの長さに切ればいい?",
+		"q": L.t("屋根を 30° の勾配で葺く。棟から軒までの高さは %d。垂木は何ぶんの長さに切ればいい?") % [short_side],
 		"answer": float(hyp), "unit": "", "tol": 0.05,
 		"fig": {"shapes": [
 			ProblemGen.poly([b, c, a], ProblemGen.FILL_MAIN, WHITE, 3.5),
@@ -699,11 +671,11 @@ static func _t_euler(rng: RandomNumberGenerator) -> Dictionary:
 	var ask_edge := rng.randf() < 0.6
 	var ans := 3 * n if ask_edge else 2 * n
 	var out: Array = StoryFigs3._prism(n, 4.0, 5.0, WHITE)
-	out.append(ProblemGen.label(Vector2(0.0, 9.2), "%d 角柱" % n, GOLD, 30))
+	out.append(ProblemGen.label(Vector2(0.0, 9.2), L.t("%d 角柱") % n, GOLD, 30))
 	return {
-		"q": "見張り小屋を %d 角柱の形に組む。" % n
-			+ ("材木は何本いるか(辺の数)、棟梁に伝えたい。" if ask_edge
-				else "継ぎ手をいくつ作ればいいか(頂点の数)、鍛冶屋に伝えたい。"),
+		"q": L.t("見張り小屋を %d 角柱の形に組む。%s") % [n,
+			L.t("材木は何本いるか(辺の数)、棟梁に伝えたい。" if ask_edge
+				else "継ぎ手をいくつ作ればいいか(頂点の数)、鍛冶屋に伝えたい。")],
 		"answer": float(ans), "unit": "", "tol": 0.05,
 		"fig": {"shapes": out}}
 
@@ -722,8 +694,7 @@ static func _t_cosine(rng: RandomNumberGenerator) -> Dictionary:
 	var pb := Vector2(float(a), 0.0)
 	var pa := Vector2(cos(deg_to_rad(float(deg))), sin(deg_to_rad(float(deg)))) * float(b)
 	return {
-		"q": "川の手前の一点から、両岸の杭までの距離が %d と %d、そのはさむ角が %d° と測れた。" % [
-			a, b, deg] + "杭と杭のあいだ ― 川はばはどれだけある?",
+		"q": L.t("川の手前の一点から、両岸の杭までの距離が %d と %d、そのはさむ角が %d° と測れた。杭と杭のあいだ ― 川はばはどれだけある?") % [a, b, deg],
 		"answer": float(c), "unit": "", "tol": 0.05,
 		"fig": {"shapes": [
 			ProblemGen.poly([pa, pb, pc], ProblemGen.FILL_MAIN, WHITE, 3.5),
@@ -743,8 +714,7 @@ static func _t_incenter(rng: RandomNumberGenerator) -> Dictionary:
 	var v: Array = ProblemGen.tri_from_angles(float(b_deg), float(rest - b_deg), 11.0)
 	var inc := StoryDefs._incenter_of(v[0], v[1], v[2])
 	return {
-		"q": "三つの村から等しい距離になる場所に井戸を掘る。村を結ぶと三角形になり、"
-			+ "頂点の村から見た角は %d°。井戸から残り二つの村を見こむ角はいくつになる?" % a_deg,
+		"q": L.t("三つの村から等しい距離になる場所に井戸を掘る。村を結ぶと三角形になり、頂点の村から見た角は %d°。井戸から残り二つの村を見こむ角はいくつになる?") % [a_deg],
 		"answer": float(ans), "unit": "度", "tol": 0.5,
 		"fig": {"shapes": [
 			ProblemGen.poly(v, ProblemGen.FILL_MAIN, WHITE, 3.5),
@@ -762,8 +732,7 @@ static func _t_radian(rng: RandomNumberGenerator) -> Dictionary:
 	var th: float = [0.5, 1.0, 1.5, 2.0, 2.5, 3.0][rng.randi_range(0, 5)]
 	var ans := float(r) * th
 	return {
-		"q": "縄の巻き取り機。軸の半径は %d で、%s ラジアンだけ回した。" % [r, ProblemGen.fmt(th)]
-			+ "縄はどれだけ出たか ― 印をつけて確かめたい。",
+		"q": L.t("縄の巻き取り機。軸の半径は %d で、%s ラジアンだけ回した。縄はどれだけ出たか ― 印をつけて確かめたい。") % [r, ProblemGen.fmt(th)],
 		"answer": ans, "unit": "", "tol": 0.05,
 		"fig": {"shapes": [
 			ProblemGen.sector(Vector2.ZERO, float(r), 0.0, rad_to_deg(th),
@@ -771,7 +740,7 @@ static func _t_radian(rng: RandomNumberGenerator) -> Dictionary:
 			ProblemGen.arc(Vector2.ZERO, float(r), 0.0, rad_to_deg(th),
 				Color(0.55, 0.85, 1.0), 4.5),
 			ProblemGen.seg(Vector2.ZERO, Vector2(r, 0), GOLD, 3.0),
-			ProblemGen.label(Vector2(float(r) * 0.5, -1.0), "半径 %d" % r, GOLD, 26),
+			ProblemGen.label(Vector2(float(r) * 0.5, -1.0), L.t("半径 %d") % r, GOLD, 26),
 			ProblemGen.label(Vector2(cos(th * 0.5), sin(th * 0.5)) * (float(r) + 1.6), "?",
 				Color(0.55, 0.85, 1.0), 30),
 			ProblemGen.ang(Vector2.ZERO, Vector2(r, 0),
@@ -795,8 +764,7 @@ static func _t_circle_eq(rng: RandomNumberGenerator) -> Dictionary:
 	var lo := Vector2(minf(c.x, p.x) - float(r) - 1.0, minf(c.y, p.y) - float(r) - 1.0)
 	var hi := Vector2(maxf(c.x, p.x) + float(r) + 1.0, maxf(c.y, p.y) + float(r) + 1.0)
 	return {
-		"q": "羊の囲いを円く作る。杭は (%d, %d) に打ってあり、囲いは (%d, %d) の木を通す。" % [
-			cx, cy, px, py] + "縄はどれだけの長さがいる?",
+		"q": L.t("羊の囲いを円く作る。杭は (%d, %d) に打ってあり、囲いは (%d, %d) の木を通す。縄はどれだけの長さがいる?") % [cx, cy, px, py],
 		"answer": float(r), "unit": "", "tol": 0.05,
 		"fig": {"shapes": [
 			ProblemGen.grid(lo, hi), ProblemGen.axes(lo, hi),

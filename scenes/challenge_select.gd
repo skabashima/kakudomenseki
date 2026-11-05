@@ -64,7 +64,7 @@ func _ready() -> void:
 	# 未購入のときは、無料で遊べる範囲をはっきり書いておく
 	if not GameState.premium and not GameState.debug_unlock_all:
 		var note := Label.new()
-		note.text = "無料で遊べるのは タイムアタック(角度編)だけです。出題は各編の最初の %d ステージから。" \
+		note.text = L.t("無料で遊べるのは タイムアタック(角度編)だけです。出題は各編の最初の %d ステージから。") \
 			% GameState.FREE_STAGES_PER_COURSE
 		note.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		note.add_theme_font_size_override("font_size", 20)
@@ -92,7 +92,7 @@ func _challenge_card(parent: Control, text: String, best_key: String, color: Col
 	var btn := Button.new()
 	var best := int(GameState.challenge_best.get(best_key, 0))
 	btn.text = text + ("\n全ステージ解放で遊べます" if paid \
-		else ("   自己ベスト %d 問" % best if best > 0 else ""))
+		else (L.t("   自己ベスト %d 問") % best if best > 0 else ""))
 	btn.custom_minimum_size = Vector2(0, 96)
 	btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	btn.add_theme_font_size_override("font_size", 24 if paid else 28)

@@ -100,9 +100,9 @@ static func _zigzag(p: Vector2) -> Dictionary:
 		ProblemGen.seg(Vector2(-8.0, 8.0), Vector2(14.0, 8.0), WHITE, 4.0),
 		ProblemGen.seg(hi, p, GOLD, 3.5),
 		ProblemGen.seg(p, lo, GOLD, 3.5),
-		ProblemGen.ang(hi, Vector2(-8.0, 8.0), p, "上 %d°" % roundi(z[0]), 1.8),
-		ProblemGen.ang(lo, p, Vector2(-8.0, 0.0), "下 %d°" % roundi(z[1]), 1.8),
-		ProblemGen.ang(p, lo, hi, "折れ %d°" % roundi(z[2]), 1.8),
+		ProblemGen.ang(hi, Vector2(-8.0, 8.0), p, L.t("上 %d°") % roundi(z[0]), 1.8),
+		ProblemGen.ang(lo, p, Vector2(-8.0, 0.0), L.t("下 %d°") % roundi(z[1]), 1.8),
+		ProblemGen.ang(p, lo, hi, L.t("折れ %d°") % roundi(z[2]), 1.8),
 		ProblemGen.label(Vector2(-6.5, 8.8), "上の壁"),
 		ProblemGen.label(Vector2(-6.5, -0.9), "下の壁"),
 	]}
@@ -120,8 +120,8 @@ static func _zigzag_proof() -> Dictionary:
 		ProblemGen.seg(Vector2(-8.0, 4.0), Vector2(14.0, 4.0), DIM, 2.5, true),
 		ProblemGen.seg(hi, p, GOLD, 3.5),
 		ProblemGen.seg(p, lo, GOLD, 3.5),
-		ProblemGen.ang(hi, Vector2(-8.0, 8.0), p, "上 %d°" % roundi(z[0]), 1.8),
-		ProblemGen.ang(lo, p, Vector2(-8.0, 0.0), "下 %d°" % roundi(z[1]), 1.8),
+		ProblemGen.ang(hi, Vector2(-8.0, 8.0), p, L.t("上 %d°") % roundi(z[0]), 1.8),
+		ProblemGen.ang(lo, p, Vector2(-8.0, 0.0), L.t("下 %d°") % roundi(z[1]), 1.8),
 		ProblemGen.ang(p, Vector2(14.0, 4.0), hi, "上と同じ", 1.5),
 		ProblemGen.ang(p, lo, Vector2(14.0, 4.0), "下と同じ", 2.4),
 		ProblemGen.label(Vector2(-6.0, 4.8), "引いた補助線(壁と平行)"),
@@ -135,8 +135,8 @@ static func _circle(p: Vector2) -> Dictionary:
 	return {"shapes": [
 		ProblemGen.circle(Vector2.ZERO, r, ProblemGen.FILL_MAIN, WHITE, 4.0),
 		ProblemGen.seg(Vector2(-r, 0.0), Vector2(r, 0.0), GOLD, 3.0),
-		ProblemGen.label(Vector2(0.0, -0.9), "直径 %.1f" % (2.0 * r)),
-		ProblemGen.label(Vector2(0.0, r + 1.0), "円周 %.2f" % (TAU * r)),
+		ProblemGen.label(Vector2(0.0, -0.9), L.t("直径 %.1f") % (2.0 * r)),
+		ProblemGen.label(Vector2(0.0, r + 1.0), L.t("円周 %.2f") % (TAU * r)),
 	]}
 
 
@@ -265,9 +265,9 @@ static func _similar(p: Vector2) -> Dictionary:
 		ProblemGen.poly(big, ProblemGen.FILL_SUB, GOLD, 3.5),
 		ProblemGen.poly(small, ProblemGen.FILL_MAIN, WHITE, 3.5),
 		ProblemGen.seg(Vector2(1.2, -2.0), Vector2(2.6, -2.0), DIM, 2.5, true),
-		ProblemGen.label(Vector2(6.2, 6.0), "相似比 %.2f 倍" % k),
-		ProblemGen.label(Vector2(6.2, 4.6), "小 %.2f" % StoryDefs.polygon_area(small)),
-		ProblemGen.label(Vector2(6.2, 3.2), "大 %.2f" % StoryDefs.polygon_area(big)),
+		ProblemGen.label(Vector2(6.2, 6.0), L.t("相似比 %.2f 倍") % k),
+		ProblemGen.label(Vector2(6.2, 4.6), L.t("小 %.2f") % StoryDefs.polygon_area(small)),
+		ProblemGen.label(Vector2(6.2, 3.2), L.t("大 %.2f") % StoryDefs.polygon_area(big)),
 		ProblemGen.label(Vector2(1.9, -3.0), "← 動かすと拡大 →"),
 	]}
 
@@ -326,7 +326,7 @@ static func _area_sin(a: Vector2) -> Dictionary:
 		ProblemGen.side_label(c0, b0, "a = %.0f" % StoryDefs.SIDE_A, -1.0, 0.9),
 		ProblemGen.side_label(c0, a, "b = %.0f" % StoryDefs.SIDE_B, 1.0, 0.9),
 		ProblemGen.label(Vector2(4.0, 7.5),
-			"面積 %.2f" % (0.5 * StoryDefs.SIDE_A * StoryDefs.SIDE_B * sin(t))),
+			L.t("面積 %.2f") % (0.5 * StoryDefs.SIDE_A * StoryDefs.SIDE_B * sin(t))),
 	]}
 
 
@@ -366,9 +366,9 @@ static func _parabola(p: Vector2) -> Dictionary:
 		ProblemGen.poly(region, ProblemGen.FILL_ACCENT, null, 0.0),
 		ProblemGen.curve(_parab_pts(-3.2, 3.2), WHITE, 3.5),
 		ProblemGen.seg(Vector2(-3.2, k), Vector2(3.2, k), GOLD, 3.0),
-		ProblemGen.label(Vector2(0.0, k * 0.45), "面積 %.2f" % (pow(2.0 * w, 3.0) / 6.0)),
-		ProblemGen.label(Vector2(2.2, k + 0.7), "水面 y = %.1f" % k),
-		ProblemGen.label(Vector2(0.0, -1.4), "交点の差 %.2f" % (2.0 * w)),
+		ProblemGen.label(Vector2(0.0, k * 0.45), L.t("面積 %.2f") % (pow(2.0 * w, 3.0) / 6.0)),
+		ProblemGen.label(Vector2(2.2, k + 0.7), L.t("水面 y = %.1f") % k),
+		ProblemGen.label(Vector2(0.0, -1.4), L.t("交点の差 %.2f") % (2.0 * w)),
 	]}
 
 

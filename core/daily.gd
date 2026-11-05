@@ -36,5 +36,5 @@ static func share_text(miss: int, seconds: float, streak: int, title: String) ->
 	var marks := ""
 	for i in 3:
 		marks += "■" if i < 3 - mini(miss, 3) else "□"
-	return "図形ハンター 今日の図形 %s\n%s  %d分%02d秒  %d日れんぞく\nきょうの図形: %s" % [
+	return L.t("図形ハンター 今日の図形 %s\n%s  %d分%02d秒  %d日れんぞく\nきょうの図形: %s") % [
 		date_label(), marks, int(seconds) / 60, int(seconds) % 60, streak, title]

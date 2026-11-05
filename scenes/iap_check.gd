@@ -91,9 +91,9 @@ func _build() -> void:
 		var methods: Array = Array(rep.get("methods", []))
 		var sigs: Array = Array(rep.get("signals", []))
 		for nm in Array(want.get("methods", [])):
-			_row("めそっど " + str(nm), "ある" if str(nm) in methods else "★無い")
+			_row(L.t("めそっど %s") % str(nm), L.t("ある" if str(nm) in methods else "★無い"))
 		for nm in Array(want.get("signals", [])):
-			_row("しぐなる " + str(nm), "ある" if str(nm) in sigs else "★無い")
+			_row(L.t("しぐなる %s") % str(nm), L.t("ある" if str(nm) in sigs else "★無い"))
 
 	_head("記録(あたらしい順)")
 	var lines: Array = Array(rep.get("log", []))
@@ -117,9 +117,7 @@ func _verdict(rep: Dictionary) -> void:
 		msg = "ストアに つながっていません。通信を 確かめて、もう一度 調べてください。"
 		col = Color(1.0, 0.6, 0.5)
 	elif not rep.get("price_live", false):
-		msg = "ストアが 商品を 返していません。アプリ側では なく、" \
-			+ "App Store Connect / Play Console の 商品が まだ 使える 状態に " \
-			+ "なっていないのが 原因です(審査待ち・未公開・国や 価格の 設定など)。"
+		msg = "ストアが 商品を 返していません。アプリ側では なく、App Store Connect / Play Console の 商品が まだ 使える 状態に なっていないのが 原因です(審査待ち・未公開・国や 価格の 設定など)。"
 		col = Color(1.0, 0.8, 0.4)
 	elif rep.get("premium", false):
 		msg = "商品も 取れていて、解放ずみです。問題ありません。"

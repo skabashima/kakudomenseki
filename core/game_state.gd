@@ -259,6 +259,15 @@ var daily_best := 0            # れんぞくの 最高記録
 ## BGM を 鳴らすか(切った 状態は 保存する)
 var bgm_on: bool = true
 
+## 言語: "auto"(端末の 言語) / "ja" / "en"。core/lang.gd が 当てる
+var lang: String = "auto"
+
+
+func set_lang(code: String) -> void:
+	lang = code
+	L.apply(lang)
+	save_game()
+
 
 func set_premium(v: bool) -> void:
 	if premium == v:
@@ -419,6 +428,11 @@ func _ready() -> void:
 	_init_sfx()
 	_init_bgm()
 	load_game()
+	L.install()
+	L.apply(lang)
+	if OS.has_environment("ZUKEI_SCAN_JA"):
+		# テスト用: 画面に 日本語が 残って いないか 見張る(英語で 走らせる)
+		get_tree().process_frame.connect(_scan_ja_tick)
 	_low_wanted = bool(ProjectSettings.get_setting("application/run/low_processor_mode", false))
 	# 起動直後の 画面の 切りかわりが いちばん あぶない。長めに 起こしておく
 	wake(90)
@@ -453,6 +467,53 @@ func _process(_delta: float) -> void:
 	if _wake_left <= 0:
 		OS.low_processor_usage_mode = _low_wanted
 		set_process(false)
+
+
+# ---------------------------------------------------------
+# テスト用: 英語で 動かした とき、画面に 日本語が 残って いないか
+# (環境変数 ZUKEI_SCAN_JA を 立てると 動く。既存の 画面テストを
+#  ZUKEI_LANG=en と いっしょに 走らせれば、全部の 画面が 検査できる)
+# ---------------------------------------------------------
+
+var _ja_seen: Dictionary = {}
+var _scan_tick := 0
+
+
+func _scan_ja_tick() -> void:
+	_scan_tick += 1
+	if _scan_tick % 4 != 0:
+		return
+	_scan_ja(get_tree().root)
+
+
+func _scan_ja(n: Node) -> void:
+	if n is Control and not (n as Control).is_visible_in_tree():
+		return
+	var s := ""
+	if n is Label:
+		s = n.atr((n as Label).text)
+	elif n is Button:
+		s = n.atr((n as Button).text)
+	elif n is RichTextLabel:
+		s = n.atr((n as RichTextLabel).text)
+	elif n is LineEdit:
+		s = n.atr((n as LineEdit).placeholder_text)
+	elif n is RubyLabel:
+		s = (n as RubyLabel).plain
+	if s != "" and L.has_ja(s) and not _ja_seen.has(s):
+		_ja_seen[s] = true
+		var scene := ""
+		if get_tree().current_scene != null:
+			scene = get_tree().current_scene.scene_file_path.get_file()
+		print("JA_LEAK [%s] %s" % [scene, s.replace("
+", "⏎")])
+	for c in n.get_children():
+		_scan_ja(c)
+
+
+func _exit_tree() -> void:
+	if OS.has_environment("ZUKEI_SCAN_JA"):
+		print("JA_LEAK total %d" % _ja_seen.size())
 
 
 func _input(event: InputEvent) -> void:
@@ -727,6 +788,7 @@ func save_game() -> void:
 		"debug_unlock_all": debug_unlock_all,
 		"premium": premium,
 		"bgm_on": bgm_on,
+		"lang": lang,
 		"review": review,
 		"daily_day": daily_day,
 		"daily_streak": daily_streak,
@@ -766,6 +828,7 @@ func load_game() -> void:
 	debug_unlock_all = bool(data.get("debug_unlock_all", false))
 	premium = bool(data.get("premium", false))
 	bgm_on = bool(data.get("bgm_on", true))
+	lang = String(data.get("lang", "auto"))
 	review = data.get("review", [])
 	daily_day = int(data.get("daily_day", 0))
 	daily_streak = int(data.get("daily_streak", 0))
