@@ -91,7 +91,7 @@ func _challenge_card(parent: Control, text: String, best_key: String, color: Col
 		paid: bool, cb: Callable) -> void:
 	var btn := Button.new()
 	var best := int(GameState.challenge_best.get(best_key, 0))
-	btn.text = text + ("\n全ステージ解放で遊べます" if paid \
+	btn.text = L.t(text) + (L.t("\n全ステージ解放で遊べます") if paid \
 		else (L.t("   自己ベスト %d 問") % best if best > 0 else ""))
 	btn.custom_minimum_size = Vector2(0, 96)
 	btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL

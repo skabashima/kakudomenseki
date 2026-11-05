@@ -529,10 +529,10 @@ static func _e23_roll(rng: RandomNumberGenerator) -> Dictionary:
 			ProblemGen.COL_YELLOW, 30),
 		ProblemGen.label(ProblemGen.proj3(Vector3(a, a * 0.5, a * 0.5)), "3",
 			ProblemGen.COL_YELLOW, 30),
-		ProblemGen.label(Vector2(a * 0.7, -1.6), "→ " + " → ".join(PackedStringArray(moves)),
+		ProblemGen.label(Vector2(a * 0.7, -1.6), "→ " + " → ".join(_tr_all(moves)),
 			ProblemGen.COL_DIM, 26),
 	]
-	var order := "・".join(PackedStringArray(moves))
+	var order := L.t("・").join(_tr_all(moves))
 	return {
 		"q": L.t("上の面が 1、手前の面が 2、右の面が 3 のさいころを、%s の順に 1 回ずつ転がしました。上の面の目はいくつですか。") % order,
 		"answer": float(top), "unit": "",
@@ -611,7 +611,7 @@ static func _e23_platonic(rng: RandomNumberGenerator) -> Dictionary:
 	if ask_edge:
 		return {
 			"q": L.t("%s の展開図です。%s が %d 枚あります。組み立てると辺は何本になりますか。") % [
-				name2, shape_name, f_n],
+				L.t(name2), L.t(shape_name), f_n],
 			"answer": float(e_n), "unit": "本",
 			"hint1": "1 本の辺は、2 枚の面がくっついてできるよ。",
 			"hint2": "%d × %d ÷ 2" % [f_n, per],
@@ -620,7 +620,7 @@ static func _e23_platonic(rng: RandomNumberGenerator) -> Dictionary:
 		}
 	return {
 		"q": L.t("%s の展開図です。%s が %d 枚あり、辺は %d 本になります。組み立てると頂点はいくつになりますか。") % [
-			name2, shape_name, f_n, e_n],
+			L.t(name2), L.t(shape_name), f_n, e_n],
 		"answer": float(v_n), "unit": "こ",
 		"hint1": "オイラーの式 頂点 − 辺 + 面 = 2 をつかおう。",
 		"hint2": L.t("頂点 = 2 + %d − %d") % [e_n, f_n],
@@ -742,7 +742,7 @@ static func _j17(rng: RandomNumberGenerator, kind: int) -> Dictionary:
 		shapes3.append(ProblemGen.ang(o2, b2, o2 + dir, "x", 4.4))
 	return {
 		"q": L.t("コンパスと定規で正三角形を作図して 60° を作りました。%sできる角 x は何度ですか。") % [
-			"この角をそのまま使うとき" if times == 0 else L.t("この角を %d 回二等分したとき、") % times],
+			L.t("この角をそのまま使うとき") if times == 0 else L.t("この角を %d 回二等分したとき、") % times],
 		"answer": ans, "unit": "度",
 		"hint1": "正三角形の 1 つの角は 60°。二等分するたびに半分になるよ。",
 		"hint2": L.t("60 ÷ 2 を %d 回") % times,
@@ -819,7 +819,7 @@ static func _solid_sketch(name: String) -> Array:
 		pts.append(Vector2(cos(th), sin(th)) * 3.5)
 	return [
 		ProblemGen.poly(pts, ProblemGen.FILL_MAIN, ProblemGen.COL_YELLOW, 3.0),
-		ProblemGen.label(Vector2(0, -5.2), L.t("面の形(正%s角形)") % ("五" if sides == 5 else "三"),
+		ProblemGen.label(Vector2(0, -5.2), L.t("面の形(%s)") % L.t("正五角形" if sides == 5 else "正三角形"),
 			ProblemGen.COL_DIM, 24),
 	]
 
@@ -891,7 +891,7 @@ static func _j18(rng: RandomNumberGenerator, kind: int) -> Dictionary:
 			q = L.t("頂点が %d 個、辺が %d 本の多面体の面の数") % [v, e]
 		var steps18 := [
 			{"say": "どんな 多面体でも (頂点) − (辺) + (面) = 2。これが オイラーの きまり。"},
-			{"say": L.t("この 立体は %s。分かっている 数を 入れて、足りない ものを 出す。") % name},
+			{"say": L.t("この 立体は %s。分かっている 数を 入れて、足りない ものを 出す。") % L.t(name)},
 			{"say": L.t("%d − %d + %d = 2 に なる。答えは %d。入力してみよう!") % [v, e, f, ans]},
 		]
 		return {
@@ -900,7 +900,7 @@ static func _j18(rng: RandomNumberGenerator, kind: int) -> Dictionary:
 			"steps": steps18,
 			"hint1": "どんな多面体でも (頂点) − (辺) + (面) = 2 が成り立つよ。",
 			"hint2": "v − e + f = 2 に、分かっている数を入れて解こう。",
-			"expl": L.t("%d − %d + %d = 2 になっている(%s)。答えは %d です。") % [v, e, f, name, ans],
+			"expl": L.t("%d − %d + %d = 2 になっている(%s)。答えは %d です。") % [v, e, f, L.t(name), ans],
 			"fig": {"shapes": _solid_sketch(name)},
 		}
 	if kind == 1:
@@ -927,13 +927,13 @@ static func _j18(rng: RandomNumberGenerator, kind: int) -> Dictionary:
 			what = "面の数"
 		var sketch_name := "六角柱" if is_prism else "六角錐"
 		return {
-			"q": L.t("%sの%sを求めなさい。") % [name2, what],
+			"q": L.t("%sの%sを求めなさい。") % [name2, L.t(what)],
 			"answer": float(ans2), "unit": "",
 			"hint1": L.t("底面の %d 角形をもとに数えよう。%s") % [n,
-				"角柱は上下に 2 つの底面があるよ。" if is_prism else "角錐は頂点が 1 つだけ上にあるよ。"],
-			"hint2": "%s" % ("角柱: 頂点 2n、辺 3n、面 n + 2" if is_prism
+				L.t("角柱は上下に 2 つの底面があるよ。" if is_prism else "角錐は頂点が 1 つだけ上にあるよ。")],
+			"hint2": L.t("角柱: 頂点 2n、辺 3n、面 n + 2" if is_prism
 				else "角錐: 頂点 n + 1、辺 2n、面 n + 1"),
-			"expl": L.t("%s は 頂点 %d・辺 %d・面 %d。%s は %d です。") % [name2, vv, ee, ff, what, ans2],
+			"expl": L.t("%s は 頂点 %d・辺 %d・面 %d。%s は %d です。") % [name2, vv, ee, ff, L.t(what), ans2],
 			"fig": {"shapes": _solid_sketch(sketch_name)},
 		}
 	# kind 2: 正多面体の表から
@@ -951,12 +951,12 @@ static func _j18(rng: RandomNumberGenerator, kind: int) -> Dictionary:
 		ans3 = s3[3]
 		what3 = "面の数"
 	return {
-		"q": L.t("%sの%sを求めなさい。") % [name3, what3],
+		"q": L.t("%sの%sを求めなさい。") % [L.t(name3), L.t(what3)],
 		"answer": float(ans3), "unit": "",
 		"hint1": "面の形と、1 つの頂点に集まる面の数から数えられるよ。オイラーの定理でも確かめられる。",
-		"hint2": L.t("%s は 面が %d 枚、辺が %d 本、頂点が %d 個。") % [name3, s3[3], s3[2], s3[1]],
+		"hint2": L.t("%s は 面が %d 枚、辺が %d 本、頂点が %d 個。") % [L.t(name3), s3[3], s3[2], s3[1]],
 		"expl": L.t("%s の %s は %d です(%d − %d + %d = 2)。") % [
-			name3, what3, ans3, s3[1], s3[2], s3[3]],
+			L.t(name3), L.t(what3), ans3, s3[1], s3[2], s3[3]],
 		"fig": {"shapes": _solid_sketch(name3)},
 	}
 
@@ -988,7 +988,7 @@ static func _j18_ball(rng: RandomNumberGenerator) -> Dictionary:
 			hex_pts.append(center + Vector2(cos(th3), sin(th3)) * 1.6)
 		shapes.append(ProblemGen.poly(hex_pts, ProblemGen.FILL_MAIN, ProblemGen.COL_DIM, 2.0))
 	return {
-		"q": L.t("サッカーボールの形(正五角形 12 枚と正六角形 20 枚でできた多面体)の%sを求めなさい。") % what,
+		"q": L.t("サッカーボールの形(正五角形 12 枚と正六角形 20 枚でできた多面体)の%sを求めなさい。") % L.t(what),
 		"answer": float(ans), "unit": "",
 		"hint1": "面の辺を全部数えると、1 本の辺を 2 回ずつ数えたことになるよ。頂点は 3 回ずつ。",
 		"hint2": L.t("(12 × 5 + 20 × 6) = %d。これを %d でわる。") % [pent * 5 + hexa * 6,
@@ -1083,15 +1083,15 @@ static func _s23(rng: RandomNumberGenerator, kind: int) -> Dictionary:
 			ProblemGen.FILL_ACCENT, ProblemGen.COL_YELLOW),
 		ProblemGen.circle(Vector2.ZERO, float(r), null, ProblemGen.COL_DIM, 2.0),
 	]}
-	var cond := "x ≥ 0、y ≥ 0" if quarter else "y ≥ 0"
+	var cond := L.t("x ≥ 0、y ≥ 0") if quarter else "y ≥ 0"
 	return {
 		"q": L.t("不等式 x² + y² ≤ %d、%s が表す領域の面積を求めなさい。円周率は 3.14 とします。") % [
 			r * r, cond],
 		"answer": area2, "unit": "", "tol": 0.02,
 		"hint1": "x² + y² ≤ r² は半径 r の円の内側。あとの条件で切り取られる分だけ考えよう。",
-		"hint2": L.t("半径 %d の円の %s。") % [r, "4 分の 1" if quarter else "半分"],
+		"hint2": L.t("半径 %d の円の %s。") % [r, L.t("4 分の 1" if quarter else "半分")],
 		"expl": L.t("円の面積 %s の %s で %s です。") % [
-			ProblemGen.fmt(3.14 * r * r), "4 分の 1" if quarter else "半分",
+			ProblemGen.fmt(3.14 * r * r), L.t("4 分の 1" if quarter else "半分"),
 			ProblemGen.fmt(area2)],
 		"fig": fig3,
 	}
@@ -1291,3 +1291,11 @@ static func _s24_origin(rng: RandomNumberGenerator) -> Dictionary:
 			d, na, ProblemGen.fmt(float(d) / float(na))],
 		"fig": {"shapes": shapes},
 	}
+
+
+## 日本語の 語の 列を、いまの 言語に 直して 返す(さいころの 転がす 向きなど)
+static func _tr_all(words: Array) -> PackedStringArray:
+	var out := PackedStringArray()
+	for w in words:
+		out.append(L.t(String(w)))
+	return out

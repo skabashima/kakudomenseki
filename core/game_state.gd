@@ -266,6 +266,7 @@ var lang: String = "auto"
 func set_lang(code: String) -> void:
 	lang = code
 	L.apply(lang)
+	NetDefs._all_cache = []      # 展開図の 説明は 言語で 作るので 作り直す
 	save_game()
 
 
@@ -500,7 +501,7 @@ func _scan_ja(n: Node) -> void:
 		s = n.atr((n as LineEdit).placeholder_text)
 	elif n is RubyLabel:
 		s = (n as RubyLabel).plain
-	if s != "" and L.has_ja(s) and not _ja_seen.has(s):
+	if s != "" and s != "日本語" and L.has_ja(s) and not _ja_seen.has(s):   # 言語ボタンは 日本語で よい
 		_ja_seen[s] = true
 		var scene := ""
 		if get_tree().current_scene != null:

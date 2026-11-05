@@ -68,7 +68,7 @@ func _ready() -> void:
 		if lv != last_level:
 			last_level = lv
 			var head_lbl := Label.new()
-			head_lbl.text = "― %s ―" % lv
+			head_lbl.text = L.t("― %s ―") % L.t(lv)
 			head_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 			head_lbl.add_theme_font_size_override("font_size", 24)
 			head_lbl.add_theme_color_override("font_color", col.lightened(0.5))

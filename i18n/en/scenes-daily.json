@@ -1,0 +1,12 @@
+{
+ "もどる": "Back",
+ "＝ 計算": "= Calc",
+ "こたえる": "Answer",
+ "けっかを 写す": "Copy result",
+ "  今日の図形 %s   %d日れんぞく": "  Daily Shape %s   %d-day streak",
+ "できた! %s  ―  みんな 今日は 同じ 問題です": "Done! %s  —  everyone gets the same question today",
+ "今日の分は もう 解きました。また あした。\n%s": "You've solved today's question. See you tomorrow.\n%s",
+ "数を いれてね(式のままでも いいよ)": "Enter a number (an expression is fine too)",
+ "ちがうみたい(%d回め)。もう一度。\n%s": "Not quite (try %d). Again.\n%s",
+ "写しました。SNS などに 貼れます。\n%s": "Copied. You can paste it anywhere.\n%s"
+}

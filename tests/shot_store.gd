@@ -9,7 +9,8 @@ extends Node
 ## レイアウトは実機と同じまま、くっきりした実寸の画像が得られる。
 ## 論理解像度は 基準幅 1080 ÷ content_scale_factor 1.2 = 900(GameState._update_ui_scale)。
 
-const DIR := "res://store/raw"
+## 英語版は `-- --en` を 付けて 撮る(出力は store/raw_en)
+var DIR := "res://store/raw"
 const SHOT := Vector2i(1320, 2868)
 const LOGICAL_W := 900
 
@@ -17,6 +18,9 @@ var sub: SubViewport
 
 
 func _ready() -> void:
+	if OS.get_cmdline_user_args().has("--en"):
+		TranslationServer.set_locale("en")
+		DIR = "res://store/raw_en"
 	sub = SubViewport.new()
 	sub.size = SHOT
 	sub.size_2d_override = Vector2i(LOGICAL_W, int(round(float(LOGICAL_W) * SHOT.y / SHOT.x)))
@@ -69,7 +73,7 @@ func _run() -> void:
 	# 11) ステージ一覧(面積編)。大学受験レベルまで下げて撮る
 	# (方べき・チェバ・円の方程式・回転体まで入っていることが、ここで伝わる)
 	GameState.current_course = "men"
-	await _scene("res://scenes/stage_select.tscn", "11_stage_select_men.png", "大学受験レベル")
+	await _scene("res://scenes/stage_select.tscn", "11_stage_select_men.png", L.t("大学受験レベル"))
 	# 12) 展開図マスター(立ち上がる 途中を 撮る ― この モードの 見どころ)
 	await _net_fold(0, 0.62, "16_net_fold.png")
 	# 13) 展開図マスターの 一覧(101 とおり あることが 伝わる)

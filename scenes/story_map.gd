@@ -123,14 +123,14 @@ func _header() -> Control:
 		GameState.change_scene("res://scenes/main.tscn"))
 	head.add_child(back)
 	var title := Label.new()
-	title.text = "  " + String(th["title"])
+	title.text = "  " + L.t(String(th["title"]))
 	title.add_theme_font_size_override("font_size", 34)
 	title.add_theme_color_override("font_color", th["accent"])
 	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	title.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	head.add_child(title)
 	var done := Label.new()
-	done.text = "%d / %d %s" % [_cleared_count(), chapters.size(), String(th["unit"])]
+	done.text = "%d / %d %s" % [_cleared_count(), chapters.size(), L.t(String(th["unit"]))]
 	done.add_theme_font_size_override("font_size", 26)
 	done.add_theme_color_override("font_color", th["ink"])
 	done.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
@@ -450,7 +450,7 @@ func _draw_levels(c: Control) -> void:
 			continue
 		last = lv
 		var here := _node_pos(i)
-		var name := StoryDefs.level_label(lv)
+		var name := L.t(StoryDefs.level_label(lv))
 		var w := font.get_string_size(name, HORIZONTAL_ALIGNMENT_LEFT, -1, 22).x + 32.0
 		var side := -1.0 if _node_pos(mini(i + 1, chapters.size() - 1)).x >= here.x else 1.0
 		var x := here.x + side * 250.0
@@ -459,7 +459,7 @@ func _draw_levels(c: Control) -> void:
 		var board := Rect2(x - w * 0.5, here.y - 62.0, w, 52)
 		c.draw_rect(board, th["land"])
 		c.draw_rect(board, th["accent"], false, 2.0)
-		c.draw_string(font, Vector2(board.position.x + 16, board.position.y + 34), name,
+		c.draw_string(font, Vector2(board.position.x + 16, board.position.y + 34), L.t(name),
 			HORIZONTAL_ALIGNMENT_LEFT, -1, 22, th["accent"])
 
 
@@ -507,19 +507,19 @@ func _draw_nodes(c: Control) -> void:
 			c.draw_string(font, p + Vector2(24, -26), "✓",
 				HORIZONTAL_ALIGNMENT_LEFT, -1, 30, th["done"])
 		if i == current:
-			c.draw_string(font, p + Vector2(60, 6), "ここ",
+			c.draw_string(font, p + Vector2(60, 6), L.t("ここ"),
 				HORIZONTAL_ALIGNMENT_LEFT, -1, 26, th["accent"])
 		# 章の名前は 開いているところだけ
 		if open:
 			var name := String(ch["title"])
-			c.draw_string(font, p + Vector2(-160, 84), name,
+			c.draw_string(font, p + Vector2(-160, 84), L.t(name),
 				HORIZONTAL_ALIGNMENT_CENTER, 320, 23, th["ink"])
 			if cleared:
 				# 見つけたことは 長いので、はみ出さないように 折りかえす
-				var lines := _wrap(font, String(ch["found"]), 330.0, 17)
+				var lines := _wrap(font, L.t(String(ch["found"])), 330.0, 17)   # 折り返す 前に 表を 引く
 				for k in lines.size():
 					c.draw_string(font, p + Vector2(-165, 110.0 + 22.0 * float(k)),
-						String(lines[k]), HORIZONTAL_ALIGNMENT_CENTER, 330, 17,
+						L.t(String(lines[k])), HORIZONTAL_ALIGNMENT_CENTER, 330, 17,
 						Color(th["done"].r, th["done"].g, th["done"].b, 0.85))
 
 
@@ -531,6 +531,11 @@ func _wrap(font: Font, text: String, width: float, size: int) -> Array:
 	while cut > 1 and font.get_string_size(text.substr(0, cut),
 			HORIZONTAL_ALIGNMENT_LEFT, -1, size).x > width:
 		cut -= 1
+	# 英語は 語の 途中で 切らない(空白まで もどす)
+	if L.en() and text.find(" ") >= 0:
+		var sp := text.rfind(" ", cut)
+		if sp > 0:
+			cut = sp + 1
 	var rest := text.substr(cut)
 	if font.get_string_size(rest, HORIZONTAL_ALIGNMENT_LEFT, -1, size).x > width:
 		var cut2 := rest.length()
@@ -599,8 +604,8 @@ func _draw_goal(c: Control) -> void:
 	if all_done:
 		msg = "すべての星に届いた!" if mode == "hs" else "国じゅうを測り終えた!"
 	else:
-		msg = L.t("あと %d %s") % [chapters.size() - _cleared_count(), String(th["unit"])]
-	c.draw_string(font, p + Vector2(-170, -86), msg,
+		msg = L.t("あと %d %s") % [chapters.size() - _cleared_count(), L.t(String(th["unit"]))]
+	c.draw_string(font, p + Vector2(-170, -86), L.t(msg),
 		HORIZONTAL_ALIGNMENT_CENTER, 340, 30, th["accent"] if all_done else th["ink"])
 
 
@@ -613,6 +618,6 @@ func _draw_veil(c: Control, w: float) -> void:
 	c.draw_rect(Rect2(0, 0, w, y), th["mist"])
 	for k in int(w / 70.0) + 1:
 		c.draw_circle(Vector2(35.0 + 70.0 * float(k), y), 44.0, th["mist"])
-	c.draw_string(ThemeDB.fallback_font, Vector2(0, y - 46), String(th["veil"]),
+	c.draw_string(ThemeDB.fallback_font, Vector2(0, y - 46), L.t(String(th["veil"])),
 		HORIZONTAL_ALIGNMENT_CENTER, w, 24,
 		Color(th["ink"].r, th["ink"].g, th["ink"].b, 0.55))

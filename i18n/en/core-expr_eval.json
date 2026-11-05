@@ -1,0 +1,5 @@
+{
+ "式が空です": "The expression is empty",
+ "式のかたちがおかしいよ": "That expression doesn't look right",
+ "0 でわることはできないよ": "You can't divide by 0"
+}

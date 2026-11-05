@@ -80,7 +80,7 @@ func _build_frame() -> void:
 	var title := Label.new()
 	title.text = _kids(L.t("第%d章 %s") % [
 		StoryDefs.chapter_index_in(StoryDefs.chapters_of(GameState.story_mode), String(chapter["id"])) + 1,
-		String(chapter["title"])])
+		L.t(String(chapter["title"]))])
 	title.add_theme_font_size_override("font_size", 32)
 	title.add_theme_color_override("font_color", HEAD)
 	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -91,8 +91,8 @@ func _build_frame() -> void:
 	head.add_child(status_lbl)
 
 	var place := Label.new()
-	place.text = L.t("%s ・ %s") % [String(chapter["place"]),
-		StoryDefs.level_label(String(chapter["level"]))]
+	place.text = L.t("%s ・ %s") % [L.t(String(chapter["place"])),
+		L.t(StoryDefs.level_label(String(chapter["level"])))]
 	place.add_theme_font_size_override("font_size", 22)
 	place.add_theme_color_override("font_color", Color(0.7, 0.78, 0.92))
 	root.add_child(place)
@@ -414,8 +414,8 @@ func _pick_answer(v: float, ans: float) -> void:
 	# 依頼(story_tasks)は本編の problem とちがって解説を持たない。
 	# ここで問題の辞書に無い鍵を読むと関数がそこで止まり、
 	# 「つぎへ」が出ないまま進めなくなる(実際にそうなっていた)
-	_add_label(_kids(L.t("答え %s%s ― %s") % [ProblemGen.fmt(ans), String(problem.get("unit", "")),
-		String(chapter.get("found", ""))]), 26, Color(0.85, 0.92, 1.0))
+	_add_label(_kids(L.t("答え %s%s ― %s") % [ProblemGen.fmt(ans), L.t(String(problem.get("unit", ""))),
+		L.t(String(chapter.get("found", "")))]), 26, Color(0.85, 0.92, 1.0))
 	_add_label(String(scene_data.get("after", "")), 27, Color(0.7, 1.0, 0.8))
 	keypad.visible = false
 	answer_row.visible = false
@@ -497,13 +497,13 @@ func _finish() -> void:
 	for c in body.get_children():
 		c.queue_free()
 	fig_panel.visible = false
-	_add_label(_kids(L.t("%s ― 章クリア!") % String(chapter["title"])), 34, HEAD)
+	_add_label(_kids(L.t("%s ― 章クリア!") % L.t(String(chapter["title"]))), 34, HEAD)
 	_add_label(_kids(L.t("見つけたこと: %s") % L.t(String(chapter.get("found", "")))), 24, Color(0.7, 1.0, 0.8))
 	var chapters: Array = StoryDefs.chapters_of(GameState.story_mode)
 	var next_i := StoryDefs.chapter_index_in(chapters, String(chapter["id"])) + 1
 	if next_i < chapters.size():
 		var nb := Button.new()
-		nb.text = L.t("第%d章 %s へ") % [next_i + 1, String(chapters[next_i]["title"])]
+		nb.text = L.t("第%d章 %s へ") % [next_i + 1, L.t(String(chapters[next_i]["title"]))]
 		nb.custom_minimum_size = Vector2(0, 84)
 		nb.add_theme_font_size_override("font_size", 26)
 		GameState.style_button(nb, Color(0.2, 0.55, 0.35))

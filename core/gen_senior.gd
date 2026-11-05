@@ -312,11 +312,11 @@ static func _s3(rng: RandomNumberGenerator, tier: int) -> Dictionary:
 		45, 135:
 			sin_v = 1.41 / 2.0
 			sin_str = "√2/2"
-			note = "√2 = 1.41 として小数で答えなさい。"
+			note = L.t("√2 = 1.41 として小数で答えなさい。")
 		_:
 			sin_v = 1.73 / 2.0
 			sin_str = "√3/2"
-			note = "√3 = 1.73 として小数で答えなさい。"
+			note = L.t("√3 = 1.73 として小数で答えなさい。")
 	var ans := 0.5 * a * b * sin_v
 	var rad := deg_to_rad(float(cc))
 	var pc := Vector2.ZERO

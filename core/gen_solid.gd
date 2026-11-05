@@ -901,11 +901,11 @@ static func _j14_cone(rng: RandomNumberGenerator) -> Dictionary:
 	var expr := "%d" % l
 	if ang == 90:
 		mul = 1.41
-		note = "√2 = 1.41 として、"
+		note = L.t("√2 = 1.41 として、")
 		expr = "%d × 1.41" % l
 	elif ang == 120:
 		mul = 1.73
-		note = "√3 = 1.73 として、"
+		note = L.t("√3 = 1.73 として、")
 		expr = "%d × 1.73" % l
 	var ans := float(l) * mul
 	var lf := float(l) * 0.8
@@ -1085,11 +1085,11 @@ static func _j14(rng: RandomNumberGenerator, kind: int) -> Dictionary:
 			ProblemGen.COL_YELLOW, 3.5),
 		_edge_label(Vector3(0, 0, 0), Vector3(a3, 0, 0), "%d" % a3, Vector2(0, -1.0)),
 	]
-	var what := "立方体の対角線"
+	var what := L.t("立方体の対角線")
 	var root := "√3"
 	var root_val := "1.73"
 	if face:
-		what = "1 つの面の対角線"
+		what = L.t("1 つの面の対角線")
 		root = "√2"
 		root_val = "1.41"
 	return {

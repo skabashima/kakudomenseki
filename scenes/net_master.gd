@@ -542,11 +542,11 @@ func _answer(btn: Button, picked: String, correct: String) -> void:
 	var name_str := String(net["solid"])
 	if ok:
 		result_label.set_ruby_text(L.t("せいかい! %s。 立ち上がる ところを 見てみよう。")
-			% name_str, true)
+			% L.t(name_str), true)
 	else:
 		# ★ まちがえても 折り上がりを 見せる。ここが いちばん 分かる ところ
 		result_label.set_ruby_text(L.t("ざんねん。正しくは %s。 立ち上がる ところを 見てみよう。")
-			% (name_str if not reverse else "この 中の 1 つ"), true)
+			% L.t(name_str if not reverse else "この 中の 1 つ"), true)
 	# 逆向きの ときは 立体を 見せていたので、正しい 展開図に もどしてから 立ち上げる
 	if reverse:
 		view.show_net(net)
@@ -575,7 +575,7 @@ func _on_folded() -> void:
 		next_btn.text = "つぎへ" if run_at + 1 < run_ids.size() else "けっかを 見る"
 	elif idx + 1 < nets.size() and GameState.net_needs_purchase(idx + 1):
 		next_btn.text = "一覧へ"
-	result_label.set_ruby_text(L.t("%s に なった。%s") % [String(net["solid"]),
+	result_label.set_ruby_text(L.t("%s に なった。%s") % [L.t(String(net["solid"])),
 		String(net["hint"])], true)
 
 

@@ -1,0 +1,18 @@
+{
+ "第%d章 %s": "Chapter %d: %s",
+ "%s ・ %s": "%s · %s",
+ "「": "\"",
+ "トト": "Toto",
+ "測る前に予想しよう。%s": "Guess before you measure. %s",
+ "この形を記録する": "Record this shape",
+ "まだ記録していない": "Nothing recorded yet",
+ "それは記録と合わない。表をもう一度見てみよう。": "That doesn't match your records. Look at the table again.",
+ "予想的中! 測る前から見抜いていた。": "Your guess was right! You saw it before measuring.",
+ "予想ははずれ。だが記録が正しい答えを教えてくれた。": "Your guess was off, but the records showed the true answer.",
+ "ちがう。%s ― もう一度。": "No. %s — try again.",
+ "答え %s%s ― %s": "Answer %s%s — %s",
+ "%s ― 章クリア!": "%s — chapter clear!",
+ "見つけたこと: %s": "What you found: %s",
+ "第%d章 %s へ": "To chapter %d: %s",
+ "章えらびへもどる": "Back to chapters"
+}

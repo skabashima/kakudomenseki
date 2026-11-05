@@ -122,6 +122,15 @@ workflows:
           /usr/libexec/PlistBuddy -c "Delete :CFBundleLocalizations" "$PLIST" 2>/dev/null || true
           /usr/libexec/PlistBuddy -c "Add :CFBundleLocalizations array" "$PLIST"
           /usr/libexec/PlistBuddy -c "Add :CFBundleLocalizations:0 string ja" "$PLIST"
+          /usr/libexec/PlistBuddy -c "Add :CFBundleLocalizations:1 string en" "$PLIST"
+          # 英語の端末ではホーム画面の名前を Shape Hunter にする(Godot の iOS 書き出しは
+          # config/name_localized を InfoPlist.strings に書かないので、ここで書く)
+          STRINGS=$(find "$CM_BUILD_DIR/build/ios" -path "*/en.lproj/InfoPlist.strings" -not -path "*.xcframework/*" | head -1)
+          if [ -n "$STRINGS" ]; then
+            printf '"CFBundleDisplayName" = "Shape Hunter";
+"CFBundleName" = "Shape Hunter";
+' > "$STRINGS"
+          fi
           PBX="$CM_BUILD_DIR/${XCODE_PROJECT}/project.pbxproj"
           sed -i '' 's|developmentRegion = en;|developmentRegion = ja;|' "$PBX"
           # BSD sed は置換文字列の \n を解釈しないので、同一行に挿入する

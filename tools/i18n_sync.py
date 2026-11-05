@@ -2,7 +2,7 @@
 """英語の表(i18n/en/*.json)をソースとそろえる。
 
 ソース(core/ scenes/ ui/)の中の、日本語をふくむ文字列リテラルを全部ひろい、
-出てきたファイルごとに i18n/en/<ファイル名>.json へ
+出てきたファイルごとに i18n/en/<フォルダ>-<ファイル名>.json へ
   {"日本語の文": "英語の文"}
 の形で持つ。まだ訳していない文は "" で入る。
 
@@ -88,7 +88,9 @@ def extract():
                     seen.add(s)
                     keys.append(s)
         if keys:
-            per_file[os.path.splitext(os.path.basename(f))[0]] = keys
+            # core/daily.gd と scenes/daily.gd のように 同じ 名前が あるので、フォルダ名を 頭に 付ける
+            per_file[os.path.basename(os.path.dirname(f)) + "-"
+                     + os.path.splitext(os.path.basename(f))[0]] = keys
     return per_file
 
 

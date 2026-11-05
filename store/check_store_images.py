@@ -20,7 +20,7 @@ import sys
 from PIL import Image
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-DELIVERY = os.path.join(HERE, "入稿セット")
+DELIVERY = os.path.join(HERE, "入稿セット_en" if "--en" in sys.argv else "入稿セット")
 
 # フォルダ名 -> (幅, 高さ, 最小枚数, 最大枚数)
 EXPECT = {

@@ -1,0 +1,20 @@
+{
+ "直方体": "rectangular box",
+ "四角柱": "square prism",
+ "三角錐": "triangular pyramid",
+ "大きな 三角形を 4 つに 分けた かたち": "a big triangle split into 4",
+ "十字の かたち": "a cross shape",
+ "%s %d 枚": "%s × %d",
+ "と ": " and ",
+ "円": "circle",
+ "三角形": "triangle",
+ "長方形": "rectangle",
+ "五角形": "pentagon",
+ "六角形": "hexagon",
+ "%d 角形": "%d-gon",
+ "三角形 8 枚。帯 6 枚に ふた 2 枚": "8 triangles: a band of 6 with 2 lids",
+ "円柱": "cylinder",
+ "長方形 1 枚と 円 2 枚": "1 rectangle and 2 circles",
+ "円錐": "cone",
+ "おうぎ形 1 枚と 円 1 枚": "1 sector and 1 circle"
+}

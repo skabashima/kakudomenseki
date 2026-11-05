@@ -319,6 +319,51 @@ godot --headless --path . -s tools/make_icons.gd
 godot --headless --path . -s tools/icon_preview.gd -- --dir=<svgのフォルダ> --out=<出力png>
 ```
 
+## 英語版(1.4 から)
+
+アプリ名は英語では **Shape Hunter**。本編・3 つのストーリー・島取り・展開図マスターの
+すべてが英語で遊べる。タイトル画面の右上のボタンで日本語と英語を切り替えられ、
+端末の言語が日本語以外なら最初から英語で開く(`GameState.lang` = `auto` / `ja` / `en`)。
+
+### しくみ
+
+- ソースの文は**日本語のまま**。英語は `i18n/en/*.json` に「日本語の文 → 英語の文」の表で持ち、
+  `tools/i18n_sync.py` がそれを 1 枚にまとめた `i18n/en.json` をアプリが読む(`core/lang.gd` = `L`)。
+- `Label` と `Button` の文字は Godot の自動翻訳が表を引く。組み立てる文(`"%d 問" % n` など)は
+  組み立てる**前**に `L.t("...")` で型を引く。`RubyLabel`(ふりがな付きの文)と図の中の文字は、出すところで表を引く。
+- 英語ではふりがなを付けない(`Ruby.needed()` が false)。`RubyLabel` は英語を語の途中で折り返さない。
+- `i18n/en/` のファイルは「フォルダ-ファイル名.json」で、そのソースに出てくる順に鍵が並ぶ。
+  同じ文が 2 か所に出るときは先に出たファイルだけが持つ。
+
+### 文を足した・変えたとき
+
+```
+python tools/i18n_sync.py          # 表をそろえ、未訳と不要になった鍵の数を出す
+python tools/i18n_sync.py --todo   # 未訳の鍵を出す → i18n/en/*.json に英語を書く
+python tools/i18n_sync.py --prune  # ソースから消えた鍵を表からも消す
+```
+
+日本語の語を `%s` に差し込むときは、差し込む側も `L.t()` を通す(`L.t("%s の面積") % L.t(name)`)。
+英語は語順が変えられないので、`%s` `%d` の並びは日本語と同じ順にする。
+
+### 見張り
+
+```
+godot --headless --path . res://tests/en_check.tscn      # 表の未訳・% の並び・問題文/データ/依頼文の英語漏れ
+set ZUKEI_LANG=en & set ZUKEI_SCAN_JA=1                   # 既存の画面テストを英語で走らせると、画面に残った日本語を JA_LEAK として出す
+godot --headless --path . res://tests/smoke.tscn
+```
+
+`tests/font_check.gd` は英語の表の字も同梱フォントで出せるかを見る(`⟂` `⁵` などは入っていない)。
+
+### ストア
+
+英語の掲載文は `store/ストア掲載情報_英語.md`。英語の画像は
+`godot --path . res://tests/shot_store.tscn -- --en` → `python store/make_store_images.py --en` →
+`python store/check_store_images.py --en` で `store/入稿セット_en/` に出る。
+iOS は `codemagic.yaml` が `CFBundleLocalizations` に ja と en を入れ、Android は `config/name_localized` で
+ホーム画面の名前が英語になる。
+
 ## デバッグ
 
 タイトル画面左下の「デバッグ: 全ステージ解放」トグルで、進捗にも購入にも関係なく全ステージを遊べる(設定はセーブされる)。

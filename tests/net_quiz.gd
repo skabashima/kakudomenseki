@@ -44,7 +44,7 @@ func _ready() -> void:
 	var wrong_name := ""
 	for b in buttons:
 		var txt := _text_of(b as Button)
-		if txt == correct:
+		if txt == L.t(correct):   # 英語で 走らせても 通るように
 			hit += 1
 		elif wrong_name == "":
 			wrong_name = txt

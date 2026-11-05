@@ -469,8 +469,8 @@ static func _describe(faces2: Array) -> String:
 		count[shape] = int(count[shape]) + 1
 	var parts := PackedStringArray()
 	for shape in order:
-		parts.append(L.t("%s %d 枚") % [shape, int(count[shape])])
-	return "と ".join(parts)
+		parts.append(L.t("%s %d 枚") % [L.t(shape), int(count[shape])])
+	return L.t("と ").join(parts)
 
 
 static func _shape_name(f: Array) -> String:

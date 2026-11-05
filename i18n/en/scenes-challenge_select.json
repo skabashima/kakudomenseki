@@ -1,0 +1,11 @@
+{
+ "← もどる": "← Back",
+ "チャレンジ": "Challenge",
+ "タイムアタック ― 3分で何問とける?": "Time Attack — how many in 3 minutes?",
+ "全コースミックス": "All courses mixed",
+ "サバイバル ― ミス3回でおわり。どこまでいける?": "Survival — 3 misses and it's over. How far can you go?",
+ "サバイバル(全コース)": "Survival (all courses)",
+ "無料で遊べるのは タイムアタック(角度編)だけです。出題は各編の最初の %d ステージから。": "Only Time Attack (Angles) is free. Questions come from the first %d stages of each course.",
+ "\n全ステージ解放で遊べます": "\nAvailable with Unlock everything",
+ "   自己ベスト %d 問": "   Best %d"
+}

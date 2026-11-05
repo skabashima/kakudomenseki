@@ -74,7 +74,7 @@ func _ready() -> void:
 				done += 1
 			total_stars += got
 	var rank := Label.new()
-	rank.text = L.t("%s ・ ★ %d ・ %s 点") % [GameState.rank_name(), total_stars,
+	rank.text = L.t("%s ・ ★ %d ・ %s 点") % [L.t(GameState.rank_name()), total_stars,
 		GameState.comma(GameState.total_score())]
 	rank.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	rank.add_theme_font_size_override("font_size", 28 if portrait else 32)
@@ -310,7 +310,7 @@ func _story_card(name: String, grade: String, progress_text: String, color: Colo
 	t.add_theme_font_size_override("font_size", 38)
 	v.add_child(t)
 	var g := Label.new()
-	g.text = "%s   %s" % [grade, progress_text]
+	g.text = "%s   %s" % [L.t(grade), progress_text]
 	g.add_theme_font_size_override("font_size", 24)
 	g.add_theme_color_override("font_color", Color(1, 1, 1, 0.8))
 	v.add_child(g)

@@ -120,7 +120,7 @@ func _card(r: Dictionary) -> Control:
 	var free_note := ""
 	if not GameState.premium and not GameState.debug_unlock_all:
 		free_note = L.t("   ここから %d 島 まで 無料") % GameState.FREE_ISLANDS_PER_RANGE
-	sub.set_ruby_text(L.t("%s%d / %d の 島   ★ %d / %d%s") % [L.t("%s ・ ") % lv if lv != "" else "",
+	sub.set_ruby_text(L.t("%s%d / %d の 島   ★ %d / %d%s") % [L.t("%s ・ ") % L.t(lv) if lv != "" else "",
 		int(prog[0]), int(prog[1]), got, int(prog[1]) * 3, free_note], true)
 	v.add_child(sub)
 	return btn

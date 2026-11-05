@@ -56,7 +56,7 @@ func _ready() -> void:
 	var ans := ProblemGen.fmt(float(a["answer"]))
 	if ans.length() >= 2 and text.contains(ans):
 		failures.append("貼る 文に 答えが 入っている(ネタバレ)")
-	if not text.contains("れんぞく"):
+	if not (text.contains("れんぞく") or text.contains("streak")):   # 英語でも 通る
 		failures.append("貼る 文に れんぞく日数が 無い")
 
 	GameState.daily_day = int(keep[0])

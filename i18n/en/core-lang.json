@@ -1,0 +1,4 @@
+{
+ "i18n: %s が 読めない": "i18n: cannot read %s",
+ "i18n: %s が 表に なっていない": "i18n: %s is not a table"
+}

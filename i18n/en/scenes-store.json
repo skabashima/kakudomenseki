@@ -1,0 +1,22 @@
+{
+ "全ステージを解放": "Unlock all stages",
+ "残り %d ステージが すべて 遊べるようになります": "Unlocks all %d remaining stages",
+ "・角度編 %d + 面積編 %d ステージ(中学・高校・大学受験)": "· Angles %d + Area %d stages (elementary to high school)",
+ "・全ステージの「挑戦 10問」(1 問ごとに解法が変わる難度ラダー)と王冠": "· Every stage's 10-question Gauntlet (a new method each step) and crowns",
+ "・チャレンジの全コースタイムアタック / サバイバル": "· All-course Time Attack and Survival",
+ "・展開図マスター全 %d 問(展開図が立ち上がって立体になるアニメつき)": "· All %d Net Master puzzles (with folding animation)",
+ "・買い切り。追加の課金や広告はありません": "· One-time purchase. No extra charges, no ads",
+ "※ 各編の最初の %d ステージと、電卓・解き方アニメ・補助線・ヒント・段位・記録は無料のままです。": "* The first %d stages of each course, the calculator, solution animations, helper lines, hints, ranks and records stay free.",
+ "購入を復元する": "Restore purchase",
+ "あとで": "Later",
+ "ありがとうございます。全ステージが遊べます。": "Thank you! All stages are unlocked.",
+ "全ステージを解放する  %s": "Unlock all stages  %s",
+ "この端末ではストアに接続できません(PC版では購入できません)。": "This device can't reach the store (purchases aren't available on PC).",
+ "ストアに接続しています…": "Connecting to the store…",
+ "購入を確認しています…": "Checking your purchase…",
+ "解放しました。ありがとうございます!": "Unlocked. Thank you!",
+ "購入できませんでした: %s": "Purchase failed: %s",
+ "購入を復元しました。": "Purchase restored.",
+ "復元できる購入が見つかりませんでした。": "No purchase to restore was found.",
+ "課金の しらべ まで あと %d 回": "%d more taps for purchase diagnostics"
+}

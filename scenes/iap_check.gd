@@ -79,7 +79,7 @@ func _build() -> void:
 	_row("買える 状態か", "はい" if rep.get("has_store", false) else "いいえ")
 	_row("商品ID", str(rep.get("product_id", "")))
 	_row("価格", "%s(%s)" % [str(rep.get("price", "")),
-		"ストアから 取れた" if rep.get("price_live", false) else "既定値。ストアから 取れていない"])
+		L.t("ストアから 取れた") if rep.get("price_live", false) else L.t("既定値。ストアから 取れていない")])
 	_row("解放ずみ", "はい" if rep.get("premium", false) else "いいえ")
 	var le: Dictionary = rep.get("last_error", {})
 	if not le.is_empty():
@@ -145,7 +145,7 @@ func _head(text: String) -> void:
 
 func _row(name: String, value: String) -> void:
 	var l := Label.new()
-	l.text = value if name == "" else "%s: %s" % [name, value]
+	l.text = L.t(value) if name == "" else "%s: %s" % [L.t(name), L.t(value)]
 	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	l.add_theme_font_size_override("font_size", 20)
 	l.add_theme_color_override("font_color", Color(0.85, 0.9, 1.0))

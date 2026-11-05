@@ -18,6 +18,7 @@
 """
 import math
 import os
+import sys
 
 from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
@@ -26,6 +27,11 @@ PROJ = os.path.dirname(HERE)
 FONT = os.path.join(PROJ, "assets", "fonts", "NotoSansJP.ttf")
 RAW = os.path.join(HERE, "raw")
 OUT = os.path.join(HERE, "screenshots")
+# 英語版(--en): 素材は store/raw_en、出力は screenshots_en と 入稿セット_en
+EN = "--en" in sys.argv
+if EN:
+    RAW = os.path.join(HERE, "raw_en")
+    OUT = os.path.join(HERE, "screenshots_en")
 
 # 出力サイズ(幅, 高さ)
 SIZES = {
@@ -91,6 +97,44 @@ SHOTS = [
      "当たってもはずれても立ち上がる。101 とおりの展開図を当てる", TEAL),
     ("17_net_list.png", "展開図は\n101 とおり",
      "立方体だけで 11 種類。同じ立体でもひらき方はいろいろ", BLUE),
+]
+
+# 英語版の見出し(素材名は日本語版と同じ)
+SHOTS_EN = [
+    ("01_title.png", "From elementary\nto high school",
+     "65 stages of angles and area. One app as you grow", NAVY),
+    ("02_stage_select.png", "One path,\nstep by step",
+     "Clear a stage to unlock the next. A clear goal at every level", GOLD),
+    ("03_problem_angle.png", "See the figure.\nType the number.",
+     "Stars, clock hands, inscribed angles... the values change every time", NAVY),
+    ("04_problem_leaf.png", "Classic exam puzzles,\njust as they are",
+     "The leaf, roads through a field, boomerangs, folded strips", BLUE),
+    ("05_calc.png", "Answer with an expression.\nNo pen and paper",
+     "Built-in calculator with √ × ÷. Work it out on the spot", TEAL),
+    ("06_walkthrough.png", "Stuck? Watch the\nsolution step by step",
+     "Helper lines appear and each step is animated", GOLD),
+    ("07_kid_map.png", "Kids follow\nthe treasure map",
+     "23 units, one step each. Touch and discover the rule yourself", PLUM),
+    ("08_kid_tear.png", "Tear off the corners:\nthey make 180°",
+     "Find the rule with your fingers before reading the formula", GOLD),
+    ("09_story_hs.png", "A separate story\nfor high school",
+     "At a planetary base, use cosines, power of a point and integrals for real", TEAL),
+    ("10_records.png", "Ranks and stars\nadd up",
+     "From Apprentice to Geometry Sage. Combos boost your score", NAVY),
+    ("11_stage_select_men.png", "Area: 45 stages.\nPythagoras to integrals",
+     "Power of a point, Ceva, circle equations, solids of revolution", BLUE),
+    ("12_store_iap.png", "One-time purchase.\nNo ads, no subscriptions",
+     "The first 4 stages of each course are free to try", NAVY),
+    ("13_story_map_jhs.png", "Middle school goes\non a surveying journey",
+     "Follow the survey points across the land through 21 chapters", PLUM),
+    ("14_story_map_hs.png", "High school\nfollows the star chart",
+     "Launch probes and fix orbits with cosines, power of a point, integrals", BLUE),
+    ("15_island.png", "Your land grows\nby the answer",
+     "Race the Crow for territory. 24 islands, 337 problems", GOLD),
+    ("16_net_fold.png", "Nets fold up\ninto solids on the spot",
+     "Right or wrong, watch it fold. 101 nets to identify", TEAL),
+    ("17_net_list.png", "101 nets\nto identify",
+     "11 for the cube alone. Many ways to unfold the same solid", BLUE),
 ]
 
 # 掲載順にリネームするときの短い名前(01_ の数字は PICKS の並び)
@@ -243,7 +287,11 @@ def make_feature_graphic(path):
 
     title = "図形ハンター"
     sub1 = "角度と面積を、数字で撃ち落とせ。"
-    sub2 = "中学・高校・大学受験 ― 全41ステージ"
+    sub2 = "中学・高校・大学受験 ― 全65ステージ"
+    if EN:
+        title = "Shape Hunter"
+        sub1 = "Angles and area. See the figure, type the number."
+        sub2 = "Elementary to high school - 65 stages"
     # 右端いっぱいに文字を置かない(ストアの一覧で端が切られることがある)
     avail = w - text_left - int(w * 0.07)
     t_size = int(h * 0.19)
@@ -317,7 +365,7 @@ def build_delivery():
     ストアの枠は Google Play が 8 枚まで、App Store が 10 枚まで。全部載せると
     伝わらないので PICKS の 8 枚に絞り、掲載順どおりに 01→08 でリネームする。
     """
-    root = os.path.join(HERE, "入稿セット")
+    root = os.path.join(HERE, "入稿セット_en" if EN else "入稿セット")
     os.makedirs(root, exist_ok=True)
     for folder, dest_name in DELIVERY:
         dest = os.path.join(root, dest_name)
@@ -365,7 +413,7 @@ def main():
         for old in os.listdir(outdir):
             if old.lower().endswith(".png"):
                 os.remove(os.path.join(outdir, old))
-        for raw_name, head, sub, colors in SHOTS:
+        for raw_name, head, sub, colors in (SHOTS_EN if EN else SHOTS):
             if not os.path.exists(os.path.join(RAW, raw_name)):
                 print("  素材なし:", raw_name)
                 continue

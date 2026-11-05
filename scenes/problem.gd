@@ -370,8 +370,8 @@ func _next_question(first := false) -> void:
 			"式のまま答えてOK(例: 12×8÷2)。図は指でなぞって書ける(「補助線」でまっすぐな線)", false)
 	unit_lbl.text = String(problem["unit"])
 	if not _stage_based():
-		title_lbl.text = ("タイムアタック  " if GameState.mode == "time" else "サバイバル  ") \
-			+ ProblemGen.stage_title(sid)
+		title_lbl.text = L.t("タイムアタック  " if GameState.mode == "time" else "サバイバル  ") \
+			+ L.t(ProblemGen.stage_title(sid))
 	hint_btn.disabled = false
 	wt_used = false
 	wt_steps = []
@@ -473,7 +473,7 @@ func _show_hint() -> void:
 	hints_used += 1
 	var text := _short(String(problem["hint1"]) if hints_used == 1 else String(problem["hint2"]))
 	hint_lbl.color = Color(0.65, 0.9, 1.0)
-	hint_lbl.set_ruby_text(L.t("ヒント%d: %s") % [hints_used, text], Ruby.needed(stage_id))
+	hint_lbl.set_ruby_text(L.t("ヒント%d: %s") % [hints_used, L.t(text)], Ruby.needed(stage_id))
 	if hints_used >= 2:
 		hint_btn.disabled = true
 
@@ -500,7 +500,7 @@ func _on_walkthrough() -> void:
 		return
 	var step: Dictionary = wt_steps[wt_idx]
 	hint_lbl.set_ruby_text(L.t("解き方 %d/%d: %s") % [wt_idx + 1, wt_steps.size(),
-		_short(String(step.get("say", "")))], Ruby.needed(stage_id))
+		L.t(_short(String(step.get("say", ""))))], Ruby.needed(stage_id))
 	hint_lbl.add_theme_color_override("font_color", Color(1.0, 0.85, 0.5))
 	if step.has("add"):
 		figure.add_overlay(step["add"])

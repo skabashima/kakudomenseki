@@ -2,7 +2,7 @@ class_name L
 ## 言語(日本語 / English)。
 ##
 ## ■ しくみ
-## ソースの 文は すべて 日本語の まま。英語は res://i18n/en.json に
+## ソースの 文は すべて 日本語の まま。英語は i18n/en.json に
 ## 「日本語の 文 → 英語の 文」の 表で 持つ(tools/i18n_sync.py が 表を そろえる)。
 ##   ・Label / Button の 文字は Godot が 自動で 表を 引く(auto_translate)
 ##   ・組み立てる 文("%d 問" % n など)は 組み立てる 前に L.t() で 型を 引く

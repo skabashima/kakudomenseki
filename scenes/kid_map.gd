@@ -420,7 +420,7 @@ func _signpost(c: Control, font: Font, at: Vector2, area: Dictionary, at_i: int)
 		Color(0.50, 0.36, 0.22), 8.0)
 	c.draw_rect(board, Color(0.78, 0.62, 0.40))
 	c.draw_rect(board, INK, false, 3.0)
-	c.draw_string(font, at + Vector2(17, 28), name, HORIZONTAL_ALIGNMENT_LEFT, -1, 24, INK)
+	c.draw_string(font, at + Vector2(17, 28), L.t(name), HORIZONTAL_ALIGNMENT_LEFT, -1, 24, INK)
 	c.draw_string(font, at + Vector2(17, 52), "%d / %d" % [done, last - at_i],
 		HORIZONTAL_ALIGNMENT_LEFT, -1, 20, PATH if done < last - at_i else GREEN)
 
@@ -459,7 +459,7 @@ func _draw_nodes(c: Control) -> void:
 			c.draw_rect(Rect2(k + Vector2(-14, -6), Vector2(28, 22)), INK, false, 2.0)
 		# 名前は 開いているところだけ(小学生が読むので ふりがな つき)
 		if open or paid:
-			_draw_ruby(c, font, p + Vector2(0, 82), String((e["unit"] as Dictionary)["title"]))
+			_draw_ruby(c, font, p + Vector2(0, 82), L.t(String((e["unit"] as Dictionary)["title"])))
 
 
 ## たんけんか(じぶん)。ぼうしを かぶって、せなかに ふくろ
@@ -507,7 +507,7 @@ func _draw_treasure(c: Control) -> void:
 			box.position + Vector2(box.size.x, 26)]), Color(0.44, 0.30, 0.16))
 		for k in 5:
 			c.draw_circle(box.position + Vector2(24.0 + 20.0 * float(k), 34.0), 11.0, GOLD)
-		c.draw_string(font, p + Vector2(-160, -78), "たからを 見つけた！",
+		c.draw_string(font, p + Vector2(-160, -78), L.t("たからを 見つけた！"),
 			HORIZONTAL_ALIGNMENT_CENTER, 320, 32, PATH)
 	else:
 		c.draw_rect(box, Color(0.52, 0.36, 0.20))
@@ -529,7 +529,7 @@ func _draw_mist(c: Control, w: float) -> void:
 	c.draw_rect(Rect2(0, 0, w, y), MIST)
 	for k in int(w / 70.0) + 1:
 		c.draw_circle(Vector2(35.0 + 70.0 * float(k), y), 44.0, MIST)
-	c.draw_string(ThemeDB.fallback_font, Vector2(0, y - 46), "この さきは きりの 中",
+	c.draw_string(ThemeDB.fallback_font, Vector2(0, y - 46), L.t("この さきは きりの 中"),
 		HORIZONTAL_ALIGNMENT_CENTER, w, 26, Color(INK.r, INK.g, INK.b, 0.55))
 
 
@@ -565,13 +565,14 @@ func _draw_compass(c: Control, w: float, _h: float) -> void:
 	c.draw_colored_polygon(PackedVector2Array([
 		at + Vector2(0, 34), at + Vector2(10, 0), at + Vector2(-10, 0)]),
 		Color(0.72, 0.66, 0.55))
-	c.draw_string(ThemeDB.fallback_font, at + Vector2(-30, -46), "きた",
+	c.draw_string(ThemeDB.fallback_font, at + Vector2(-30, -46), L.t("きた"),
 		HORIZONTAL_ALIGNMENT_CENTER, 60, 16, INK)
 
 
 ## 漢字の上に よみ を のせて、まん中ぞろえで 描く(地図の上は Label が使えないため)
 func _draw_ruby(c: Control, font: Font, center: Vector2, text: String) -> void:
-	var parts: Array = Ruby.parts(text)
+	text = L.t(text)
+	var parts: Array = Ruby.parts(text) if not L.en() else [{"s": text, "r": ""}]
 	var total := 0.0
 	for seg in parts:
 		total += font.get_string_size(String((seg as Dictionary)["s"]),
@@ -581,9 +582,9 @@ func _draw_ruby(c: Control, font: Font, center: Vector2, text: String) -> void:
 		var d: Dictionary = seg
 		var body := String(d["s"])
 		var bw := font.get_string_size(body, HORIZONTAL_ALIGNMENT_LEFT, -1, 24).x
-		c.draw_string(font, Vector2(x, center.y), body, HORIZONTAL_ALIGNMENT_LEFT, -1, 24, INK)
+		c.draw_string(font, Vector2(x, center.y), L.t(body), HORIZONTAL_ALIGNMENT_LEFT, -1, 24, INK)
 		if String(d["r"]) != "":
 			var rw := font.get_string_size(String(d["r"]), HORIZONTAL_ALIGNMENT_LEFT, -1, 13).x
-			c.draw_string(font, Vector2(x + (bw - rw) * 0.5, center.y - 24.0), String(d["r"]),
+			c.draw_string(font, Vector2(x + (bw - rw) * 0.5, center.y - 24.0), L.t(String(d["r"])),
 				HORIZONTAL_ALIGNMENT_LEFT, -1, 13, INK)
 		x += bw

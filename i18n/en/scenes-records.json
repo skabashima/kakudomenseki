@@ -1,0 +1,15 @@
+{
+ "記録": "Records",
+ "段位": "Rank",
+ "総得点 %s 点": "Total score %s pts",
+ "「%s」まで あと %d 点": "Next rank \"%s\": %d pts to go",
+ "解いた問題 %d 問(一発正解 %d 問)   最高コンボ ×%d": "Solved %d (first try %d)   Best combo ×%d",
+ "クリア %d/%d   ★ %d/%d   王冠 %d/%d   %d点": "Cleared %d/%d   ★ %d/%d   Crowns %d/%d   %d pts",
+ "入": "On",
+ "切": "Off",
+ "チャレンジ自己ベスト": "Challenge bests",
+ "タイムアタック %s: %d 問": "Time Attack %s: %d",
+ "タイムアタック 全コース: %d 問": "Time Attack, all courses: %d",
+ "サバイバル: %d 問": "Survival: %d",
+ "まだ記録がありません": "No records yet"
+}

@@ -567,16 +567,16 @@ static func _e7(rng: RandomNumberGenerator, tier: int) -> Dictionary:
 			{"say": "1 つの ちょう点から、ほかの ちょう点へ 線を ひいて みる。",
 				"add": diag7},
 			{"say": L.t("%s角形は 三角形 %d こ に 分かれた。三角形 1 こ の 角の 和は 180°。") % [
-				names[n], n - 2]},
+				L.t(names[n]), n - 2]},
 			{"say": L.t("180 × %d = %d°。入力してみよう!") % [n - 2, (n - 2) * 180]},
 		]
 		return {
-			"q": L.t("%s角形の内角の和は何度ですか。") % names[n],
+			"q": L.t("%s角形の内角の和は何度ですか。") % L.t(names[n]),
 			"answer": float((n - 2) * 180), "unit": "度",
 			"steps": steps7,
 			"hint1": "1 つの頂点から対角線を引くと、三角形が (ちょう点の数 − 2) こできるよ。",
 			"hint2": L.t("(%d − 2) × 180 を計算しよう。") % n,
-			"expl": L.t("%s角形は三角形 %d こに分けられるので、内角の和は %d × 180 = %d° です。") % [names[n], n - 2, n - 2, (n - 2) * 180],
+			"expl": L.t("%s角形は三角形 %d こに分けられるので、内角の和は %d × 180 = %d° です。") % [L.t(names[n]), n - 2, n - 2, (n - 2) * 180],
 			"fig": fig,
 		}
 	elif kind == 1:
@@ -1771,7 +1771,7 @@ static func _e6_diff(rng: RandomNumberGenerator) -> Dictionary:
 	var b := rng.randi_range(25, 55) if bigger else rng.randi_range(63, 84)
 	var d := (180 - 3 * b) if bigger else (3 * b - 180)
 	var v: Array = ProblemGen.tri_from_angles(float(b), float(b), 10.0)
-	var rel := "大きい" if bigger else "小さい"
+	var rel := L.t("大きい" if bigger else "小さい")
 	var fig := {"shapes": [
 		ProblemGen.poly(v, ProblemGen.FILL_MAIN),
 		ProblemGen.tick(v[0], v[1]), ProblemGen.tick(v[0], v[2]),
@@ -1961,7 +1961,7 @@ static func _e11_oclock(rng: RandomNumberGenerator) -> Dictionary:
 		"answer": float(x), "unit": "度",
 		"hint1": "長針は 12 をさしている。短針は 1 時間で 30° 進むよ。",
 		"hint2": L.t("30 × %d(180° をこえたら 360 から引く)") % h,
-		"expl": L.t("30°×%d = %d°%s なので答えは %d° です。") % [h, 30 * h, "(大きい方なので 360 から引く)" if 30 * h > 180 else "", x],
+		"expl": L.t("30°×%d = %d°%s なので答えは %d° です。") % [h, 30 * h, L.t("(大きい方なので 360 から引く)") if 30 * h > 180 else "", x],
 		"fig": {"shapes": shapes},
 	}
 

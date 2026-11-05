@@ -188,7 +188,7 @@ func _ready() -> void:
 		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		b.add_theme_font_size_override("font_size", 24)
 		b.text = "%s
-%s" % [String(lv["star"]), String(lv["name"])]
+%s" % [String(lv["star"]), L.t(String(lv["name"]))]
 		GameState.style_button(b, lv["color"])
 		b.pressed.connect(_pick_level.bind(i))
 		pick_row.add_child(b)
@@ -702,7 +702,7 @@ func _take_marked() -> void:
 	if got_spring > 0:
 		extra += L.t("  泉! つぎは +%d マス") % bonus
 	if got_ruin > 0:
-		extra += "  遺跡を見つけた!"
+		extra += L.t("  遺跡を見つけた!")
 	if got_shrine > 0:
 		extra += L.t("  石碑を %d こ 取った! 毎ターン +%d マス") % [got_shrine,
 			got_shrine * SHRINE_GAIN]
@@ -782,7 +782,7 @@ func _crow_turn() -> void:
 		var crow2 := _count(CROW)
 		var win_side := mine2 > crow2
 		var left_n := _potential(CROW) if win_side else _potential(MINE)
-		var who := "カラス" if win_side else "こちら"
+		var who := L.t("カラス" if win_side else "こちら")
 		msg.set_ruby_text(L.t("勝負あり ― %s は もう %d マスまでしか 伸ばせない。のこりは 自動で ぬる")
 			% [who, left_n], true)
 
@@ -910,7 +910,7 @@ func _open_quiz(_tier: int) -> void:
 	input_text = ""
 	keypad.answer_lbl.text = ""
 	keypad.unit_lbl.text = String(problem.get("unit", ""))
-	q_lbl.set_ruby_text("%s\n%s" % [String(problem["q"]), _reward_note()], true)
+	q_lbl.set_ruby_text("%s\n%s" % [L.t(String(problem["q"])), _reward_note()], true)
 	# カットインが 出たままだと 電卓の 上に かぶる。ここで 引っこめる
 	cut_t = 0.0
 	cutin.visible = false
@@ -940,7 +940,7 @@ func _reward_note() -> String:
 	var lv: Dictionary = LEVELS[level]
 	var lost := "" if miss == 0 else L.t("  ※ まちがえたので もらえる マスは %d 分の 1") % int(pow(2, miss))
 	return L.t("正解すると %d〜%d マス(%s。答えが 大きいほど 多い)%s") % [
-		int(lv["low"]), int(lv["high"]), String(lv["name"]), lost]
+		int(lv["low"]), int(lv["high"]), L.t(String(lv["name"])), lost]
 
 
 func _on_key(k: String) -> void:
@@ -977,10 +977,10 @@ func _submit() -> void:
 		if miss >= can:
 			# えらんだ 難しさの ぶんだけ しか まちがえられない
 			quiz.visible = false
-			_lose_turn(L.t("%s を はずした。このターンは 何も 取れない") % String(LEVELS[level]["name"]))
+			_lose_turn(L.t("%s を はずした。このターンは 何も 取れない") % L.t(String(LEVELS[level]["name"])))
 			return
 		q_lbl.set_ruby_text(L.t("ちがう ― もらえる マスが 半分に なった(のこり %d 回)\n%s\n%s") % [
-			can - miss, String(problem["q"]), _reward_note()], true)
+			can - miss, L.t(String(problem["q"])), _reward_note()], true)
 		return
 	GameState.play_sfx("correct")
 	var shrine_bonus := _shrine_count(MINE) * SHRINE_GAIN
@@ -1009,7 +1009,7 @@ func _refresh() -> void:
 	var all := maxi(mine + crow + _count(EMPTY) + _count(SPRING) + _count(RUIN) + _count(SHRINE), 1)
 	# 割合は 下の 帯(顔つき)に 出すので、ここは ターン数だけ
 	head_lbl.set_ruby_text(L.t("  %d島 %s  %d/%d ターン  石碑 %d-%d") % [isle + 1,
-		String(isle_def["name"]), mini(turn, MAX_TURN), MAX_TURN,
+		L.t(String(isle_def["name"])), mini(turn, MAX_TURN), MAX_TURN,
 		_shrine_count(MINE), _shrine_count(CROW)], true)
 	pick_row.visible = need <= 0 and not over and not auto_fill
 	claim_row.visible = not pick_row.visible
@@ -1100,7 +1100,7 @@ const CROW_LINES := {
 
 func _crow_says(kind: String) -> String:
 	var list: Array = CROW_LINES.get(kind, CROW_LINES["win"])
-	return String(list[prng.randi_range(0, list.size() - 1)])
+	return L.t(String(list[prng.randi_range(0, list.size() - 1)]))   # カットインは 自前で 描くので ここで 表を 引く
 
 
 ## カラスの番の カットイン。大きく出して、何をされたのか 分かるようにする
@@ -1140,7 +1140,7 @@ func _draw_cut_band() -> void:
 	Chars.bubble(c, Vector2(w * 0.31 + slide, h * 0.80), Vector2(w * 0.54, h * 0.52),
 		cut_text, 1.0, 23)
 	c.draw_string(ThemeDB.fallback_font, Vector2(slide + 16.0, h - 14.0),
-		"カラスのターン", HORIZONTAL_ALIGNMENT_LEFT, -1, 24, Color(0.55, 0.22, 0.14))
+		L.t("カラスのターン"), HORIZONTAL_ALIGNMENT_LEFT, -1, 24, Color(0.55, 0.22, 0.14))
 
 
 ## 上の 帯。両はしに 顔を 出して、いま 誰と 戦っているかを 見せる
@@ -1405,7 +1405,7 @@ func _show_result(mine_pct: int, crow_pct: int) -> void:
 	var stars := ""
 	for k in 3:
 		stars += "★" if k < star else "☆"
-	sub.text = L.t("%d島 %s   じぶん %d%%  ―  カラス %d%%%s") % [isle + 1, String(isle_def["name"]),
+	sub.text = L.t("%d島 %s   じぶん %d%%  ―  カラス %d%%%s") % [isle + 1, L.t(String(isle_def["name"])),
 		mine_pct, crow_pct, ("   " + stars) if win else ""]
 	sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	sub.add_theme_font_size_override("font_size", 26)
@@ -1436,8 +1436,8 @@ func _show_result(mine_pct: int, crow_pct: int) -> void:
 	if win and nxt_i >= 0:
 		var nxt: Dictionary = IslandDefs.of(nxt_i)
 		var open := Label.new()
-		open.text = L.t("つぎの島が 開いた ― %d島 %s(%s)") % [nxt_i + 1, String(nxt["name"]),
-			String(nxt["level"])]
+		open.text = L.t("つぎの島が 開いた ― %d島 %s(%s)") % [nxt_i + 1, L.t(String(nxt["name"])),
+			L.t(String(nxt["level"]))]
 		open.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		open.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		open.add_theme_font_size_override("font_size", 25)
@@ -1460,7 +1460,7 @@ func _show_result(mine_pct: int, crow_pct: int) -> void:
 		var all_done := Label.new()
 		var pr := IslandDefs.progress_in(GameState.island_range, GameState.island_clear)
 		all_done.text = L.t("%s の島を すべて 取った!(%d / %d)") % [
-			String(IslandDefs.range_of(GameState.island_range)["name"]), int(pr[0]), int(pr[1])]
+			L.t(String(IslandDefs.range_of(GameState.island_range)["name"])), int(pr[0]), int(pr[1])]
 		all_done.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		all_done.add_theme_font_size_override("font_size", 27)
 		all_done.add_theme_color_override("font_color", GOLD)

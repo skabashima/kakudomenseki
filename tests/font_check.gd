@@ -43,6 +43,7 @@ func _init() -> void:
 		return
 	for d in DIRS:
 		_scan_dir(d)
+	_scan_table("res://i18n/en.json")   # 英語の 文も 同じ フォントで 出る
 	var bad_import := _check_import()
 	for b in bad_import:
 		print("FAIL: " + str(b))
@@ -119,3 +120,16 @@ func _check_char(ch: String, where: String) -> void:
 	checked += 1
 	if not font.has_char(ch.unicode_at(0)):
 		missing[ch] = [where]
+
+
+## 英語の 表(日本語 → 英語)の 値の 字も 見る
+func _scan_table(path: String) -> void:
+	var text := FileAccess.get_file_as_string(path)
+	if text == "":
+		return
+	var data = JSON.parse_string(text)
+	if typeof(data) != TYPE_DICTIONARY:
+		return
+	for k in data:
+		for ch in String(data[k]):
+			_check_char(ch, path + ": " + String(k).left(30))

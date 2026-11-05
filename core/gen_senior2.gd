@@ -382,7 +382,7 @@ const FAMOUS_LINES := [
 ## 傾き m = num/den の直線の表示("y = 2x" "y = x/3" "y = −x/2" など)
 static func _line_text(num: int, den: int) -> String:
 	if num == 0:
-		return "y = 0(x 軸)"
+		return L.t("y = 0(x 軸)")
 	var sign_s := "−" if num < 0 else ""
 	var n := absi(num)
 	if den == 1:
@@ -498,7 +498,7 @@ static func _s14(rng: RandomNumberGenerator, kind: int) -> Dictionary:
 	]}
 	return {
 		"q": L.t("2 直線 %s と %s のなす角 θ を求めなさい。") % [
-			String(FAMOUS_LINES[i1][1]), String(FAMOUS_LINES[i2][1])],
+			L.t(String(FAMOUS_LINES[i1][1])), L.t(String(FAMOUS_LINES[i2][1]))],
 		"answer": float(ans3), "unit": "度",
 		"hint1": "それぞれが x 軸となす角(傾角)を思い出そう。傾き 1 なら 45°、√3 なら 60°。",
 		"hint2": L.t("傾角は %d° と %d°。その差を考えて、90° を超えたら 180° から引く。") % [a1, a2],
@@ -639,12 +639,12 @@ static func _s15(rng: RandomNumberGenerator, kind: int) -> Dictionary:
 			hint2 = "向かい合う辺どうしは内積が 0 になる。"
 		return {
 			"q": L.t("1 辺 %s の正四面体で、%s 2 辺のなす角を求めなさい。") % [
-				ProblemGen.fmt(a * 1.41), "向かい合う" if opposite else "隣り合う"],
+				ProblemGen.fmt(a * 1.41), L.t("向かい合う" if opposite else "隣り合う")],
 			"answer": float(ans2), "unit": "度",
 			"hint1": "正四面体は立方体の 4 頂点(A・C・F・H)を結んだ形。座標で考えよう。",
 			"hint2": hint2,
 			"expl": L.t("%s なので、なす角は %d° です。") % [
-				"向かい合う辺は垂直" if opposite else "面が正三角形", ans2],
+				L.t("向かい合う辺は垂直" if opposite else "面が正三角形"), ans2],
 			"fig": _cube_fig(a, e1, e2),
 		}
 	# kind 2: 切り口の角(正三角形 ACF と、中点を通る正六角形)

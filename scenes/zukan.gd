@@ -75,7 +75,7 @@ func _ready() -> void:
 			band.ruby_size = 12
 			band.color = Color(0.75, 0.82, 0.96)
 			band.custom_minimum_size = Vector2(0, 38)
-			band.set_ruby_text("― %s ―" % from, true)
+			band.set_ruby_text(L.t("― %s ―") % L.t(from), true)
 			list.add_child(band)
 		list.add_child(_card(card))
 
@@ -93,7 +93,7 @@ func _card(card: Dictionary) -> Control:
 	name.ruby_size = 12
 	name.color = Color.WHITE if got else Color(0.62, 0.68, 0.80)
 	name.custom_minimum_size = Vector2(0, 34)
-	name.set_ruby_text(("● " if got else "○ ") + String(card["name"]), true)
+	name.set_ruby_text(("● " if got else "○ ") + L.t(String(card["name"])), true)
 	v.add_child(name)
 	var found := RubyLabel.new()
 	found.font_size = 21

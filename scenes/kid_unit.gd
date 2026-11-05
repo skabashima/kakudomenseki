@@ -82,7 +82,7 @@ func _ready() -> void:
 	title.ruby_size = 15
 	title.color = GOLD
 	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	title.set_ruby_text("  " + String(unit["title"]), true)
+	title.set_ruby_text("  " + L.t(String(unit["title"])), true)
 	head.add_child(title)
 
 	map = Control.new()
@@ -228,7 +228,7 @@ func _act_done() -> void:
 	GameState.play_sfx("clear" if tries >= 3 else "correct")
 	big.text = _act_cheer()
 	if tries >= 3:
-		talk.set_ruby_text(L.t("3 回とも 合っていた。%s") % String(unit["found"]), true)
+		talk.set_ruby_text(L.t("3 回とも 合っていた。%s") % L.t(String(unit["found"])), true)
 		act_btn.text = "しるしを 見る"
 	else:
 		# 「もう いちど」だと、まちがえて やりなおしだと 思われた。
@@ -260,6 +260,8 @@ func _start_quiz() -> void:
 
 
 func _short(text: String) -> String:
+	if L.en():
+		return text
 	var t := text.replace("を求めなさい。", "は?")
 	t = t.replace("は何度ですか。", "は何度?")
 	return t.replace("ですか。", "?")
@@ -295,7 +297,7 @@ func _submit() -> void:
 	if absf(v - float(problem["answer"])) < maxf(float(problem.get("tol", 0.01)), 0.01):
 		GameState.play_sfx("win")
 		big.text = "あたり！"
-		talk.set_ruby_text(L.t("しるしが とけた。%s") % String(unit["found"]), true)
+		talk.set_ruby_text(L.t("しるしが とけた。%s") % L.t(String(unit["found"])), true)
 		keypad.visible = false
 		answer_row.visible = false
 		act_btn.visible = true
@@ -306,7 +308,7 @@ func _submit() -> void:
 	else:
 		GameState.play_sfx("fail")
 		big.text = "ちがうみたい"
-		talk.set_ruby_text(String(unit["found"]) + "  もう いちど。", true)
+		talk.set_ruby_text(L.t(String(unit["found"])) + L.t("  もう いちど。"), true)
 		input_text = ""
 		keypad.answer_lbl.text = " "
 
@@ -679,7 +681,7 @@ func _draw_tag(c: Control, at: Vector2, text: String, size: int, col: Color) -> 
 	var lt := at + Vector2(-w * 0.5, float(size) * 0.36)
 	c.draw_rect(Rect2(lt + Vector2(-6.0, -float(size) * 0.86),
 		Vector2(w + 12.0, float(size) * 1.18)), Color(0.06, 0.10, 0.18, 0.72))
-	c.draw_string(f, lt, text, HORIZONTAL_ALIGNMENT_LEFT, -1, size, col)
+	c.draw_string(f, lt, L.t(text), HORIZONTAL_ALIGNMENT_LEFT, -1, size, col)
 
 
 ## 「ここへ はこぶ」の 矢じるし
@@ -766,7 +768,7 @@ func _draw_rounds(c: Control) -> void:
 	var x := c.size.x - 22.0 - 3.0 * 30.0
 	var lab := "たしかめ"
 	var lw := f.get_string_size(lab, HORIZONTAL_ALIGNMENT_LEFT, -1, 22).x
-	c.draw_string(f, Vector2(x - lw - 12.0, 31.0), lab, HORIZONTAL_ALIGNMENT_LEFT, -1, 22, DIM)
+	c.draw_string(f, Vector2(x - lw - 12.0, 31.0), L.t(lab), HORIZONTAL_ALIGNMENT_LEFT, -1, 22, DIM)
 	for i in 3:
 		var at := Vector2(x + float(i) * 30.0 + 12.0, 24.0)
 		if i < tries:
@@ -794,7 +796,7 @@ func _draw_ok(c: Control) -> void:
 	var at := mid + Vector2(-w * 0.5, -r * pop - 20.0)
 	c.draw_rect(Rect2(at + Vector2(-14.0, -34.0), Vector2(w + 28.0, 46.0)),
 		Color(0.06, 0.10, 0.18, 0.80))
-	c.draw_string(f, at, s, HORIZONTAL_ALIGNMENT_LEFT, -1, 32, OK_COL)
+	c.draw_string(f, at, L.t(s), HORIZONTAL_ALIGNMENT_LEFT, -1, 32, OK_COL)
 
 
 func _draw_tear(c: Control) -> void:
@@ -856,7 +858,7 @@ func _draw_tear(c: Control) -> void:
 		lab = "そろった！"
 	elif n_placed > 0:
 		lab = L.t("つぎも ここへ(あと %d こ)") % (3 - n_placed)
-	c.draw_string(ThemeDB.fallback_font, zone.position + Vector2(16.0, 36.0), lab,
+	c.draw_string(ThemeDB.fallback_font, zone.position + Vector2(16.0, 36.0), L.t(lab),
 		HORIZONTAL_ALIGNMENT_LEFT, -1, 28, GOLD)
 	c.draw_line(Vector2(20, ly), Vector2(c.size.x - 20, ly), Color(1, 1, 1, 0.85), 5.0)
 	var base := 0.0
@@ -972,7 +974,7 @@ func _draw_slide(c: Control) -> void:
 	if bool(st["moved"]):
 		# くらべる ため、はじめの かども うすく のこす
 		_draw_piece(c, p_top, deg_to_rad(-slope), slope, Color(1.0, 0.78, 0.35, 0.35), 82.0)
-	c.draw_string(ThemeDB.fallback_font, Vector2(24, c.size.y - 18), _slide_note(),
+	c.draw_string(ThemeDB.fallback_font, Vector2(24, c.size.y - 18), L.t(_slide_note()),
 		HORIZONTAL_ALIGNMENT_LEFT, -1, 26, GOLD if bool(st["moved"]) else DIM)
 
 
@@ -1117,7 +1119,7 @@ func _draw_fold_tape(c: Control) -> void:
 	# つまむ ところ
 	c.draw_circle(_tape_screen(_tape_fold_pt(_tape_handle(), t)), 13.0, GOLD)
 	c.draw_string(f, Vector2(24, c.size.y - 20),
-		"同じ かどが もう 1 つ できた" if t > 0.95 else "右はしを つまんで ○ まで 折り返そう",
+		L.t("同じ かどが もう 1 つ できた" if t > 0.95 else "右はしを つまんで ○ まで 折り返そう"),
 		HORIZONTAL_ALIGNMENT_LEFT, -1, 26, GOLD if t > 0.95 else DIM)
 
 
@@ -1147,7 +1149,7 @@ func _draw_fold(c: Control) -> void:
 		Color(1.0, 0.78, 0.35, 0.6))
 	c.draw_polyline(PackedVector2Array([top, moved_mid, moved_br, top]), GOLD, 3.0)
 	c.draw_string(ThemeDB.fallback_font, Vector2(24, c.size.y - 20),
-		"右がわを つまんで、左へ たおそう" if t < 0.95 else "ぴったり 重なった",
+		L.t("右がわを つまんで、左へ たおそう" if t < 0.95 else "ぴったり 重なった"),
 		HORIZONTAL_ALIGNMENT_LEFT, -1, 26, DIM if t < 0.95 else GOLD)
 
 
@@ -1197,10 +1199,10 @@ func _draw_diag(c: Control) -> void:
 	var sum_msg := "三角形 1 つで 180°"
 	if k > 0:
 		sum_msg = L.t("三角形 %d こ × 180° ＝ %d°") % [k, k * 180]
-	c.draw_string(f, Vector2(24, c.size.y - 58), sum_msg,
+	c.draw_string(f, Vector2(24, c.size.y - 58), L.t(sum_msg),
 		HORIZONTAL_ALIGNMENT_LEFT, -1, 30, GOLD if k >= n - 2 else Color(0.85, 0.9, 1.0))
 	c.draw_string(f, Vector2(24, c.size.y - 20),
-		"金色の 点から 白い 点まで なぞろう(タップでも いい)",
+		L.t("金色の 点から 白い 点まで なぞろう(タップでも いい)"),
 		HORIZONTAL_ALIGNMENT_LEFT, -1, 26, DIM)
 
 
@@ -1289,10 +1291,10 @@ func _draw_spoke(c: Control) -> void:
 		sum_msg = L.t("線 %d 本。まん中は まだ 分けきれていない") % k
 	elif k >= n:
 		sum_msg = L.t("360° ÷ %d ＝ %d°") % [n, roundi(step_deg)]
-	c.draw_string(f, Vector2(24, c.size.y - 58), sum_msg,
+	c.draw_string(f, Vector2(24, c.size.y - 58), L.t(sum_msg),
 		HORIZONTAL_ALIGNMENT_LEFT, -1, 30, GOLD if k >= n else Color(0.85, 0.9, 1.0))
 	c.draw_string(f, Vector2(24, c.size.y - 20),
-		"まん中から 白い 点まで なぞろう(タップでも いい)",
+		L.t("まん中から 白い 点まで なぞろう(タップでも いい)"),
 		HORIZONTAL_ALIGNMENT_LEFT, -1, 26, DIM)
 
 
@@ -1392,9 +1394,9 @@ func _draw_clock(c: Control) -> void:
 	var sum_msg := "1 こ分 ＝ 30°"
 	if whole > 0:
 		sum_msg = L.t("30° × %d こ ＝ %d°") % [whole, whole * 30]
-	c.draw_string(f, Vector2(24, c.size.y - 58), sum_msg,
+	c.draw_string(f, Vector2(24, c.size.y - 58), L.t(sum_msg),
 		HORIZONTAL_ALIGNMENT_LEFT, -1, 30, GOLD if done else Color(0.85, 0.9, 1.0))
-	c.draw_string(f, Vector2(24, c.size.y - 20), _clock_note(),
+	c.draw_string(f, Vector2(24, c.size.y - 20), L.t(_clock_note()),
 		HORIZONTAL_ALIGNMENT_LEFT, -1, 26, GOLD if done else DIM)
 
 
@@ -1524,17 +1526,17 @@ func _draw_grid(c: Control) -> void:
 	# つまむ ところ(k16 は 底辺の はし。高さは 動かさない)
 	c.draw_circle(o + Vector2(s * w, 0.0 if uid == "k16" else -s * h), 16.0, GOLD)
 	c.draw_string(font, o + Vector2(s * w * 0.5 - 30.0, 34.0),
-		("底辺 %d" if uid == "k16" else "よこ %d") % w,
+		L.t(("底辺 %d" if uid == "k16" else "よこ %d") % w),
 		HORIZONTAL_ALIGNMENT_LEFT, -1, 26, INK)
 	c.draw_string(font, o + Vector2(-96.0, -s * h * 0.5),
-		("高さ %d" if uid == "k16" else "たて %d") % h,
+		L.t(("高さ %d" if uid == "k16" else "たて %d") % h),
 		HORIZONTAL_ALIGNMENT_LEFT, -1, 26, INK)
 	var foot := L.t("金色の 点を つまんで、うすい 形に あわせよう(たて %d よこ %d)") % [th, tw]
 	if uid == "k10":
 		foot = L.t("四角 %d × %d ＝ %d ます。金色の 三角は その 半分") % [h, w, w * h]
 	elif uid == "k16":
 		foot = L.t("高さ %d は そのまま。底辺を %d まで のばそう(いま %d)") % [h, tw, w]
-	c.draw_string(font, Vector2(24, map.size.y - 18), foot,
+	c.draw_string(font, Vector2(24, map.size.y - 18), L.t(foot),
 		HORIZONTAL_ALIGNMENT_LEFT, -1, 25, DIM)
 
 
@@ -1704,7 +1706,7 @@ func _draw_cut(c: Control) -> void:
 	elif String(unit["id"]) == "k17":
 		done_msg = "重なった ところが 葉っぱの 形"
 	c.draw_string(ThemeDB.fallback_font, Vector2(24, map.size.y - 18),
-		done_msg if done else msg, HORIZONTAL_ALIGNMENT_LEFT, -1, 25, GOLD if done else DIM)
+		L.t(done_msg if done else msg), HORIZONTAL_ALIGNMENT_LEFT, -1, 25, GOLD if done else DIM)
 
 
 ## 円を ころがす
@@ -1748,7 +1750,7 @@ func _draw_shift(c: Control) -> void:
 			Color(0.60, 0.52, 0.40, 0.9))
 		c.draw_circle(Vector2(rx + s * 0.5, o.y + 26.0), 16.0, GOLD)
 		c.draw_string(ThemeDB.fallback_font, Vector2(24, map.size.y - 18),
-			"道を 左右に 動かそう。のこりの 畑は たて 5 × よこ 8 の まま",
+			L.t("道を 左右に 動かそう。のこりの 畑は たて 5 × よこ 8 の まま"),
 			HORIZONTAL_ALIGNMENT_LEFT, -1, 25, DIM)
 	else:
 		# 門と 動く板。
@@ -1791,7 +1793,7 @@ func _draw_shift(c: Control) -> void:
 			L.t("重なりの たては ずっと %d。よこ だけが 進んだ ぶん ふえる") % K21_TALL,
 			HORIZONTAL_ALIGNMENT_LEFT, -1, 25, DIM)
 		c.draw_string(f2, Vector2(24, map.size.y - 18),
-			"板を 右へ 動かそう。重なった ところが 広がっていく",
+			L.t("板を 右へ 動かそう。重なった ところが 広がっていく"),
 			HORIZONTAL_ALIGNMENT_LEFT, -1, 25, DIM)
 
 
@@ -1872,11 +1874,11 @@ func _draw_open(c: Control) -> void:
 			_draw_tag(c, box[i], str(pips[i]), 34, Color(1.0, 0.97, 0.85))
 		if t > 0.9:
 			c.draw_string(font_o, Vector2(24, map.size.y - 52),
-				"同じ 色が 向かい合う面 ― 1 と 6、2 と 5、3 と 4",
+				L.t("同じ 色が 向かい合う面 ― 1 と 6、2 と 5、3 と 4"),
 				HORIZONTAL_ALIGNMENT_LEFT, -1, 26, GOLD)
 		c.draw_string(font_o, Vector2(24, map.size.y - 18),
-			"つまんで ひらこう(面は 6 つ)" if t < 0.9
-			else "ひらいた! 1 つ おいた 先が 向かい合う面。たすと どれも 7",
+			L.t("つまんで ひらこう(面は 6 つ)" if t < 0.9
+			else "ひらいた! 1 つ おいた 先が 向かい合う面。たすと どれも 7"),
 			HORIZONTAL_ALIGNMENT_LEFT, -1, 25, DIM if t < 0.9 else GOLD)
 	else:
 		# ななめに 切った 箱と、さかさに した 同じ 箱。
@@ -1918,8 +1920,8 @@ func _draw_open(c: Control) -> void:
 				% [int(n1 + n2), ProblemGen.fmt((n1 + n2) * 0.5)],
 			HORIZONTAL_ALIGNMENT_LEFT, -1, 25, DIM if t < 0.9 else GOLD)
 		c.draw_string(f2, Vector2(24, map.size.y - 18),
-			"さかさの 箱を つまんで、右上へ 運んで のせよう" if t < 0.9
-			else "のった! まっすぐな 箱 2 つ分に なった",
+			L.t("さかさの 箱を つまんで、右上へ 運んで のせよう" if t < 0.9
+			else "のった! まっすぐな 箱 2 つ分に なった"),
 			HORIZONTAL_ALIGNMENT_LEFT, -1, 25, DIM if t < 0.9 else GOLD)
 
 
@@ -1969,7 +1971,7 @@ func _draw_shadow(c: Control) -> void:
 		c.draw_line(Vector2(x, ground), Vector2(x + sh, ground), SKY, 6.0)
 		c.draw_dashed_line(Vector2(x, ground - h), Vector2(x + sh, ground),
 			Color(1, 1, 1, 0.35), 2.0, 9.0)
-		c.draw_string(font, Vector2(x - 34.0, ground - h - 12.0), String(item[3]),
+		c.draw_string(font, Vector2(x - 34.0, ground - h - 12.0), L.t(String(item[3])),
 			HORIZONTAL_ALIGNMENT_LEFT, -1, 24, GOLD)
 	# 太陽(光の 向きに 置く)
 	var dir := Vector2(-cos(deg_to_rad(th)), -sin(deg_to_rad(th)))
@@ -1978,7 +1980,7 @@ func _draw_shadow(c: Control) -> void:
 	sun.x = clampf(sun.x, 40.0, c.size.x - 40.0)
 	sun.y = clampf(sun.y, 46.0, ground - 40.0)
 	c.draw_circle(sun, 24.0, Color(1.0, 0.9, 0.4))
-	c.draw_string(font, sun + Vector2(-18.0, -32.0), "太陽", HORIZONTAL_ALIGNMENT_LEFT, -1, 22, DIM)
+	c.draw_string(font, sun + Vector2(-18.0, -32.0), L.t("太陽"), HORIZONTAL_ALIGNMENT_LEFT, -1, 22, DIM)
 	c.draw_string(font, Vector2(24, c.size.y - 18),
 		L.t("太陽を 上下に 動かそう(くい %.1f ÷ %.1f ＝ %.2f ・ 木 %.1f ÷ %.1f ＝ %.2f)") % [
 			pole, s1, pole / s1, tree, s2, tree / s2],
