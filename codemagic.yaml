@@ -127,9 +127,7 @@ workflows:
           # config/name_localized を InfoPlist.strings に書かないので、ここで書く)
           STRINGS=$(find "$CM_BUILD_DIR/build/ios" -path "*/en.lproj/InfoPlist.strings" -not -path "*.xcframework/*" | head -1)
           if [ -n "$STRINGS" ]; then
-            printf '"CFBundleDisplayName" = "Shape Hunter";
-"CFBundleName" = "Shape Hunter";
-' > "$STRINGS"
+            printf '"CFBundleDisplayName" = "Shape Hunter";\n"CFBundleName" = "Shape Hunter";\n' > "$STRINGS"
           fi
           PBX="$CM_BUILD_DIR/${XCODE_PROJECT}/project.pbxproj"
           sed -i '' 's|developmentRegion = en;|developmentRegion = ja;|' "$PBX"
