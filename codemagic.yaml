@@ -123,11 +123,11 @@ workflows:
           /usr/libexec/PlistBuddy -c "Add :CFBundleLocalizations array" "$PLIST"
           /usr/libexec/PlistBuddy -c "Add :CFBundleLocalizations:0 string ja" "$PLIST"
           /usr/libexec/PlistBuddy -c "Add :CFBundleLocalizations:1 string en" "$PLIST"
-          # 英語の端末ではホーム画面の名前を Shape Hunter にする(Godot の iOS 書き出しは
+          # 英語の端末ではホーム画面の名前を Zukei Hunter にする(Godot の iOS 書き出しは
           # config/name_localized を InfoPlist.strings に書かないので、ここで書く)
           STRINGS=$(find "$CM_BUILD_DIR/build/ios" -path "*/en.lproj/InfoPlist.strings" -not -path "*.xcframework/*" | head -1)
           if [ -n "$STRINGS" ]; then
-            printf '"CFBundleDisplayName" = "Shape Hunter";\n"CFBundleName" = "Shape Hunter";\n' > "$STRINGS"
+            printf '"CFBundleDisplayName" = "Zukei Hunter";\n"CFBundleName" = "Zukei Hunter";\n' > "$STRINGS"
           fi
           PBX="$CM_BUILD_DIR/${XCODE_PROJECT}/project.pbxproj"
           sed -i '' 's|developmentRegion = en;|developmentRegion = ja;|' "$PBX"

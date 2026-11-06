@@ -301,7 +301,7 @@ def make_feature_graphic(path):
     sub1 = "角度と面積を、数字で撃ち落とせ。"
     sub2 = "中学・高校・大学受験 ― 全65ステージ"
     if EN:
-        title = "Shape Hunter"
+        title = "Zukei Hunter"
         sub1 = "Angles and area. See the figure, type the number."
         sub2 = "Elementary to high school - 65 stages"
     # 右端いっぱいに文字を置かない(ストアの一覧で端が切られることがある)
