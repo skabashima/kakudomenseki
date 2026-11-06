@@ -49,6 +49,24 @@ func _run() -> void:
 	GameState.mode = "survival"
 	await _open("res://scenes/problem.tscn")
 
+	# 未購入の 人に だけ 出る 画面(タイトルの「すべてを解放」・鍵の 札 など)。
+	# 購入済みで 開くと 映らないので、英語の 日本語残り(JA_LEAK)を 見逃す(1.4.0 で 見逃した)。
+	# 有料ステージの problem は 開かない(解放画面へ 移って テストが 止まる)
+	GameState.premium = false
+	var saved_debug: bool = GameState.debug_unlock_all
+	GameState.debug_unlock_all = false
+	await _open("res://scenes/main.tscn")
+	await _open("res://scenes/challenge_select.tscn")
+	await _open("res://scenes/store.tscn")
+	await _open("res://scenes/story_map.tscn")
+	await _open("res://scenes/net_master.tscn")
+	await _open("res://scenes/island_select.tscn")
+	await _open("res://scenes/kid_map.tscn")
+	for course in ProblemGen.COURSES:
+		GameState.current_course = String(course["id"])
+		await _open("res://scenes/stage_select.tscn")
+	GameState.debug_unlock_all = saved_debug
+
 	GameState.premium = saved_premium
 
 	var bad := 0

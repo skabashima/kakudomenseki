@@ -401,7 +401,8 @@ func _small_card(name: String, color: Color, icon: Control, callback: Callable,
 func _menu_button(text: String, sub: String, color: Color, callback: Callable, small := false) -> Button:
 	var portrait := get_viewport_rect().size.x < 1400.0
 	var btn := Button.new()
-	btn.text = text + ("\n" + sub if sub != "" else "")
+	# つなぐ 前に 訳す(つないだ 文は 表に 無いので、Button の 自動の 訳では 引けない)
+	btn.text = L.t(text) + ("\n" + sub if sub != "" else "")
 	var h := (110.0 if portrait else 124.0) - (26.0 if small else 0.0)
 	btn.custom_minimum_size = Vector2(minf(720.0, get_viewport_rect().size.x - 50.0), h)
 	btn.add_theme_font_size_override("font_size",
