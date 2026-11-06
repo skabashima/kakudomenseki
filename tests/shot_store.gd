@@ -19,7 +19,7 @@ var sub: SubViewport
 
 func _ready() -> void:
 	if OS.get_cmdline_user_args().has("--en"):
-		TranslationServer.set_locale("en")
+		L.apply("en")
 		DIR = "res://store/raw_en"
 	sub = SubViewport.new()
 	sub.size = SHOT

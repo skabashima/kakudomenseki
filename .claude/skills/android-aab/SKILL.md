@@ -122,7 +122,7 @@ push する前に 手元で 通す。
 
 ```bash
 G="$LOCALAPPDATA/Microsoft/WinGet/Packages/GodotEngine.GodotEngine_Microsoft.Winget.Source_8wekyb3d8bbwe/Godot_v4.7-stable_win64_console.exe"
-for t in explain_check kid_check kid_touch story_play gen_check calc_check \
+for t in lang_check en_check explain_check kid_check kid_touch story_play gen_check calc_check \
          play_check smoke iap_gate review_check daily_check power_check island_check; do
   "$G" --headless --path . res://tests/$t.tscn
 done

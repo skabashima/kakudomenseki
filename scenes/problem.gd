@@ -522,9 +522,10 @@ func _on_walkthrough() -> void:
 func _generic_steps() -> Array:
 	var steps: Array = []
 	var mark := _outline_shapes()
-	var head := "図の光っているところに注目。" if not mark.is_empty() else "図をよく見てみよう。"
+	# つなぐ 前に 訳す(つないだ 文は 表に 無いので、あとの L.t() では 引けない)
+	var head := L.t("図の光っているところに注目。" if not mark.is_empty() else "図をよく見てみよう。")
 	if hints_used < 1:
-		head += _short(String(problem["hint1"]))
+		head += (" " if L.en() else "") + _short(String(problem["hint1"]))
 	var first := {"say": head}
 	if not mark.is_empty():
 		first["add"] = mark
@@ -564,7 +565,8 @@ func _split_expl(text: String) -> Array:
 	var buf := ""
 	for ch in text:
 		buf += ch
-		if ch == "。" and buf.strip_edges().length() >= 8:
+		# 英語は「. 」で 区切る(3.14 の 点では 区切らない)
+		if (ch == "。" or (ch == " " and buf.ends_with(". "))) and buf.strip_edges().length() >= 8:
 			parts.append(buf.strip_edges())
 			buf = ""
 	if buf.strip_edges() != "":

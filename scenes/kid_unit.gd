@@ -791,7 +791,8 @@ func _draw_ok(c: Control) -> void:
 	c.draw_arc(mid, r * pop, 0.0, TAU, 64, Color(OK_COL.r, OK_COL.g, OK_COL.b, 0.95), 12.0)
 	# ことばは ○ の 上に。図と 重なっても 読めるように 下じきを 敷く
 	var f := ThemeDB.fallback_font
-	var s := "せいかい！" if tries < 3 else "3 回とも せいかい！"
+	# 幅は 出す 文で 測る(英語の ときに 吹き出しが ずれないように)
+	var s := L.t("せいかい！" if tries < 3 else "3 回とも せいかい！")
 	var w := f.get_string_size(s, HORIZONTAL_ALIGNMENT_LEFT, -1, 32).x
 	var at := mid + Vector2(-w * 0.5, -r * pop - 20.0)
 	c.draw_rect(Rect2(at + Vector2(-14.0, -34.0), Vector2(w + 28.0, 46.0)),
@@ -1594,7 +1595,7 @@ func _draw_point(c: Control) -> void:
 		HORIZONTAL_ALIGNMENT_LEFT, -1, 28, Color(0.85, 0.9, 1.0))
 	c.draw_string(f, Vector2(24, map.size.y - 20),
 		L.t("どこへ 動かしても どちらも %d(四角の 半分)") % roundi(w * h * 0.5) if moved >= 2.0
-			else "金色の 点を つまんで、あちこちへ 動かそう",
+			else L.t("金色の 点を つまんで、あちこちへ 動かそう"),
 		HORIZONTAL_ALIGNMENT_LEFT, -1, 25, GOLD if moved >= 2.0 else DIM)
 
 

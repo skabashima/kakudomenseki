@@ -349,10 +349,19 @@ python tools/i18n_sync.py --prune  # ソースから消えた鍵を表からも�
 ### 見張り
 
 ```
+godot --headless --path . res://tests/lang_check.tscn    # 日本語 ⇄ 英語の切り替えが効くか(日本語でも英語が出ないか)
 godot --headless --path . res://tests/en_check.tscn      # 表の未訳・% の並び・問題文/データ/依頼文の英語漏れ
 set ZUKEI_LANG=en & set ZUKEI_SCAN_JA=1                   # 既存の画面テストを英語で走らせると、画面に残った日本語を JA_LEAK として出す
 godot --headless --path . res://tests/smoke.tscn
 ```
+
+英語の表は**英語のときだけ** TranslationServer に登録する(`L.apply()`)。登録したままだと、
+Godot は日本語の表が無いので予備の言語(en)の表を引き、日本語にしても英語が出る。
+テストで言語を変えるときも `TranslationServer.set_locale()` ではなく `L.apply()` を使う。
+
+条件で文を選ぶとき(`A if c else B`)は**両側とも** `L.t()` を通す。文をつなぐときは
+**つなぐ前に**訳す(つないだ文は表に無い)。自前で描く文(`draw_string`)は `JA_LEAK` の
+見張りに映らないので、ここが漏れやすい。
 
 `tests/font_check.gd` は英語の表の字も同梱フォントで出せるかを見る(`⟂` `⁵` などは入っていない)。
 

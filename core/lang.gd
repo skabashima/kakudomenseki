@@ -17,10 +17,16 @@ class_name L
 const TABLE := "res://i18n/en.json"
 
 static var _installed := false
+## 英語の表。日本語のときは TranslationServer から外しておく
+## (Godot は いまの言語に 表が 無いと 予備の言語 = en の 表を 引くので、
+##  登録した ままだと 日本語に しても 英語が 出る。1.4.0 の 書き出し前に 実機で 見つかった)
+static var _tr: Translation = null
 
 
 ## 日本語の 文を いまの 言語に。表に 無ければ そのまま
 static func t(s: String) -> String:
+	if not en():
+		return s
 	return TranslationServer.translate(s)
 
 
@@ -48,7 +54,7 @@ static func install() -> void:
 		var v := String(data[k])
 		if v != "":
 			tr.add_message(String(k), v)
-	TranslationServer.add_translation(tr)
+	_tr = tr   # 登録は apply() が 言語に 合わせて 行う
 
 
 ## "ja" / "en" に 切り替える。"auto" なら 端末の 言語から 決める
@@ -59,6 +65,14 @@ static func apply(code: String) -> void:
 		c = forced
 	if c == "auto" or c == "":
 		c = "ja" if OS.get_locale_language() == "ja" else "en"
+	if c != "en":
+		c = "ja"
+	if _tr != null:
+		var has := TranslationServer.get_translation_object("en") == _tr
+		if c == "en" and not has:
+			TranslationServer.add_translation(_tr)
+		elif c != "en" and has:
+			TranslationServer.remove_translation(_tr)
 	TranslationServer.set_locale(c)
 
 

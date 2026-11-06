@@ -19,7 +19,7 @@ var checked := 0
 
 
 func _ready() -> void:
-	TranslationServer.set_locale("en")
+	L.apply("en")
 	_check_table()
 	_check_problems()
 	_check_data()

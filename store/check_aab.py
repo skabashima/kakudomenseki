@@ -76,7 +76,10 @@ def main(path):
     # Billing ライブラリが持ち込む base/res/raw/com_android_billingclient_* を
     # 誤って弾いてしまう(Android の res/raw はライブラリの正規の資源)。
     leaked = [n for n in z.namelist()
-              if "store/raw/" in n or "store/screenshots/" in n
+              # store/ はアイコン(store/icon)だけ入ってよい。英語版の画像フォルダ
+              # (raw_en / screenshots_en / 入稿セット_en)が 1.4.0 で一度まぎれこんだ
+              if ("assets/store/" in n and "assets/store/icon/" not in n)
+              or "assets/build/" in n
               or "/tests/" in n or n.endswith(".py")]
     if leaked:
         ok = False
