@@ -37,7 +37,10 @@ if EN:
 SIZES = {
     "appstore_6.9": (1320, 2868),
     "appstore_6.5": (1284, 2778),
-    "appstore_ipad": (2048, 2732),
+    "appstore_6.3": (1206, 2622),     # Dynamic Island 搭載の 中型(6.3インチ)
+    "appstore_duo": (2007, 2853),     # iPhone Duo
+    "appstore_ipad": (2048, 2732),    # iPad 12.9インチ
+    "appstore_ipad13": (2064, 2752),  # iPad 13インチ
     "googleplay": (1080, 1920),
 }
 
@@ -46,7 +49,10 @@ DELIVERY = [
     ("googleplay", "GooglePlay_スマホ_1080x1920"),
     ("appstore_6.9", "AppStore_iPhone6.9_1320x2868_必須"),
     ("appstore_6.5", "AppStore_iPhone6.5_1284x2778"),
+    ("appstore_6.3", "AppStore_iPhone6.3_1206x2622"),
+    ("appstore_duo", "AppStore_iPhoneDuo_2007x2853"),
     ("appstore_ipad", "AppStore_iPad13_2048x2732_必須"),
+    ("appstore_ipad13", "AppStore_iPad13_2064x2752"),
 ]
 
 # 掲載する順(Google Play は 8 枚まで)。最初の 3 枚で「何のアプリか」が伝わる並びにする
@@ -159,8 +165,14 @@ NICE_NAME = {
 }
 
 
-def font(size):
-    return ImageFont.truetype(FONT, size)
+def font(size, weight="Bold"):
+    # 同梱の Noto Sans JP は可変フォントで、既定が Thin(100)。見出しは太字、補足は Medium で出す
+    f = ImageFont.truetype(FONT, size)
+    try:
+        f.set_variation_by_name(weight)
+    except Exception:
+        pass
+    return f
 
 
 def gradient(size, c0, c1):
@@ -226,14 +238,14 @@ def compose(raw_name, head, sub, colors, size):
             break
         head_size -= 2
     sub_size = int(w * 0.038)
-    while sub_size > 14 and d.textlength(sub, font=font(sub_size)) > avail:
+    while sub_size > 14 and d.textlength(sub, font=font(sub_size, "Medium")) > avail:
         sub_size -= 1
     y = int(h * 0.050)
     for line in lines:
         d.text((left, y), line, font=font(head_size), fill=(255, 255, 255))
         y += int(head_size * 1.24)
     y += int(head_size * 0.16)
-    d.text((left, y), sub, font=font(sub_size), fill=(226, 234, 250))
+    d.text((left, y), sub, font=font(sub_size, "Medium"), fill=(226, 234, 250))
 
     # 端末画面(角丸+影)。上の文言のぶんだけ下に置く
     shot = Image.open(os.path.join(RAW, raw_name)).convert("RGB")

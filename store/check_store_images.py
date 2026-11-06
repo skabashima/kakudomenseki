@@ -28,6 +28,9 @@ EXPECT = {
     "AppStore_iPhone6.9_1320x2868_必須": (1320, 2868, 3, 10),
     "AppStore_iPhone6.5_1284x2778": (1284, 2778, 3, 10),
     "AppStore_iPad13_2048x2732_必須": (2048, 2732, 3, 10),
+    "AppStore_iPhone6.3_1206x2622": (1206, 2622, 3, 10),
+    "AppStore_iPhoneDuo_2007x2853": (2007, 2853, 3, 10),
+    "AppStore_iPad13_2064x2752": (2064, 2752, 3, 10),
 }
 RAW_W, RAW_H = 1320, 2868      # 撮影した実画面の解像度
 MAX_MB = 8.0                   # Google Play の 1 枚あたりの上限
@@ -87,6 +90,11 @@ def main():
     ok = _one(iap, (1242, 2208), "App内課金の審査用スクショ") and ok
     promo = os.path.join(DELIVERY, "AppStore_App内課金_プロモ_1024x1024.png")
     ok = _one(promo, (1024, 1024), "App内課金のプロモ画像(任意)") and ok
+    # App Store の「ヘッダと検索結果」(iOS 27 以降)。store/make_app_store_creative.py で作る
+    ok = _one(os.path.join(DELIVERY, "app_store_creative", "AppStore_header_3840x1646.png"),
+              (3840, 1646), "App Store ヘッダ(任意)") and ok
+    ok = _one(os.path.join(DELIVERY, "app_store_creative", "AppStore_search_3840x2560.png"),
+              (3840, 2560), "App Store 検索結果(任意)") and ok
     icon = os.path.join(HERE, "icon", "icon_1024.png")
     ok = _one(icon, (1024, 1024), "アプリアイコン(App Store 用 / 書き出し元)") and ok
     play_icon = os.path.join(DELIVERY, "GooglePlay_アプリアイコン_512x512.png")
