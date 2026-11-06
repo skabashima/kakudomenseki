@@ -69,7 +69,8 @@ def main():
         print("== %s ==" % name)
         for head, body in fields(path):
             text = body.strip()
-            n = len(text.replace("\n", ""))
+            # ストアは改行も 1 字に数える(App Store Connect で 4000 字を 73 字こえて気づいた)
+            n = len(text)
             lim = limit_of(head)
             ng = sorted({c for c in text if is_ng(c)})
             mark = "OK "
